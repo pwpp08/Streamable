@@ -473,27 +473,41 @@ object FilmoProvider : Provider {
         val document = getService().getDocument(absoluteUrl(id))
         extractCsrf(document)
 
-        val chips = document.select("[data-provider-chip][data-movie-link-id][data-p]")
         val servers = mutableListOf<Video.Server>()
-        val seenLinkIds = mutableSetOf<String>()
+        val seenPayloads = mutableSetOf<String>()
 
-        chips.forEach { chip ->
-            val linkId = chip.attr("data-movie-link-id").trim()
-            val payload = chip.attr("data-p").trim()
-            if (payload.isBlank()) return@forEach
-            if (linkId.isNotBlank() && !seenLinkIds.add(linkId)) return@forEach
+        document.select(".provider-row").forEach { row ->
+            val lang = row.selectFirst(".provider-row__lang")?.text()?.trim().orEmpty()
 
-            val name = chip.attr("aria-label").trim()
-                .ifBlank { chip.selectFirst(".provider-chip__name")?.text()?.trim().orEmpty() }
-                .ifBlank { "Server" }
+            row.select("[data-provider-chip][data-p]").forEach { chip ->
+                val payload = chip.attr("data-p").trim()
+                if (payload.isBlank() || !seenPayloads.add(payload)) return@forEach
 
-            servers.add(
-                Video.Server(
-                    id = payload,
-                    name = name,
-                    src = payload
+                val baseName = chip.attr("aria-label").trim()
+                    .ifBlank { chip.selectFirst(".provider-chip__name")?.text()?.trim().orEmpty() }
+                    .ifBlank { "Server" }
+
+                val ripType = chip.selectFirst(".provider-chip__metadata-tag")?.text()?.trim().orEmpty()
+                val nameWithRip = if (ripType.isNotBlank() && !baseName.contains(ripType, ignoreCase = true)) {
+                    "$baseName [$ripType]"
+                } else {
+                    baseName
+                }
+
+                val name = if (lang.isNotBlank() && !nameWithRip.contains(lang, ignoreCase = true)) {
+                    "$nameWithRip ($lang)"
+                } else {
+                    nameWithRip
+                }
+
+                servers.add(
+                    Video.Server(
+                        id = payload,
+                        name = name,
+                        src = payload
+                    )
                 )
-            )
+            }
         }
 
         return servers
