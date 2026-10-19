@@ -160,7 +160,9 @@ object SerienStreamProvider : Provider {
             Category(name = Category.FEATURED,
                 list = document.select(".home-hero-slide").map {
                     TvShow(
-                        id = getTvShowIdFromLink(it.selectFirst("a.home-hero-cta")?.attr("href") ?: ""),
+                        id = getTvShowIdFromLink(
+                            it.selectFirst("a.home-hero-overlay, a.home-hero-cta")?.attr("href") ?: ""
+                        ),
                         title = it.selectFirst("h2.home-hero-title")?.text() ?: "",
                         banner = normalizeImageUrl(
                             it.select("picture.home-hero-bg img")
@@ -361,8 +363,15 @@ object SerienStreamProvider : Provider {
             TmdbUtils.getEpisodesBySeason(it.id, seasonNumber, language = language) 
         } ?: emptyList()
         
-        return document.select("tr.episode-row").map {
-            val episodeNumber = it.selectFirst(".episode-number-cell")?.text()?.trim()?.toIntOrNull() ?: 0
+        return document.select("tr.episode-row")
+            .filterNot { row ->
+                row.hasClass("upcoming") ||
+                        row.selectFirst(".badge-upcoming") != null ||
+                        row.selectFirst("td.episode-watch-cell img, td.episode-watch-cell .watch-link") == null ||
+                        row.selectFirst("td.episode-watch-cell")?.text()?.contains("TBA", ignoreCase = true) == true
+            }
+            .map {
+                val episodeNumber = it.selectFirst(".episode-number-cell")?.text()?.trim()?.toIntOrNull() ?: 0
             val tmdbEp = tmdbEpisodes.find { ep -> ep.number == episodeNumber }
             
             val episodeLink = it.attr("onclick")

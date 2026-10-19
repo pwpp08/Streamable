@@ -41,7 +41,7 @@ import kotlinx.coroutines.sync.withLock
 object GuardaSerieProvider : Provider {
 
     override val name = "GuardaSerie"
-    override val baseUrl = "https://guardoserie.study"
+    override val baseUrl = "https://guardoseries.cyou"
     override val logo: String = "$baseUrl/wp-content/uploads/2026/06/Guardoserie1.png"
     override val language = "it"
 

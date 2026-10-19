@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.media3.common.MimeTypes
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.extractors.Extractor
+import com.streamflixreborn.streamflix.extractors.MovieMasterExtractor
 import com.streamflixreborn.streamflix.models.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -89,11 +90,12 @@ object CineHaxProvider : Provider {
         }
         .build()
 
-    private fun get(url: String, referer: String? = null): String {
+    private fun get(url: String, referer: String? = null, headers: Map<String, String> = emptyMap()): String {
         val builder = Request.Builder().url(url)
         if (referer != null) {
             builder.header("Referer", referer)
         }
+        headers.forEach { (k, v) -> builder.header(k, v) }
         val request = builder.build()
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw Exception("HTTP ${response.code} for $url")
@@ -329,6 +331,8 @@ object CineHaxProvider : Provider {
                     number = number,
                     title = "Episodio $number",
                     poster = a.selectFirst("img")?.attr("src"),
+                    tvShow = TvShow(id = tvId, title = ""),
+                    season = Season(id = seasonId, number = seasonNumber),
                 )
             }
             .distinctBy { it.number }
@@ -346,6 +350,8 @@ object CineHaxProvider : Provider {
     // region Playback
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
+        // --- Unlimplay code commented ---
+        /*
         val embedUrl = when (videoType) {
             is Video.Type.Movie -> "https://$UNLIMPLAY_HOST/f/embed/movie/$id"
             is Video.Type.Episode -> {
@@ -363,8 +369,12 @@ object CineHaxProvider : Provider {
             Log.w(TAG, "Failed to resolve embed page $embedUrl: ${e.message}")
             emptyList()
         }
+        */
+
+        return MovieMasterExtractor().servers(videoType)
     }
 
+    /*
     private fun resolveUnlimplayServers(embedPageUrl: String): List<Video.Server> {
         val embedHtml = get(embedPageUrl, referer = "$baseUrl/")
         val embedsJson = Regex("""finalizePlayer\s*\(\s*(\{.*?\})\s*\)""")
@@ -391,6 +401,7 @@ object CineHaxProvider : Provider {
             }
         }
     }
+    */
 
     override suspend fun getVideo(server: Video.Server): Video {
         if (server.src.contains(REMUX_HOST)) {

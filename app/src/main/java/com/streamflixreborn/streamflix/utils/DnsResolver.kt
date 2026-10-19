@@ -44,8 +44,9 @@ object DnsResolver : Dns {
         Log.d(TAG, "Resolving host: $hostname using provider: $providerName")
         return try {
             val addresses = _internalDoh.lookup(hostname)
-            Log.d(TAG, "Resolved $hostname to: ${addresses.joinToString { it.hostAddress ?: "" }}")
-            addresses
+            val sorted = addresses.sortedBy { if (it is java.net.Inet4Address) 0 else 1 }
+            Log.d(TAG, "Resolved $hostname to: ${sorted.joinToString { it.hostAddress ?: "" }}")
+            sorted
         } catch (e: Exception) {
             Log.e(TAG, "Failed to resolve $hostname with $providerName: ${e.message}")
             if (_internalDoh === Dns.SYSTEM) {
@@ -54,8 +55,9 @@ object DnsResolver : Dns {
 
             Log.w(TAG, "Falling back to system DNS for host: $hostname")
             val fallbackAddresses = Dns.SYSTEM.lookup(hostname)
-            Log.d(TAG, "System DNS resolved $hostname to: ${fallbackAddresses.joinToString { it.hostAddress ?: "" }}")
-            fallbackAddresses
+            val sortedFallback = fallbackAddresses.sortedBy { if (it is java.net.Inet4Address) 0 else 1 }
+            Log.d(TAG, "System DNS resolved $hostname to: ${sortedFallback.joinToString { it.hostAddress ?: "" }}")
+            sortedFallback
         }
     }
 

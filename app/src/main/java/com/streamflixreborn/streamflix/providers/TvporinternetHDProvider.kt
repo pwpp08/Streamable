@@ -19,8 +19,8 @@ import java.net.URLDecoder
 
 object TvporinternetHDProvider : IptvProvider {
     override val name = "TvPorInternet2"
-    override val baseUrl = "https://www.tvporinternet2.com"
-    override val logo = "https://www.tvporinternet2.com/imge/favicon.png"
+    override val baseUrl = "https://www.tvporinternet.org"
+    override val logo = "https://www.tvporinternet.org/imge/favicon.png"
     override val language = "es"
 
     private const val TAG = "TvPorInternet2Spy"

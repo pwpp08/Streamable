@@ -142,15 +142,21 @@ object AnimeOnlineNinjaProvider : Provider {
                 headers = pageHeaders(referer).minus("Cookie"),
                 completion = { currentUrl, html, cookies ->
                     val newClearance = clearanceToken(cookies)
-                    val hasClearance = !newClearance.isNullOrBlank()
+                    val isNewClearance = !newClearance.isNullOrBlank() && newClearance != rejectedClearance
                     val hasUsableContent = hasUsableSiteContent(html, currentUrl)
-                    if (hasClearance) promoteClearanceCookieHeader(cookies)
+                    val isStillOnChallenge = html.contains("cf-browser-verification", ignoreCase = true) ||
+                            html.contains("challenge-running", ignoreCase = true) ||
+                            html.contains("challenges.cloudflare.com", ignoreCase = true) ||
+                            html.contains("Just a moment...", ignoreCase = true) ||
+                            currentUrl.contains("/cdn-cgi/", ignoreCase = true)
+
+                    if (isNewClearance) promoteClearanceCookieHeader(cookies)
                     Log.d(
                         TAG,
-                        "WebView challenge poll -> url=$currentUrl clearance=$hasClearance " +
-                                "changed=${newClearance != currentClearance} content=$hasUsableContent"
+                        "WebView challenge poll -> url=$currentUrl isNewClearance=$isNewClearance " +
+                                "content=$hasUsableContent challenge=$isStillOnChallenge"
                     )
-                    hasClearance || hasUsableContent
+                    hasUsableContent || (isNewClearance && !isStillOnChallenge)
                 },
                 shouldAllowNavigation = { targetUrl, _ ->
                     runCatching {
@@ -162,7 +168,8 @@ object AnimeOnlineNinjaProvider : Provider {
             )
         }
 
-        if (clearanceToken(currentClearanceCookie()).isNullOrBlank()) {
+        val resolvedClearance = clearanceToken(currentClearanceCookie())
+        if (resolvedClearance.isNullOrBlank() || resolvedClearance == rejectedClearance) {
             throw ChallengeRequiredException(
                 message = "Cloudflare clearance was not obtained for $url",
                 rejectedClearance = rejectedClearance,
@@ -181,17 +188,23 @@ object AnimeOnlineNinjaProvider : Provider {
 
     private fun clearStaleClearanceCookie() {
         val cookieManager = CookieManager.getInstance()
-        listOf(SITE_BASE_URL, "$SITE_BASE_URL/").forEach { target ->
-            cookieManager.setCookie(target, "cf_clearance=; Max-Age=0; Path=/; Secure")
+        val targets = listOf(
+            SITE_BASE_URL,
+            "$SITE_BASE_URL/",
+            "https://$MAIN_HOST",
+            "https://$MAIN_HOST/",
+            "https://.$MAIN_HOST",
+            "https://.$MAIN_HOST/",
+            "http://$MAIN_HOST",
+            "http://$MAIN_HOST/"
+        )
+        targets.forEach { target ->
+            cookieManager.setCookie(target, "cf_clearance=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=.$MAIN_HOST; Max-Age=0")
+            cookieManager.setCookie(target, "cf_clearance=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Max-Age=0")
         }
         cookieManager.flush()
 
-        clearanceCookieHeader = clearanceCookieHeader
-            ?.split(';')
-            ?.map(String::trim)
-            ?.filterNot { it.startsWith("cf_clearance=", ignoreCase = true) }
-            ?.joinToString("; ")
-            ?.takeIf(String::isNotBlank)
+        clearanceCookieHeader = null
     }
 
     private fun artworkUrl(url: String?, referer: String = baseUrl): String? {

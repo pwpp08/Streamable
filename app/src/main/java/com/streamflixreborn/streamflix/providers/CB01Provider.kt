@@ -652,82 +652,91 @@ object CB01Provider : Provider {
         return mac.doFinal(message.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
     }
 
-    private fun callUprotApi(uprotId: String, apiType: String = "ms"): String? {
-        val client = OkHttpClient.Builder()
+    private const val MAXSTREAM_EMBED_BASE = "https://maxstream.video/emilpy0n/"
+
+    private val uprotClient by lazy {
+        OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .build()
+    }
 
-        // 1. Direct API
-        try {
-            val directBase = Keys.getUprotDirectApiBase()
-            val directKey = Keys.getUprotDirectKey()
-            if (directBase.isNotBlank() && directKey.isNotBlank()) {
-                val endpoint = if (apiType == "msi") "api_msi_dec.php" else "api_ms_dec.php"
-                val directUrl = "$directBase$endpoint?fc=$uprotId&key=$directKey"
-                val directReq = okhttp3.Request.Builder()
-                    .url(directUrl)
-                    .header("Accept-Language", "it")
-                    .header("Sec-Fetch-Dest", "empty")
-                    .header("Sec-Fetch-Mode", "no-cors")
-                    .header("Sec-Fetch-Site", "none")
-                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 9.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36")
-                    .header("X-Requested-With", "")
-                    .build()
-                val directResp = client.newCall(directReq).execute()
-                if (directResp.isSuccessful) {
-                    val body = directResp.body?.string()?.trim().orEmpty()
-                    if (body.isNotBlank() && body != "not found" && !body.contains("<") && !body.contains(" ")) {
-                        return "https://maxstream.video/emilpy0n/$body"
-                    }
+    private fun callUprotApi(uprotId: String, apiType: String = "ms"): String? = try {
+        var videoId: String? = null
+
+        // Direct API
+        /*
+        val directBase = Keys.getUprotDirectApiBase()
+        val directKey = Keys.getUprotDirectKey()
+        if (directBase.isNotBlank() && directKey.isNotBlank()) {
+            val endpoint = if (apiType == "msi") "api_msi_dec.php" else "api_ms_dec.php"
+            val directUrl = "$directBase$endpoint?fc=$uprotId&key=$directKey"
+            val directReq = okhttp3.Request.Builder()
+                .url(directUrl)
+                .header("Accept-Language", "it")
+                .header("Sec-Fetch-Dest", "empty")
+                .header("Sec-Fetch-Mode", "no-cors")
+                .header("Sec-Fetch-Site", "none")
+                .header("User-Agent", "Mozilla/5.0 (Linux; Android 9.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36")
+                .header("X-Requested-With", "")
+                .build()
+            val directResp = uprotClient.newCall(directReq).execute()
+            if (directResp.isSuccessful) {
+                val body = directResp.body?.string()?.trim().orEmpty()
+                if (body.isNotBlank() && body != "not found" && !body.contains("<") && !body.contains(" ")) {
+                    videoId = body
                 }
             }
-        } catch (_: Exception) { }
+        }
+        */
 
-        // 2. Fallback API
-        return try {
+        // Fallback API
+
+        if (videoId == null) {
             val apiBase = Keys.getUprotApiBase()
             val signKey = Keys.getUprotSignKey()
-            if (apiBase.isBlank() || signKey.isBlank()) return null
+            if (apiBase.isNotBlank() && signKey.isNotBlank()) {
+                var tsSkew = 0L
 
-            var tsSkew = 0L
+                // Retry once if the server asks us to sync the clock (MSDEC_TS response)
+                for (attempt in 0..1) {
+                    val ts = System.currentTimeMillis() / 1000 + tsSkew
+                    val message = "$uprotId|$apiType|$ts"
+                    val sig = hmacSHA256(message, signKey)
+                    val apiUrl = "$apiBase$uprotId&t=$apiType&ts=$ts&v=3&sig=$sig"
 
-            // Retry once if the server asks us to sync the clock (MSDEC_TS response)
-            repeat(2) { attempt ->
-                val ts = System.currentTimeMillis() / 1000 + tsSkew
-                val message = "$uprotId|$apiType|$ts"
-                val sig = hmacSHA256(message, signKey)
-                val apiUrl = "$apiBase$uprotId&t=$apiType&ts=$ts&v=2&sig=$sig"
+                    val req = okhttp3.Request.Builder()
+                        .url(apiUrl)
+                        .header("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.101 Safari/537.36")
+                        .header("X-Requested-With", "")
+                        .header("Accept-Language", "it")
+                        .build()
 
-                val req = okhttp3.Request.Builder()
-                    .url(apiUrl)
-                    .header("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.101 Safari/537.36")
-                    .header("X-Requested-With", "")
-                    .header("Accept-Language", "it")
-                    .build()
+                    val resp = uprotClient.newCall(req).execute()
+                    if (!resp.isSuccessful) break
 
-                val resp = client.newCall(req).execute()
-                if (!resp.isSuccessful) return null
+                    val responseText = resp.body?.string()?.trim().orEmpty()
 
-                val responseText = resp.body?.string()?.trim().orEmpty()
-
-                // Server signals clock drift — sync and retry
-                if (responseText.startsWith("MSDEC_TS") && attempt == 0) {
-                    val serverTs = responseText.split(" ").getOrNull(1)?.toLongOrNull()
-                    if (serverTs != null) {
-                        tsSkew = serverTs - System.currentTimeMillis() / 1000
+                    // Server signals clock drift — sync and retry
+                    if (responseText.startsWith("MSDEC_TS") && attempt == 0) {
+                        val serverTs = responseText.split(" ").getOrNull(1)?.toLongOrNull()
+                        if (serverTs != null) {
+                            tsSkew = serverTs - System.currentTimeMillis() / 1000
+                        }
+                        continue
                     }
-                    return@repeat // continue to next iteration (retry)
+
+                    if (responseText.isNotBlank() && !responseText.contains("<") && !responseText.contains(" ")) {
+                        videoId = responseText
+                    }
+                    break
                 }
-
-                if (responseText.isBlank() || responseText.contains("<") || responseText.contains(" ")) return null
-                return "https://maxstream.video/emilpy0n/$responseText"
             }
-
-            null
-        } catch (_: Exception) {
-            null
         }
+
+        videoId?.let { "$MAXSTREAM_EMBED_BASE$it" }
+    } catch (_: Exception) {
+        null
     }
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {

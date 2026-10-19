@@ -68,6 +68,10 @@ class VidemExtractor : Extractor() {
         }
     }
 
+    companion object {
+        private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    }
+
     override suspend fun extract(link: String): Video {
         // link is the direct api.php URL constructed in servers()
         val service = Service.build(mainUrl)
@@ -85,8 +89,8 @@ class VidemExtractor : Extractor() {
             source = finalUrl,
             type = MimeTypes.APPLICATION_M3U8,
             headers = mapOf(
-                "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "Referer" to mainUrl
+                "User-Agent" to USER_AGENT,
+                "Referer" to "$mainUrl/"
             )
         )
     }
@@ -97,7 +101,8 @@ class VidemExtractor : Extractor() {
                 val client = OkHttpClient.Builder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
-                            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                            .header("User-Agent", USER_AGENT)
+                            .header("Referer", "$baseUrl/")
                             .build()
                         chain.proceed(request)
                     }

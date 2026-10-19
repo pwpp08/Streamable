@@ -29,11 +29,11 @@ import kotlinx.coroutines.delay
 
 object PelisplustoProvider : Provider {
 
-    override val name = "Pelisplusto"
-    override val baseUrl = "https://pelisplus.to"
+    override val name = "TioPlus"
+    override val baseUrl = "https://tioplus.app"
     override val language = "es"
-    override val logo = "https://pelisplus.to/images/logo2.png"
-    private const val TAG = "PelisplustoProvider"
+    override val logo = "https://tioplus.app/images/logo2.png"
+    private const val TAG = "TioPlus"
 
     private val client = OkHttpClient.Builder()
         .addInterceptor { chain ->

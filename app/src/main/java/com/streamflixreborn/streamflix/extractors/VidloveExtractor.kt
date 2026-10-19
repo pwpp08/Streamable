@@ -1,5 +1,7 @@
 package com.streamflixreborn.streamflix.extractors
 
+import android.media.MediaCodecList
+import android.media.MediaFormat
 import com.streamflixreborn.streamflix.models.Video
 import androidx.media3.common.MimeTypes
 import okhttp3.OkHttpClient
@@ -7,38 +9,58 @@ import org.json.JSONObject
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.GET
-import retrofit2.http.Header
+import retrofit2.http.Headers
 import retrofit2.http.Url
 
 class VidloveExtractor : Extractor() {
     override val name = "Vidlove"
     override val mainUrl = "https://api.vidlove.cc"
 
+    companion object {
+        val supportsHevc: Boolean by lazy {
+            try {
+                MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
+                    !info.isEncoder && info.supportedTypes.any { type ->
+                        type.equals(MediaFormat.MIMETYPE_VIDEO_HEVC, ignoreCase = true)
+                    }
+                }
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
     data class ServerConfig(
         val name: String,
-        val sourceKey: String,
-        val isHevc: Boolean = false
+        val sourceKey: String
     )
 
     private val serversConfig = listOf(
-        ServerConfig("Barbarian King 2.0", "moviebox2", isHevc = true),
-        ServerConfig("Archer Queen", "vidapi"),
-        ServerConfig("Mega Knight", "megaknight"),
-        ServerConfig("Grand Warden", "warden"),
-        ServerConfig("P.E.K.K.A", "cinefreak"),
-        ServerConfig("Royal Champion", "ipcloud"),
-        ServerConfig("Ice Wizard", "tcloud")
+        ServerConfig("Barbarian King 2.0", "moviebox2"),
+        ServerConfig("Barbarian King", "moviebox"),
+        ServerConfig("Electro Dragon", "dcloud"),
+        ServerConfig("Ice Wizard", "tcloud"),
+        ServerConfig("Archer Queen", "vidapi")
     )
 
     fun servers(videoType: Video.Type): List<Video.Server> {
-        return serversConfig.map { config ->
-            val hevcParam = if (config.isHevc) "&hevc=1" else ""
+        return serversConfig
+            .filter { config ->
+                // moviebox2 only provides HEVC streams on Vidlove; exclude if device has no HEVC support
+                config.sourceKey != "moviebox2" || supportsHevc
+            }
+            .map { config ->
+                val extraParams = when (config.sourceKey) {
+                    "moviebox", "moviebox2" -> if (supportsHevc) "&hevc=1&vh=1" else "&vh=1"
+                    "dcloud" -> "&sw=1"
+                    else -> ""
+                }
             val url = when (videoType) {
                 is Video.Type.Movie -> {
-                    "$mainUrl/movie?id=${videoType.id}&mode=json&sources=${config.sourceKey}$hevcParam"
+                    "$mainUrl/movie?id=${videoType.id}&mode=json&sources=${config.sourceKey}$extraParams"
                 }
                 is Video.Type.Episode -> {
-                    "$mainUrl/tv?id=${videoType.tvShow.id}&season=${videoType.season.number}&episode=${videoType.number}&mode=json&sources=${config.sourceKey}$hevcParam"
+                    "$mainUrl/tv?id=${videoType.tvShow.id}&season=${videoType.season.number}&episode=${videoType.number}&mode=json&sources=${config.sourceKey}$extraParams"
                 }
             }
             
@@ -96,6 +118,10 @@ class VidloveExtractor : Extractor() {
             }
         }
 
+        @Headers(
+            "Origin: https://player.vidlove.cc",
+            "Referer: https://player.vidlove.cc/"
+        )
         @GET
         suspend fun get(
             @Url url: String

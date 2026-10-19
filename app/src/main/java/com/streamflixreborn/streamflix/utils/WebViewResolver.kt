@@ -403,8 +403,13 @@ class WebViewResolver(
     }
 
     private fun isCloudflareRequest(url: String): Boolean {
-        val host = runCatching { Uri.parse(url).host.orEmpty().lowercase() }.getOrDefault("")
-        return host == "cloudflare.com" || host.endsWith(".cloudflare.com")
+        val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return false
+        val host = uri.host.orEmpty().lowercase()
+        val path = uri.path.orEmpty().lowercase()
+        return host == "cloudflare.com" ||
+                host.endsWith(".cloudflare.com") ||
+                host.contains("challenges.cloudflare.com") ||
+                path.contains("/cdn-cgi/")
     }
 
     private fun emptyBlockedResponse(): WebResourceResponse {
