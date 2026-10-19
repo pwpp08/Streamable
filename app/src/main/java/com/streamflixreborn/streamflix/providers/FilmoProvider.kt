@@ -19,6 +19,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import org.json.JSONObject
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import retrofit2.Response
@@ -522,6 +523,7 @@ object FilmoProvider : Provider {
         val response = getService().openToken(tokenUrl)
         val location = response.headers()["Location"]
             ?: response.raw().header("Location")
+            ?: Jsoup.parse(response.body()?.string().orEmpty()).selectFirst("a.open")?.attr("href")?.trim()?.ifBlank { null }
             ?: throw Exception("Filmo hoster redirect missing")
 
         val hosterUrl = when {
@@ -530,6 +532,6 @@ object FilmoProvider : Provider {
             else -> absoluteUrl(location)
         }
 
-        return Extractor.extract(hosterUrl)
+        return Extractor.extract(hosterUrl, server)
     }
 }
