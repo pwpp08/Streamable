@@ -896,6 +896,9 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
     private fun configurableDomainDefault(
         providerName: String?,
     ): String? {
+        // FILMO_REDIRECT_SETTINGS_V1
+        if (providerName == "Filmo") return "https://filmo.to/"
+
         if (isVavooProviderName(providerName)) {
             return VavooConfig.DEFAULT_BASE_URL
         }

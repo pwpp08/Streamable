@@ -75,6 +75,7 @@ interface Provider {
             MStreamProvider to ProviderSupport(movies = true, tvShows = true),
             FrenchAnimeProvider to ProviderSupport(movies = true, tvShows = true),
             FilmPalastProvider to ProviderSupport(movies = true, tvShows = true),
+            FilmoProvider to ProviderSupport(movies = true, tvShows = false),
             PoseidonHD2Provider to ProviderSupport(movies = true, tvShows = true),
             CuevanaEuProvider to ProviderSupport(movies = true, tvShows = true),
             LatanimeProvider to ProviderSupport(movies = true, tvShows = true),
