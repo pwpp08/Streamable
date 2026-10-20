@@ -16,7 +16,6 @@ import com.streamflixreborn.streamflix.extractors.EinschaltenExtractor
 import com.streamflixreborn.streamflix.extractors.FrembedExtractor
 import com.streamflixreborn.streamflix.extractors.VidflixExtractor
 import com.streamflixreborn.streamflix.extractors.VidrockExtractor
-import com.streamflixreborn.streamflix.extractors.VideasyExtractor
 import com.streamflixreborn.streamflix.extractors.VidloveExtractor
 import com.streamflixreborn.streamflix.extractors.PrimeSrcExtractor
 import com.streamflixreborn.streamflix.extractors.VidemExtractor
@@ -816,10 +815,6 @@ class TmdbProvider(override val language: String) : Provider {
                 if (videoType is Video.Type.Movie) {
                     servers.add(EinschaltenExtractor().server(videoType))
                 }
-
-                VideasyExtractor()
-                    .server(videoType, language)
-                    ?.let { servers.add(it) }
             }
             "fr" -> {
                 // Solo server francesi
@@ -931,7 +926,6 @@ class TmdbProvider(override val language: String) : Provider {
                 servers.addAll(PrimeSrcExtractor().servers(videoType))
 
                 if (language == "en") {
-                    servers.addAll(1, VideasyExtractor().servers(videoType, language))
                     servers.addAll(VidemExtractor().servers(videoType, "en"))
                     servers.addAll(VidloveExtractor().servers(videoType))
                 }

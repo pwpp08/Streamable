@@ -40,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap
 object AnimeOnlineNinjaProvider : Provider {
 
     private const val SITE_BASE_URL = "https://ww3.animeonline.ninja"
+    private const val VERHENTAI_HOST = "www2.verhentai.top"
+    private const val VERHENTAI_BASE_URL = "https://$VERHENTAI_HOST"
 
     override val name = "Anime Online Ninja"
     override val baseUrl = SITE_BASE_URL
@@ -91,8 +93,8 @@ object AnimeOnlineNinjaProvider : Provider {
         val document = try {
             fetchDocumentDirect(url)
         } catch (challenge: ChallengeRequiredException) {
-            solveCloudflareChallenge(url, baseUrl, challenge.rejectedClearance)
-            fetchDocumentDirect(url)
+            val resolvedDoc = solveCloudflareChallenge(url, baseUrl, challenge.rejectedClearance)
+            resolvedDoc ?: fetchDocumentDirect(url)
         }
 
         return document?.also { cacheDocument(url, it) }?.clone()
@@ -127,12 +129,12 @@ object AnimeOnlineNinjaProvider : Provider {
         url: String,
         referer: String,
         rejectedClearance: String?,
-    ) {
-        providerMutex.withLock {
+    ): Document? {
+        val result = providerMutex.withLock {
             val currentClearance = clearanceToken(currentClearanceCookie())
             if (!currentClearance.isNullOrBlank() && currentClearance != rejectedClearance) {
                 Log.d(TAG, "Another request already renewed Cloudflare clearance; skipping WebView")
-                return@withLock
+                return@withLock null
             }
 
             clearStaleClearanceCookie()
@@ -162,10 +164,24 @@ object AnimeOnlineNinjaProvider : Provider {
                     runCatching {
                         val target = URL(targetUrl)
                         target.host.equals(MAIN_HOST, ignoreCase = true) ||
+                                target.host.equals(VERHENTAI_HOST, ignoreCase = true) ||
                                 target.path.contains("/cdn-cgi/", ignoreCase = true)
                     }.getOrDefault(false)
                 },
             )
+        }
+
+        if (result != null) {
+            val clearanceInResult = clearanceToken(result.cookies)
+            if (!clearanceInResult.isNullOrBlank()) {
+                promoteClearanceCookieHeader(result.cookies)
+            }
+            val pageUrl = result.finalUrl ?: url
+            if (result.html.isNotBlank() && hasUsableSiteContent(result.html, pageUrl)) {
+                val doc = Jsoup.parse(result.html, pageUrl).apply { setBaseUri(pageUrl) }
+                cacheDocument(url, doc)
+                return doc
+            }
         }
 
         val resolvedClearance = clearanceToken(currentClearanceCookie())
@@ -175,6 +191,7 @@ object AnimeOnlineNinjaProvider : Provider {
                 rejectedClearance = rejectedClearance,
             )
         }
+        return null
     }
 
     private fun clearanceToken(cookieHeader: String?): String? {
@@ -196,10 +213,19 @@ object AnimeOnlineNinjaProvider : Provider {
             "https://.$MAIN_HOST",
             "https://.$MAIN_HOST/",
             "http://$MAIN_HOST",
-            "http://$MAIN_HOST/"
+            "http://$MAIN_HOST/",
+            VERHENTAI_BASE_URL,
+            "$VERHENTAI_BASE_URL/",
+            "https://$VERHENTAI_HOST",
+            "https://$VERHENTAI_HOST/",
+            "https://.$VERHENTAI_HOST",
+            "https://.$VERHENTAI_HOST/",
+            "http://$VERHENTAI_HOST",
+            "http://$VERHENTAI_HOST/"
         )
         targets.forEach { target ->
             cookieManager.setCookie(target, "cf_clearance=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=.$MAIN_HOST; Max-Age=0")
+            cookieManager.setCookie(target, "cf_clearance=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Domain=.$VERHENTAI_HOST; Max-Age=0")
             cookieManager.setCookie(target, "cf_clearance=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; Max-Age=0")
         }
         cookieManager.flush()
@@ -1242,7 +1268,9 @@ object AnimeOnlineNinjaProvider : Provider {
             "$SITE_BASE_URL/",
             SITE_BASE_URL,
             "$baseUrl/",
-            baseUrl
+            baseUrl,
+            "$VERHENTAI_BASE_URL/",
+            VERHENTAI_BASE_URL
         )
 
         val liveCookieHeaders = candidates.mapNotNull { candidate ->

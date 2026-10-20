@@ -32,10 +32,14 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.json.JSONObject
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import java.util.concurrent.TimeUnit
+import com.streamflixreborn.streamflix.utils.UserPreferences
 
 object AnimeUnityProvider : Provider {
+    private const val DEFAULT_BASE_URL = "https://www.animeunity.to"
+
     override val name = "AnimeUnity"
-    override val baseUrl = "https://www.animeunity.so"
+    override val baseUrl: String
+        get() = UserPreferences.resolveProviderBaseUrl(name, DEFAULT_BASE_URL)
     override val logo: String get() = "$baseUrl/images/scritta2.png"
     override val language = "it"
     
@@ -222,7 +226,36 @@ object AnimeUnityProvider : Provider {
         }
     }
 
-    private val service = AnimeUnityService.build(baseUrl)
+    @Volatile
+    private var cachedService: AnimeUnityService? = null
+
+    @Volatile
+    private var cachedServiceBaseUrl: String? = null
+
+    private val service: AnimeUnityService
+        get() {
+            val current = baseUrl
+
+            val cached = cachedService
+            if (
+                cached != null &&
+                cachedServiceBaseUrl == current
+            ) {
+                return cached
+            }
+
+            return synchronized(this) {
+                val existing = cachedService
+                if (existing != null && cachedServiceBaseUrl == current) {
+                    existing
+                } else {
+                    AnimeUnityService.build(current).also {
+                        cachedService = it
+                        cachedServiceBaseUrl = current
+                    }
+                }
+            }
+        }
 
 
     override suspend fun getHome(): List<Category> {

@@ -77,7 +77,7 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
         val title: String?,
     )
 
-    private val DEFAULT_DOMAIN_VALUE = "streamingunity.cc"
+    private val DEFAULT_DOMAIN_VALUE = "streamingunity.fun"
     private val DEFAULT_SERIENSTREAM_DOMAIN_VALUE = "serienstream.to"
     private val DEFAULT_MOFLIX_DOMAIN_VALUE = "moflix-stream.xyz"
     private val DEFAULT_CUEVANA_DOMAIN_VALUE = "cuevana3.la"
@@ -1514,6 +1514,7 @@ class SettingsTvFragment : LeanbackPreferenceFragmentCompat() {
             "KinoGer" -> "https://kinoger.beer/"
             "Einschalten" -> "https://einschalten.in"
             "Kellerkino" -> "https://www.kellerkino.com/"
+            "AnimeUnity" -> "https://www.animeunity.to"
             else -> null
         }
     }

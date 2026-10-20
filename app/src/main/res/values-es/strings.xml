@@ -1,11 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="app_name">Streamflix</string>
+
+    <string name="profile_who_is_watching">¿Quién está viendo?</string>
+    <string name="profile_no_profiles">Aún no hay perfiles</string>
+    <string name="profile_default_name">Predeterminado</string>
+    <string name="profile_current">Perfil actual</string>
+    <string name="profile_card_content_description">Perfil %1$s</string>
+    <string name="profile_add_btn">Añadir Perfil</string>
+    <string name="profile_manage_btn">Gestionar</string>
+    <string name="profile_edit_btn">Editar Perfil</string>
+    <string name="settings_profile_edit_summary">Renombrar el perfil actual</string>
+    <string name="profile_manage_title">Gestionar Perfiles</string>
+    <string name="profile_create_title">Nuevo Perfil</string>
+    <string name="profile_rename_title">Renombrar Perfil</string>
+    <string name="profile_action_color">Cambiar color</string>
+    <string name="profile_color_title">Color del perfil</string>
+    <string name="profile_color_changed">Color del perfil modificado</string>
+    <string name="profile_delete_title">Eliminar Perfil</string>
+    <string name="profile_delete_message">¿Estás seguro de que quieres eliminar "%s"?</string>
+    <string name="profile_name_hint">Nombre del perfil</string>
+    <string name="profile_action_switch">Cambiar a este perfil</string>
+    <string name="profile_switch_pin_title">Introducir PIN del perfil</string>
+    <string name="profile_switch_pin_message">Introduce el PIN parental del perfil actual para cambiar de perfil.</string>
+    <string name="profile_action_rename">Renombrar</string>
+    <string name="profile_action_delete">Eliminar</string>
+    <string name="profile_created">Perfil creado</string>
+    <string name="profile_renamed">Perfil renombrado</string>
+    <string name="profile_deleted">Perfil eliminado</string>
+    <string name="profile_delete_error">No se puede eliminar el perfil</string>
+    <string name="profile_delete_default_error">No se puede eliminar el perfil predeterminado</string>
+    <string name="profile_import_warning_title">Importación entre Perfiles</string>
+    <string name="profile_import_warning_message">Estos datos fueron exportados del perfil "%1$s". Se importarán al perfil actual "%2$s". Los datos del perfil actual serán sobrescritos. ¿Continuar?</string>
+    <string name="settings_screen_profiles_title">Perfiles</string>
+    <string name="settings_screen_profiles_summary">Gestionar perfiles de usuario y sus datos</string>
+    <string name="settings_profile_manage_summary">Ver, renombrar o eliminar perfiles</string>
+    <string name="settings_profile_add_summary">Crear un nuevo perfil</string>
 
     <string name="loading_error_title">Ha ocurrido un error</string>
     <string name="loading_error_retry">Reintentar</string>
-    <string name="loading_error_details">Detalles del error</string>
     <string name="loading_error_clear_cache">Vaciar caché</string>
+    <string name="loading_error_details">Detalles del error</string>
 
     <string name="update_title">Actualización disponible</string>
     <string name="update_message">Una nueva versión de la aplicación está disponible</string>
@@ -35,6 +70,7 @@
     <string name="main_menu_tv_shows">Series</string>
     <string name="main_menu_all_channels">Todos los canales</string>
     <string name="main_menu_settings">Ajustes</string>
+    <string name="main_menu_favorites">Favoritos</string>
     <string name="main_menu_theme_change">Cambiar tema</string>
     <string name="theme_default">Predeterminado</string>
     <string name="theme_nero_amoled_oled">Nero Amoled/Oled</string>
@@ -46,7 +82,7 @@
     <string name="theme_nord_frost">Nord Frost</string>
     <string name="theme_emerald_luxe">Emerald Luxe</string>
     <string name="theme_retro_neon">Retro Neon</string>
-    
+
     <string name="search_input_hint">Buscar película, serie</string>
     <string name="search_input_hint_iptv">Buscar canales</string>
     <string name="global_search">Búsqueda global</string>
@@ -62,6 +98,20 @@
     <string name="home_recently_watched">Visto recientemente</string>
     <string name="home_favorite_movies">Películas favoritas</string>
     <string name="home_favorite_tv_shows">Series favoritas</string>
+    <string name="favorites_empty">Aún no tienes favoritos</string>
+    <string name="favorites_reorder_categories">Ordenar favoritos</string>
+    <string name="favorites_sort_title">Ordenar favoritos</string>
+    <string name="favorites_sort_manual">Orden manual</string>
+    <string name="favorites_sort_recent">Añadidos recientemente</string>
+    <string name="favorites_sort_title_ascending">Título A–Z</string>
+    <string name="favorites_sort_title_descending">Título Z–A</string>
+    <string name="favorites_reorder_item">Reordenar favorito</string>
+    <string name="favorites_move_left">Mover a la izquierda</string>
+    <string name="favorites_move_right">Mover a la derecha</string>
+    <string name="favorites_show_options">Mostrar opciones normales</string>
+    <string name="favorites_rearrange_on">Modo de reordenación</string>
+    <string name="favorites_rearrange_off">Finalizar reordenación</string>
+    <string name="favorites_moving_selected">Moviendo seleccionado – OK para detener</string>
 
     <string name="option_episode_open_tv_show">Ir a la serie</string>
     <string name="option_show_favorite">Añadir a favoritos</string>
@@ -113,17 +163,17 @@
 
     <string name="player_subtitle_tv_show">T%d E%d • %s</string>
     <string name="player_subtitle_tv_show_episode_only">E%d • %s</string>
-    <string name="player_next_episode_up_next">A continuación</string>
-    <string name="player_next_episode_action">Reproducir ahora</string>
-    <string name="player_next_episode_dismiss">Ocultar</string>
-    <string name="player_next_episode_ready">Siguiente episodio listo</string>
-    <string name="player_next_episode_autoplay_in">Reproduciendo el siguiente en %ds</string>
     <string name="player_picture_in_picture_not_supported">PIP no es compatible con tu dispositivo</string>
     <string name="player_external_player_title">Reproducir con</string>
     <string name="player_external_player_error_video">El vídeo todavía no está cargado</string>
     <string name="player_not_available_it_message">No disponible en servidores italianos, búscalo en TMDB en otros idiomas</string>
     <string name="player_not_available_lang_message">No disponible en %s, búscalo en TMDB en otros idiomas</string>
     <string name="player_retry_later_message">Vídeo no disponible por el momento. Por favor, inténtalo de nuevo más tarde</string>
+    <string name="player_next_episode_up_next">A continuación</string>
+    <string name="player_next_episode_action">Reproducir ahora</string>
+    <string name="player_next_episode_dismiss">Ocultar</string>
+    <string name="player_next_episode_ready">Siguiente episodio listo</string>
+    <string name="player_next_episode_autoplay_in">Reproduciendo el siguiente en %ds</string>
     <string name="player_aspect_ratio_fit">Ajustar a la pantalla</string>
     <string name="player_aspect_ratio_fill">Estirar</string>
     <string name="player_aspect_ratio_zoom">Zoom</string>
@@ -142,6 +192,9 @@
     <string name="player_settings_subtitles_title">Subtítulos</string>
     <string name="player_settings_subtitles_label">Subtítulos</string>
     <string name="player_settings_subtitles_off">Desactivado</string>
+    <string name="player_settings_subtitle_offset_title">Sincronización de subtítulos</string>
+    <string name="player_settings_subtitle_offset_label">Desfase temporal</string>
+    <string name="player_settings_subtitle_offset_seconds">%+.1f s</string>
     <string name="player_settings_caption_style_title">Estilo de subtítulos</string>
     <string name="player_settings_caption_style_label">Estilo de subtítulos</string>
     <string name="player_settings_caption_style_sub_label">Cambiar color de texto, estilo de fondo y margen inferior</string>
@@ -251,6 +304,16 @@
     <string name="settings_streamingcommunity_domain_reset_summary">Restaurar al dominio predeterminado</string>
     <string name="settings_streamingcommunity_domain_reset_done">Dominio restaurado al predeterminado</string>
     <string name="settings_streamingcommunity_domain_blocked">Dominio bloqueado detectado, restaurado al predeterminado</string>
+    <string name="settings_category_serienstream">Ajustes de SerienStream</string>
+    <string name="settings_category_serienstream_domain">Dominio de SerienStream</string>
+    <string name="settings_serienstream_domain_reset">Restablecer dominio</string>
+    <string name="settings_serienstream_domain_reset_summary">Restablecer el nombre de dominio predeterminado</string>
+    <string name="settings_serienstream_domain_reset_done">Dominio restablecido al valor predeterminado</string>
+    <string name="settings_category_moflix">Ajustes de Moflix</string>
+    <string name="settings_category_moflix_domain">Dominio de Moflix</string>
+    <string name="settings_moflix_domain_reset">Restablecer dominio</string>
+    <string name="settings_moflix_domain_reset_summary">Restablecer el nombre de dominio predeterminado</string>
+    <string name="settings_moflix_domain_reset_done">Dominio restablecido al valor predeterminado</string>
     <string name="settings_category_cuevana">Ajustes de Cuevana 3</string>
     <string name="settings_category_cuevana_domain">Dominio de Cuevana 3</string>
     <string name="settings_category_poseidon">Ajustes de Poseidonhd2</string>
@@ -270,6 +333,12 @@
     <string name="settings_provider_no_options_title">No hay opciones disponibles para el proveedor</string>
     <string name="settings_provider_no_options_summary">Este proveedor no expone ninguna configuración adicional en este momento.</string>
     <string name="settings_category_provider_url">URL principal</string>
+    <string name="settings_category_provider_domain">Dominio del proveedor</string>
+    <string name="settings_provider_domain">Dominio</string>
+    <string name="settings_provider_domain_summary">Reemplaza el dominio del proveedor si el sitio web cambia de dirección.</string>
+    <string name="settings_provider_domain_reset">Restablecer dominio</string>
+    <string name="settings_provider_domain_reset_summary">Restablecer el dominio predeterminado del proveedor.</string>
+    <string name="settings_provider_domain_reset_done">Dominio del proveedor restablecido.</string>
     <string name="settings_category_provider_url_manual">Ingresar manualmente</string>
     <string name="settings_category_provider_update_url">URL del portal</string>
     <string name="settings_autoupdate">Actualizar URL principal al inicio</string>
@@ -312,6 +381,7 @@
     <string name="smarttube_stable">SmartTube Estable</string>
     <string name="smarttube_beta">SmartTube Beta</string>
     <string name="choose_smarttube_version">Elige la versión de SmartTube</string>
+    <string name="tizentube">TizenTube</string>
 
     <string name="settings_trailer_player_title">Reproductor de tráiler</string>
     <string name="settings_trailer_player_summary">Elige tu reproductor preferido para los tráilers</string>
@@ -321,6 +391,57 @@
 
     <string name="backup_category_title">Copia de seguridad y restauración</string>
     <string name="settings_screen_backup_summary">Exporta o restaura favoritos, historial y datos guardados de la app</string>
+    <string name="cloud_sync_title">Cuenta y sincronización</string>
+    <string name="cloud_sync_screen_summary">Sincroniza favoritos e historial entre dispositivos</string>
+    <string name="cloud_sync_account_category">Cuenta de Supabase</string>
+    <string name="cloud_sync_account_status">Estado de la cuenta</string>
+    <string name="cloud_sync_active_profile">Perfil: %1$s</string>
+    <string name="cloud_sync_signed_out">No conectado</string>
+    <string name="cloud_sync_signed_in_as">Sesión iniciada como %1$s</string>
+    <string name="cloud_sync_sign_in">Iniciar sesión</string>
+    <string name="cloud_sync_sign_in_summary">Usa un correo electrónico y contraseña existentes</string>
+    <string name="cloud_sync_sign_up">Crear cuenta</string>
+    <string name="cloud_sync_sign_up_summary">Crear una cuenta sincronizada</string>
+    <string name="cloud_sync_sign_out">Cerrar sesión</string>
+    <string name="cloud_sync_now">Sincronizar ahora</string>
+    <string name="cloud_sync_now_summary">Sube los cambios locales y descarga los de otros dispositivos</string>
+    <string name="cloud_sync_email_hint">Correo electrónico</string>
+    <string name="cloud_sync_password_hint">Contraseña</string>
+    <string name="cloud_sync_success">Sincronización completada</string>
+    <string name="cloud_sync_sign_in_success">Sesión iniciada y sincronizada</string>
+    <string name="cloud_sync_sign_up_success">Cuenta creada y sincronizada</string>
+    <string name="cloud_sync_confirm_email">Cuenta creada. Confirma tu correo electrónico y luego inicia sesión.</string>
+    <string name="cloud_sync_sign_out_success">Sesión cerrada</string>
+    <string name="cloud_sync_invalid_credentials">Introduce un correo válido y una contraseña de al menos 6 caracteres</string>
+    <string name="cloud_sync_error">Error en la sincronización en la nube: %1$s</string>
+    <string name="cloud_sync_progress_title">Cuenta y sincronización</string>
+    <string name="cloud_sync_progress_connecting">Conectando…</string>
+    <string name="cloud_sync_progress_authenticating">Autenticando de forma segura…</string>
+    <string name="cloud_sync_progress_checking_cloud">Comprobando la biblioteca en la nube…</string>
+    <string name="cloud_sync_progress_preparing_local">Preparando la biblioteca local…</string>
+    <string name="cloud_sync_progress_merging">Combinando bibliotecas local y en la nube…</string>
+    <string name="cloud_sync_progress_uploading">Subiendo tu biblioteca: %1$d de %2$d</string>
+    <plurals name="cloud_sync_progress_applying_cloud">
+        <item quantity="one">Aplicando %d elemento de la nube…</item>
+        <item quantity="other">Aplicando %d elementos de la nube…</item>
+    </plurals>
+    <string name="cloud_sync_progress_finalizing">Finalizando sincronización…</string>
+    <string name="supabase_config_category">Conexión con Supabase</string>
+    <string name="supabase_url_title">URL del proyecto Supabase</string>
+    <string name="supabase_url_summary">Introduce la URL de tu proyecto, por ejemplo https://your-project.supabase.co</string>
+    <string name="supabase_public_key_title">Clave pública de Supabase</string>
+    <string name="supabase_public_key_summary">Usa solo la clave pública/anon; nunca utilices una clave secreta service_role</string>
+    <string name="supabase_config_saved">Conexión de Supabase guardada</string>
+    <string name="supabase_config_invalid">Introduce una URL HTTPS válida y una clave pública</string>
+    <string name="supabase_config_required">Configura Supabase antes de usar la sincronización</string>
+    <string name="supabase_config_removed">Conexión y clave pública de Supabase eliminadas</string>
+    <string name="supabase_copy_sql_title">Copiar SQL de configuración de base de datos</string>
+    <string name="supabase_copy_sql_summary">Copia al portapapeles las tablas requeridas, políticas de seguridad y configuración de realtime</string>
+    <string name="supabase_copy_sql_done">SQL de configuración de Supabase copiado al portapapeles</string>
+    <string name="supabase_open_sql_title">Abrir editor SQL de Supabase</string>
+    <string name="supabase_open_sql_summary">Abre el panel donde puedes pegar y ejecutar el SQL copiado</string>
+    <string name="supabase_instructions_title">Instrucciones</string>
+    <string name="supabase_instructions_summary">Abrir en el navegador la guía detallada para configurar la cuenta y la sincronización de Supabase</string>
     <string name="backup_export_title">Exportar datos de usuario</string>
     <string name="backup_export_summary">Guarda tus datos (favoritos, historial de visualización) en un archivo.</string>
     <string name="backup_import_title">Importar datos de usuario</string>
@@ -372,7 +493,14 @@
     <string name="settings_server_voe_category">Ajustes del servidor VOE</string>
     <string name="settings_server_voe_title">Desactivar subtítulos automáticos del servidor</string>
     <string name="settings_server_voe_summary">Si está activado, los subtítulos de los servidores VOE, Vidnest y Vidzy no se activarán automáticamente aunque estén disponibles y tengan el valor predeterminado true</string>
-    
+    <string name="settings_category_animeonlineninja">Ajustes de Anime Online Ninja</string>
+    <string name="settings_provider_animeonlineninja_preferred_server">Servidor preferido</string>
+    <string name="settings_provider_animeonlineninja_preferred_server_summary">Prioriza una etiqueta de servidor específica si está disponible en Anime Online Ninja, o usa el orden predeterminado si no.</string>
+    <string name="settings_provider_animeonlineninja_preferred_server_default">Predeterminado</string>
+    <string name="settings_provider_animeonlineninja_preferred_server_es">ES</string>
+    <string name="settings_provider_animeonlineninja_preferred_server_lat">LAT</string>
+    <string name="settings_provider_animeonlineninja_preferred_server_sub">SUB</string>
+
     <string name="settings_category_interface_title">Ajustes de la interfaz</string>
     <string name="settings_immersive_mode">Modo inmersivo</string>
     <string name="settings_immersive_mode_summary">Oculta las barras de estado y navegación</string>
@@ -382,6 +510,28 @@
     <string name="player_brightness">Brillo</string>
     <string name="player_volume">Volumen</string>
     <string name="percentage_format">%d%%</string>
+
+    <string name="settings_category_recently_watched">Vistos recientemente</string>
+    <string name="settings_tmdb_categories_title">Categorías de inicio (Proveedor TMDB)</string>
+    <string name="settings_tmdb_categories_summary">Elige qué categorías mostrar en la pantalla principal.</string>
+
+    <string name="tmdb_category_featured">Destacados</string>
+    <string name="tmdb_category_trending">Tendencias</string>
+    <string name="tmdb_category_popular_movies">Películas populares</string>
+    <string name="tmdb_category_popular_tv">Series de TV populares</string>
+    <string name="tmdb_category_popular_anime">Anime populares</string>
+    <string name="tmdb_category_netflix">Popular en Netflix</string>
+    <string name="tmdb_category_amazon">Popular en Amazon</string>
+    <string name="tmdb_category_disney">Popular en Disney+</string>
+    <string name="tmdb_category_hulu">Popular en Hulu</string>
+    <string name="tmdb_category_apple">Popular en Apple TV+</string>
+    <string name="tmdb_category_hbo">Popular en HBO</string>
+    <string name="settings_enable_recently_watched_title">Mostrar Vistos recientemente en Inicio</string>
+    <string name="settings_enable_recently_watched_summary">Muestra la lista de películas y series vistas recientemente en la pantalla principal.</string>
+    <string name="settings_clear_recently_watched_title">Borrar historial de Vistos recientemente</string>
+    <string name="settings_clear_recently_watched_summary">Elimina todos los elementos guardados de la lista de Vistos recientemente.</string>
+    <string name="settings_clear_recently_watched_dialog_message">¿Estás seguro de que deseas borrar todo el historial de Vistos recientemente?</string>
+    <string name="settings_clear_recently_watched_done">Historial de Vistos recientemente borrado.</string>
     <string name="player_settings_extra_buffer_title">Servidor con búfer extra</string>
 
     <string name="player_settings_extra_buffer_server_label">Servidor con búfer extra</string>
@@ -421,6 +571,7 @@
     <string name="settings_app_language_spanish">Español</string>
     <string name="settings_app_language_french">Francés</string>
     <string name="settings_app_language_italian">Italiano</string>
+    <string name="settings_app_language_polish">Polaco</string>
     <string name="player_settings_gestures_title">Gestos</string>
     <string name="player_settings_keep_screen_on_title">Mantener pantalla encendida en pausa</string>
 
@@ -502,58 +653,15 @@
     <string name="settings_parental_tmdb_disable_blocked">Debes desbloquear el control parental antes de desactivar TMDB.</string>
     <string name="settings_force_extra_buffer_title">Búfer extra global</string>
     <string name="settings_force_extra_buffer_summary">Activa búfer extra para todos los servidores de forma predeterminada</string>
-    <string name="profile_who_is_watching">¿Quién está viendo?</string>
-    <string name="profile_no_profiles">Aún no hay perfiles</string>
-    <string name="profile_default_name">Predeterminado</string>
-    <string name="profile_current">Perfil actual</string>
-    <string name="profile_add_btn">Añadir Perfil</string>
-    <string name="profile_manage_btn">Gestionar</string>
-    <string name="profile_edit_btn">Editar Perfil</string>
-    <string name="profile_manage_title">Gestionar Perfiles</string>
-    <string name="profile_create_title">Nuevo Perfil</string>
-    <string name="profile_rename_title">Renombrar Perfil</string>
-    <string name="profile_delete_title">Eliminar Perfil</string>
-    <string name="profile_delete_message">¿Estás seguro de que quieres eliminar "%s"?</string>
-    <string name="profile_name_hint">Nombre del perfil</string>
-    <string name="profile_action_switch">Cambiar a este perfil</string>
-    <string name="profile_switch_pin_title">Introducir PIN del perfil</string>
-    <string name="profile_switch_pin_message">Introduce el PIN parental del perfil actual para cambiar de perfil.</string>
-    <string name="profile_action_rename">Renombrar</string>
-    <string name="profile_action_delete">Eliminar</string>
-    <string name="profile_created">Perfil creado</string>
-    <string name="profile_renamed">Perfil renombrado</string>
-    <string name="profile_deleted">Perfil eliminado</string>
-    <string name="profile_delete_error">No se puede eliminar el perfil</string>
-    <string name="profile_delete_default_error">No se puede eliminar el perfil predeterminado</string>
-    <string name="profile_import_warning_title">Importación entre Perfiles</string>
-    <string name="profile_import_warning_message">Estos datos fueron exportados del perfil "%1$s". Se importarán al perfil actual "%2$s". Los datos del perfil actual serán sobrescritos. ¿Continuar?</string>
-    <string name="settings_screen_profiles_title">Perfiles</string>
-    <string name="settings_screen_profiles_summary">Gestionar perfiles de usuario y sus datos</string>
-    <string name="settings_profile_edit_summary">Renombrar el perfil actual</string>
-    <string name="settings_profile_manage_summary">Ver, renombrar o eliminar perfiles</string>
-    <string name="settings_profile_add_summary">Crear un nuevo perfil</string>
-    <string name="supabase_instructions_title">Instrucciones</string>
-    <string name="supabase_instructions_summary">Abrir en el navegador la guía detallada para configurar la cuenta y la sincronización de Supabase</string>
 
-    <string name="settings_category_recently_watched">Vistos recientemente</string>
-    <string name="settings_tmdb_categories_title">Categorías de inicio (Proveedor TMDB)</string>
-    <string name="settings_tmdb_categories_summary">Elige qué categorías mostrar en la pantalla principal.</string>
+    <string name="settings_provider_domain_check">Comprobar / actualizar dominio</string>
+    <string name="settings_provider_domain_check_summary">Sigue las redirecciones y guarda automáticamente el nuevo dominio</string>
+    <string name="settings_provider_domain_check_current">El dominio ya está actualizado</string>
+    <string name="settings_provider_domain_check_updated">Nuevo dominio guardado: %1$s</string>
+    <string name="settings_provider_domain_check_failed">Error al comprobar el dominio: %1$s</string>
 
-    <string name="tmdb_category_featured">Destacados</string>
-    <string name="tmdb_category_trending">Tendencias</string>
-    <string name="tmdb_category_popular_movies">Películas populares</string>
-    <string name="tmdb_category_popular_tv">Series de TV populares</string>
-    <string name="tmdb_category_popular_anime">Anime populares</string>
-    <string name="tmdb_category_netflix">Popular en Netflix</string>
-    <string name="tmdb_category_amazon">Popular en Amazon</string>
-    <string name="tmdb_category_disney">Popular en Disney+</string>
-    <string name="tmdb_category_hulu">Popular en Hulu</string>
-    <string name="tmdb_category_apple">Popular en Apple TV+</string>
-    <string name="tmdb_category_hbo">Popular en HBO</string>
-    <string name="settings_enable_recently_watched_title">Mostrar Vistos recientemente en Inicio</string>
-    <string name="settings_enable_recently_watched_summary">Muestra la lista de películas y series vistas recientemente en la pantalla principal.</string>
-    <string name="settings_clear_recently_watched_title">Borrar historial de Vistos recientemente</string>
-    <string name="settings_clear_recently_watched_summary">Elimina todos los elementos guardados de la lista de Vistos recientemente.</string>
-    <string name="settings_clear_recently_watched_dialog_message">¿Estás seguro de que deseas borrar todo el historial de Vistos recientemente?</string>
-    <string name="settings_clear_recently_watched_done">Historial de Vistos recientemente borrado.</string>
+    <!-- VAVOO_DOMAIN_ROTATION_V1 -->
+    <string name="settings_vavoo_domain_next">Siguiente dominio Vavoo</string>
+    <string name="settings_vavoo_domain_next_summary">Prueba el siguiente dominio conocido de Vavoo y guarda el primero accesible</string>
+    <string name="settings_vavoo_domain_next_updated">Dominio de Vavoo cambiado a: %1$s</string>
 </resources>

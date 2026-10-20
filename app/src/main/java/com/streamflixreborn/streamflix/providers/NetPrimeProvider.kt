@@ -5,7 +5,6 @@ import com.streamflixreborn.streamflix.extractors.Extractor
 import com.streamflixreborn.streamflix.extractors.TwoEmbedExtractor
 import com.streamflixreborn.streamflix.extractors.VidLinkExtractor
 import com.streamflixreborn.streamflix.extractors.VidnestTmdbResolver
-import com.streamflixreborn.streamflix.extractors.VideasyExtractor
 import com.streamflixreborn.streamflix.extractors.VidrockExtractor
 import com.streamflixreborn.streamflix.extractors.VidloveExtractor
 import com.streamflixreborn.streamflix.extractors.VidemExtractor
@@ -141,13 +140,6 @@ object NetPrimeProvider : Provider {
             }.getOrDefault(emptyList())
         }
 
-        val videasyDeferred = async(Dispatchers.IO) {
-            runCatching {
-                VideasyExtractor()
-                    .servers(videoType, "en")
-                    .map { it.asNetPrime(it.name) }
-            }.getOrDefault(emptyList())
-        }
 
         val servers = mutableListOf<Video.Server>()
 
@@ -182,7 +174,6 @@ object NetPrimeProvider : Provider {
         servers += vidrockDeferred.await()
         servers += vidloveDeferred.await()
         servers += videmDeferred.await()
-        servers += videasyDeferred.await()
 
         servers.distinctBy { it.id }
     }

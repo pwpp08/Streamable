@@ -381,6 +381,7 @@
     <string name="smarttube_stable">SmartTube Stable</string>
     <string name="smarttube_beta">SmartTube Beta</string>
     <string name="choose_smarttube_version">Choose SmartTube version</string>
+    <string name="tizentube">TizenTube</string>
 
     <string name="settings_trailer_player_title">Trailer Player</string>
     <string name="settings_trailer_player_summary">Choose your preferred player for trailers</string>

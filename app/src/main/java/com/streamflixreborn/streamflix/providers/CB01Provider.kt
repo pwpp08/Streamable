@@ -703,7 +703,7 @@ object CB01Provider : Provider {
                     val ts = System.currentTimeMillis() / 1000 + tsSkew
                     val message = "$uprotId|$apiType|$ts"
                     val sig = hmacSHA256(message, signKey)
-                    val apiUrl = "$apiBase$uprotId&t=$apiType&ts=$ts&v=3&sig=$sig"
+                    val apiUrl = "$apiBase$uprotId&t=$apiType&ts=$ts&v=4&sig=$sig"
 
                     val req = okhttp3.Request.Builder()
                         .url(apiUrl)

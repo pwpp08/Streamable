@@ -454,6 +454,12 @@ class TvShowViewHolder(
         context.startActivity(intent)
     }
 
+    private fun launchTizenTube(trailerUrl: String) {
+        val intent = Intent(Intent.ACTION_VIEW, trailerUrl.toUri())
+        intent.setPackage("io.gh.reisxd.tizentube.cobalt")
+        context.startActivity(intent)
+    }
+
     private fun showSmartTubeVersionDialog(packages: List<String>, trailerUrl: String, shouldSavePreference: Boolean) {
 
         val items = packages.map { pkg ->
@@ -518,24 +524,46 @@ class TvShowViewHolder(
             "smarttube_beta" -> {
                 launchSmartTube("org.smarttube.beta", trailer)
             }
+            "tizentube" -> {
+                if (isPackageInstalled("io.gh.reisxd.tizentube.cobalt")) {
+                    launchTizenTube(trailer)
+                } else {
+                    safeLaunchYoutube(youtubeIntent)
+                }
+            }
             "youtube" -> {
                 safeLaunchYoutube(youtubeIntent)
             }
             else -> {
                 val stPackages = getInstalledSmartTubePackages()
+                val isTizenInstalled = isPackageInstalled("io.gh.reisxd.tizentube.cobalt")
+
+                val options = mutableListOf<Pair<String, () -> Unit>>()
+                options.add(context.getString(R.string.youtube) to {
+                    safeLaunchYoutube(youtubeIntent)
+                })
+
                 if (stPackages.isNotEmpty()) {
+                    options.add(context.getString(R.string.smarttube) to {
+                        if (stPackages.size > 1) {
+                            showSmartTubeVersionDialog(stPackages, trailer, false)
+                        } else {
+                            launchSmartTube(stPackages[0], trailer)
+                        }
+                    })
+                }
+
+                if (isTizenInstalled) {
+                    options.add(context.getString(R.string.tizentube) to {
+                        launchTizenTube(trailer)
+                    })
+                }
+
+                if (options.size > 1) {
                     AlertDialog.Builder(context)
                         .setTitle(context.getString(R.string.watch_trailer_with))
-                        .setItems(arrayOf(context.getString(R.string.youtube), context.getString(R.string.smarttube))) { _, which ->
-                            if (which == 0) {
-                                safeLaunchYoutube(youtubeIntent)
-                            } else {
-                                if (stPackages.size > 1) {
-                                    showSmartTubeVersionDialog(stPackages, trailer, false)
-                                } else {
-                                    launchSmartTube(stPackages[0], trailer)
-                                }
-                            }
+                        .setItems(options.map { it.first }.toTypedArray()) { _, which ->
+                            options[which].second.invoke()
                         }.show()
                 } else {
                     safeLaunchYoutube(youtubeIntent)

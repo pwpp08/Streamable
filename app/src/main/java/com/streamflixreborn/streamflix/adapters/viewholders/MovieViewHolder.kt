@@ -118,9 +118,11 @@ class MovieViewHolder(
         private const val PLAYER_SMARTTUBE = "smarttube"
         private const val PLAYER_SMARTTUBE_STABLE = "smarttube_stable"
         private const val PLAYER_SMARTTUBE_BETA = "smarttube_beta"
+        private const val PLAYER_TIZENTUBE = "tizentube"
         private const val PLAYER_ASK = "ask"
         private const val SMARTTUBE_STABLE_PACKAGE = "org.smarttube.stable"
         private const val SMARTTUBE_BETA_PACKAGE = "org.smarttube.beta"
+        private const val TIZENTUBE_PACKAGE = "io.gh.reisxd.tizentube.cobalt"
         private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
         private const val YOUTUBE_TV_PACKAGE = "com.google.android.tv.youtube"
     }
@@ -207,6 +209,12 @@ class MovieViewHolder(
         context.startActivity(intent)
     }
 
+    private fun launchTizenTube(trailerUrl: String) {
+        val intent = Intent(Intent.ACTION_VIEW, trailerUrl.toUri())
+        intent.setPackage(TIZENTUBE_PACKAGE)
+        context.startActivity(intent)
+    }
+
     private fun showSmartTubeVersionDialog(packages: List<String>, trailerUrl: String, shouldSavePreference: Boolean) {
         
         val items = packages.map { pkg ->
@@ -289,33 +297,56 @@ class MovieViewHolder(
                 Log.d(TAG, "$logPrefix: Launching SmartTube Beta (Preferred)")
                 launchSmartTube(SMARTTUBE_BETA_PACKAGE, trailer)
             }
+            PLAYER_TIZENTUBE -> {
+                Log.d(TAG, "$logPrefix: Launching TizenTube (Preferred)")
+                if (isPackageInstalled(TIZENTUBE_PACKAGE)) {
+                    launchTizenTube(trailer)
+                } else {
+                    Log.d(TAG, "$logPrefix: TizenTube not installed, falling back to YouTube")
+                    safeLaunchYoutube(youtubeIntent)
+                }
+            }
             PLAYER_YOUTUBE -> {
                 Log.d(TAG, "$logPrefix: Launching YouTube (Preferred)")
                 safeLaunchYoutube(youtubeIntent)
             }
             else -> { // PLAYER_ASK or nothing set
                 val stPackages = getInstalledSmartTubePackages()
+                val isTizenInstalled = isPackageInstalled(TIZENTUBE_PACKAGE)
+
+                val options = mutableListOf<Pair<String, () -> Unit>>()
+                options.add(context.getString(R.string.youtube) to {
+                    Log.d(TAG, "$logPrefix: Dialog (Ask): YouTube selected")
+                    safeLaunchYoutube(youtubeIntent)
+                })
+
                 if (stPackages.isNotEmpty()) {
-                    Log.d(TAG, "$logPrefix: Showing choice dialog (Ask)")
+                    options.add(context.getString(R.string.smarttube) to {
+                        Log.d(TAG, "$logPrefix: Dialog (Ask): SmartTube selected")
+                        if (stPackages.size > 1) {
+                            showSmartTubeVersionDialog(stPackages, trailer, false)
+                        } else {
+                            launchSmartTube(stPackages[0], trailer)
+                        }
+                    })
+                }
+
+                if (isTizenInstalled) {
+                    options.add(context.getString(R.string.tizentube) to {
+                        Log.d(TAG, "$logPrefix: Dialog (Ask): TizenTube selected")
+                        launchTizenTube(trailer)
+                    })
+                }
+
+                if (options.size > 1) {
+                    Log.d(TAG, "$logPrefix: Showing choice dialog (Ask) with ${options.size} options")
                     AlertDialog.Builder(context)
                         .setTitle(context.getString(R.string.watch_trailer_with))
-                        .setItems(arrayOf(context.getString(R.string.youtube), context.getString(R.string.smarttube))) { _, which ->
-                            if (which == 0) {
-                                Log.d(TAG, "$logPrefix: Dialog (Ask): YouTube selected")
-                                safeLaunchYoutube(youtubeIntent)
-                            } else {
-                                Log.d(TAG, "$logPrefix: Dialog (Ask): SmartTube selected")
-                                // Qui, non salvare la preferenza per la versione SmartTube,
-                                // ma chiedi quale usare se ci sono due installazioni.
-                                if (stPackages.size > 1) {
-                                    showSmartTubeVersionDialog(stPackages, trailer, false)
-                                } else {
-                                    launchSmartTube(stPackages[0], trailer)
-                                }
-                            }
+                        .setItems(options.map { it.first }.toTypedArray()) { _, which ->
+                            options[which].second.invoke()
                         }.show()
                 } else {
-                    Log.d(TAG, "$logPrefix: SmartTube not found, launching YouTube directly")
+                    Log.d(TAG, "$logPrefix: No alternative players installed, launching YouTube directly")
                     safeLaunchYoutube(youtubeIntent)
                 }
             }
