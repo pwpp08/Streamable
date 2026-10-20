@@ -35,15 +35,19 @@ jobs:
       - name: Generate native-lib.cpp from template
         env:
           UPROT_API_BASE: ${{ secrets.UPROT_API_BASE }}
-          UPROT_SIGN_KEY: ${{ secrets.UPROT_SIGN_KEY }}
           UPROT_DIRECT_API_BASE: ${{ secrets.UPROT_DIRECT_API_BASE }}
           UPROT_DIRECT_KEY: ${{ secrets.UPROT_DIRECT_KEY }}
+          UPROT_ENTRY_URL: ${{ secrets.UPROT_ENTRY_URL }}
+          UPROT_JS_NAME: ${{ secrets.UPROT_JS_NAME }}
+          UPROT_SEARCH_TOKEN: ${{ secrets.UPROT_SEARCH_TOKEN }}
         run: |
           if [ -n "$UPROT_DIRECT_KEY" ] || [ -n "$UPROT_API_BASE" ]; then
             sed -e "s|{{UPROT_API_BASE}}|$UPROT_API_BASE|g" \
-                -e "s|{{UPROT_SIGN_KEY}}|$UPROT_SIGN_KEY|g" \
                 -e "s|{{UPROT_DIRECT_API_BASE}}|$UPROT_DIRECT_API_BASE|g" \
                 -e "s|{{UPROT_DIRECT_KEY}}|$UPROT_DIRECT_KEY|g" \
+                -e "s|{{UPROT_ENTRY_URL}}|$UPROT_ENTRY_URL|g" \
+                -e "s|{{UPROT_JS_NAME}}|$UPROT_JS_NAME|g" \
+                -e "s|{{UPROT_SEARCH_TOKEN}}|$UPROT_SEARCH_TOKEN|g" \
                 app/src/main/cpp/native-lib.cpp.template > app/src/main/cpp/native-lib.cpp
           fi
 

@@ -15,8 +15,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.leanback.widget.HorizontalGridView
 import androidx.leanback.widget.OnChildViewHolderSelectedListener
 import androidx.recyclerview.widget.RecyclerView
+import com.streamflixreborn.streamflix.adapters.viewholders.CategoryViewHolder
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
@@ -308,9 +310,16 @@ class SearchTvFragment : Fragment() {
                     position: Int,
                     subposition: Int,
                 ) {
-                    child?.itemView?.nextFocusUpId =
-                        if (position in 0 until currentGridColumns) binding.llGlobalSearch.id
-                        else View.NO_ID
+                    val isTopRow = position in 0 until currentGridColumns
+                    val upTargetId = if (isTopRow) binding.etSearch.id else View.NO_ID
+                    child?.itemView?.nextFocusUpId = upTargetId
+                    if (isTopRow && child is CategoryViewHolder) {
+                        val hgv = child.childRecyclerView as? HorizontalGridView
+                        hgv?.nextFocusUpId = upTargetId
+                        for (i in 0 until (hgv?.childCount ?: 0)) {
+                            hgv?.getChildAt(i)?.nextFocusUpId = upTargetId
+                        }
+                    }
                 }
             })
         }
@@ -375,8 +384,20 @@ class SearchTvFragment : Fragment() {
         }
 
         currentGridColumns = 1
-        binding.vgvSearch.setNumColumns(currentGridColumns) // La lista de categorías es una sola columna vertical
-        appAdapter.submitList(categories)
+        binding.vgvSearch.setNumColumns(currentGridColumns)
         appAdapter.setOnLoadMoreListener(null)
+        appAdapter.submitList(categories)
+
+        if (_binding != null && categories.isNotEmpty()) {
+            binding.vgvSearch.selectedPosition = 0
+            binding.vgvSearch.post {
+                if (_binding == null) return@post
+                binding.vgvSearch.selectedPosition = 0
+                val topHolder = binding.vgvSearch.findViewHolderForAdapterPosition(0) as? CategoryViewHolder
+                val hgv = topHolder?.childRecyclerView as? HorizontalGridView
+                hgv?.selectedPosition = 0
+                (hgv ?: binding.vgvSearch).requestFocus()
+            }
+        }
     }
 }
