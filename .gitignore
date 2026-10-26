@@ -11,3 +11,8 @@ local.properties
 *.salive
 *.log
 app/src/main/cpp/native-lib.cpp
+
+# Python
+*.py
+*.pyc
+__pycache__/

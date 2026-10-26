@@ -31,7 +31,7 @@ object LaCartoonsProvider : Provider {
     override val name = "La Cartoons"
     override val baseUrl = "https://www.lacartoons.com"
     override val language = "es"
-    override val logo: String get() = "https://images2.imgbox.com/fc/26/S7f7dn42_o.png"
+    override val logo: String get() = "https://images4.imgbox.com/1a/35/y9nRbkj6_o.png"
 
     private val client: OkHttpClient = getOkHttpClient()
     private val retrofit: Retrofit = Retrofit.Builder()

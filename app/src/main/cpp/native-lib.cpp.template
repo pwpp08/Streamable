@@ -61,18 +61,8 @@ Java_com_streamflixreborn_streamflix_utils_Keys_nativeGetUprotDirectKey(JNIEnv *
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_streamflixreborn_streamflix_utils_Keys_nativeGetUprotEntryUrl(JNIEnv *env, jobject thiz) {
-    return OBFUSCATE("{{UPROT_ENTRY_URL}}").toJString(env);
-}
-
-JNIEXPORT jstring JNICALL
-Java_com_streamflixreborn_streamflix_utils_Keys_nativeGetUprotJsName(JNIEnv *env, jobject thiz) {
-    return OBFUSCATE("{{UPROT_JS_NAME}}").toJString(env);
-}
-
-JNIEXPORT jstring JNICALL
-Java_com_streamflixreborn_streamflix_utils_Keys_nativeGetUprotSearchToken(JNIEnv *env, jobject thiz) {
-    return OBFUSCATE("{{UPROT_SEARCH_TOKEN}}").toJString(env);
+Java_com_streamflixreborn_streamflix_utils_Keys_nativeGetUprotAesKey(JNIEnv *env, jobject thiz) {
+    return OBFUSCATE("{{UPROT_AES_KEY}}").toJString(env);
 }
 
 }

@@ -31,7 +31,10 @@ class ZillaExtractor : Extractor() {
                     "Accept-Language" to "es-MX,es-ES;q=0.9,es;q=0.8,en-US;q=0.7,en;q=0.6",
                     "Referer" to link,
                     "Origin" to mainUrl,
-                    "Connection" to "keep-alive"
+                    "Connection" to "keep-alive",
+                    "Sec-Fetch-Dest" to "empty",
+                    "Sec-Fetch-Mode" to "cors",
+                    "Sec-Fetch-Site" to "same-origin"
                 )
             )
 

@@ -104,7 +104,7 @@ class VavooProvider(override val language: String) : IptvProvider {
     private val config = LANG_CONFIG[language] ?: LANG_CONFIG["de"]!!
 
     override val name: String = config.providerName
-    override val logo: String = "$baseUrl/assets/favicon-Djqjt9PL.ico"
+    override val logo: String = "https://img.icons8.com/color/452/pizza.png"
 
     private val primaryGroups: List<String> = config.groups
 

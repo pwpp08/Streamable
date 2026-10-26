@@ -20,6 +20,7 @@ import com.streamflixreborn.streamflix.extractors.VidloveExtractor
 import com.streamflixreborn.streamflix.extractors.PrimeSrcExtractor
 import com.streamflixreborn.streamflix.extractors.VidemExtractor
 import com.streamflixreborn.streamflix.extractors.MovieMasterExtractor
+import com.streamflixreborn.streamflix.extractors.VideoappExtractor
 import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Genre
@@ -904,6 +905,7 @@ class TmdbProvider(override val language: String) : Provider {
                     servers.addAll(deferred.awaitAll().flatten())
                     servers.addAll(MovieMasterExtractor().servers(videoType))
                     servers.addAll(VidemExtractor().servers(videoType, "es"))
+                    servers.add(VideoappExtractor().server(videoType))
                 }
             }
             else -> {

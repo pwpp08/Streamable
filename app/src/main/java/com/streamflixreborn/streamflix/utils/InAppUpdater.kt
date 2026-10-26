@@ -67,9 +67,24 @@ object InAppUpdater {
         }
 
         withContext(Dispatchers.IO) {
-            URL(asset.browserDownloadUrl).openStream()
-        }.use { input ->
-            FileOutputStream(apk).use { output -> input.copyTo(output) }
+            val url = URL(asset.browserDownloadUrl)
+            val inputStream = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                url.openConnection().apply {
+                    setRequestProperty("User-Agent", NetworkClient.USER_AGENT)
+                }.getInputStream()
+            } else {
+                try {
+                    url.openStream()
+                } catch (e: Exception) {
+                    url.openConnection().apply {
+                        setRequestProperty("User-Agent", NetworkClient.USER_AGENT)
+                    }.getInputStream()
+                }
+            }
+
+            inputStream.use { input ->
+                FileOutputStream(apk).use { output -> input.copyTo(output) }
+            }
         }
 
         return apk

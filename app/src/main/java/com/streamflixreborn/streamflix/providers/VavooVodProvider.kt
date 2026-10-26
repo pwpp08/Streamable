@@ -61,7 +61,7 @@ class VavooVodProvider private constructor(
         .build()
 
     override val baseUrl: String get() = VavooConfig.baseUrl()
-    override val logo: String get() = "${baseUrl}assets/favicon-Djqjt9PL.ico"
+    override val logo: String get() = "https://img.icons8.com/color/452/pizza.png"
 
     override suspend fun getHome(): List<Category> =
         tmdb.getHome().map { category ->

@@ -35,6 +35,8 @@ import com.streamflixreborn.streamflix.utils.ThemeManager
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.providers.AnimeOnlineNinjaProvider
+import com.streamflixreborn.streamflix.providers.euroStreamingProvider
+import com.streamflixreborn.streamflix.providers.SoloLatinoProvider
 import kotlinx.coroutines.launch
 
 class MainTvActivity : FragmentActivity() {
@@ -63,6 +65,8 @@ class MainTvActivity : FragmentActivity() {
         FilmyOnlineCcProvider.init(this)
         ZaluknijProvider.init(this)
         GuardaSerieProvider.init(this)
+        euroStreamingProvider.init(this)
+        SoloLatinoProvider.init(this)
 
         _binding = ActivityMainTvBinding.inflate(layoutInflater)
         setContentView(binding.root)

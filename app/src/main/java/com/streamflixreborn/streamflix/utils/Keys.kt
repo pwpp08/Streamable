@@ -16,15 +16,11 @@ object Keys {
     fun getUprotApiBase(): String = if (isLoaded) runCatching { nativeGetUprotApiBase() }.getOrDefault("") else ""
     fun getUprotDirectApiBase(): String = if (isLoaded) runCatching { nativeGetUprotDirectApiBase() }.getOrDefault("") else ""
     fun getUprotDirectKey(): String = if (isLoaded) runCatching { nativeGetUprotDirectKey() }.getOrDefault("") else ""
-    fun getUprotEntryUrl(): String = if (isLoaded) runCatching { nativeGetUprotEntryUrl() }.getOrDefault("") else ""
-    fun getUprotJsName(): String = if (isLoaded) runCatching { nativeGetUprotJsName() }.getOrDefault("") else ""
-    fun getUprotSearchToken(): String = if (isLoaded) runCatching { nativeGetUprotSearchToken() }.getOrDefault("") else ""
+    fun getUprotAesKey(): String = if (isLoaded) runCatching { nativeGetUprotAesKey() }.getOrDefault("") else ""
 
     private external fun nativeGetUprotApiBase(): String
     private external fun nativeGetUprotDirectApiBase(): String
     private external fun nativeGetUprotDirectKey(): String
-    private external fun nativeGetUprotEntryUrl(): String
-    private external fun nativeGetUprotJsName(): String
-    private external fun nativeGetUprotSearchToken(): String
+    private external fun nativeGetUprotAesKey(): String
 }
 

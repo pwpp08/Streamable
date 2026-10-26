@@ -1,11 +1,22 @@
 package com.streamflixreborn.streamflix.utils
 
+import android.util.Base64
+import android.util.Log
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONObject
 import java.util.concurrent.TimeUnit
-import java.util.regex.Pattern
+import javax.crypto.Cipher
+import javax.crypto.Mac
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 object UprotResolver {
+
+    private const val TAG = "UprotResolver"
+    private const val UPROT_CONFIG_URL =
+        "https://git.gay/streamflix-reborn2/streamflix/raw/branch/main/uprot.enc"
+    const val MAXSTREAM_EMBED_BASE = "https://maxstream.video/emisvjoe/"
 
     data class Config(
         val version: Int,
@@ -17,184 +28,293 @@ object UprotResolver {
 
     private val httpClient by lazy {
         OkHttpClient.Builder()
-            .readTimeout(10, TimeUnit.SECONDS)
-            .connectTimeout(10, TimeUnit.SECONDS)
+            .dns(DnsResolver.doh)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
             .build()
     }
 
-    private fun decode(b: ByteArray): String =
-        String(ByteArray(b.size) { (b[it].toInt() xor 0x5D).toByte() }, Charsets.UTF_8)
+    /**
+     * Resolves a uprot.net URL or raw ID into a final MaxStream embed link.
+     * Supports full URLs (e.g. /msf/..., /mse/..., /msfi/...) and raw IDs.
+     * Set [isStayOnline] to true if the Uprot link originated from StayOnline, which uses apiType "msi".
+     */
+    fun resolve(urlOrId: String, isStayOnline: Boolean = false): String? {
+        Log.d(TAG, "resolve() called with urlOrId='$urlOrId', isStayOnline=$isStayOnline")
 
-    private val P_VER by lazy {
-        Pattern.compile(decode(byteArrayOf(
-            0x7b, 0x2b, 0x60, 0x75, 0x01, 0x39, 0x76, 0x74, 0x7b, 0x2e, 0x34, 0x3a, 0x60
-        )))
+        if (urlOrId.contains("/msd/", ignoreCase = true)) {
+            Log.d(TAG, "Ignoring MaxStream download link (/msd/): $urlOrId")
+            return null
+        }
+
+        if (urlOrId.contains("maxstream.video", ignoreCase = true)) {
+            Log.d(TAG, "Input is already a MaxStream URL: $urlOrId")
+            return urlOrId
+        }
+
+        val apiType = if (isStayOnline || urlOrId.contains("stayonline.pro", ignoreCase = true) || urlOrId.contains("/msfi/", ignoreCase = true)) {
+            "msi"
+        } else {
+            "ms"
+        }
+
+        val uprotId = Regex("""/ms[a-zA-Z]+/([A-Za-z0-9+/=]+)""").find(urlOrId)?.groupValues?.getOrNull(1)
+            ?: urlOrId.takeIf { !it.contains("/") && it.isNotBlank() }
+            ?: run {
+                Log.w(TAG, "Failed to extract uprotId from input: '$urlOrId'")
+                return null
+            }
+
+        Log.d(TAG, "Extracted uprotId='$uprotId', apiType='$apiType'")
+        val result = callUprotApi(uprotId, apiType)
+        if (result != null) {
+            Log.d(TAG, "resolve() succeeded -> $result")
+        } else {
+            Log.w(TAG, "resolve() failed to produce a valid video link for uprotId='$uprotId'")
+        }
+        return result
     }
 
-    private val P_S1 by lazy {
-        Pattern.compile(decode(byteArrayOf(
-            0x2b, 0x3c, 0x2f, 0x01, 0x2e, 0x76, 0x39, 0x05, 0x11, 0x10, 0x3a, 0x01, 0x2e, 0x77, 0x60, 0x01, 0x2e, 0x77, 0x06, 0x7f, 0x01, 0x7a, 0x00, 0x75, 0x06, 0x03, 0x7f, 0x01, 0x7a, 0x00, 0x76, 0x74, 0x06, 0x7f, 0x01, 0x7a, 0x00
-        )))
+    /**
+     * Executes Uprot API resolution with HMAC-SHA256, clock drift handling (MSDEC_TS),
+     * and automatic remote payload refresh if needed.
+     */
+    fun callUprotApi(uprotId: String, apiType: String = "ms"): String? = try {
+        Log.d(TAG, "callUprotApi() started: uprotId='$uprotId', apiType='$apiType'")
+        var videoId: String? = null
+
+        val apiBase = Keys.getUprotApiBase()
+        var uprotConfig = getConfig()
+
+        if (apiBase.isBlank()) {
+            Log.w(TAG, "Uprot API base URL from native Keys is blank")
+        }
+        if (uprotConfig == null || uprotConfig.signKey.isBlank()) {
+            Log.w(TAG, "Uprot config or signKey is missing/blank")
+        }
+
+        if (apiBase.isNotBlank()) {
+            for (refreshAttempt in 0..1) {
+                val currentConfig = uprotConfig ?: break
+                if (currentConfig.signKey.isBlank()) break
+
+                var tsSkew = 0L
+                var isTemporaryError = false
+
+                for (attempt in 0..4) {
+                    val ts = System.currentTimeMillis() / 1000 + tsSkew
+                    val message = "$uprotId|$apiType|$ts"
+                    val sig = hmacSHA256(message, currentConfig.signKey)
+                    val apiUrl = "$apiBase$uprotId&t=$apiType&ts=$ts&v=${currentConfig.version}&sig=$sig"
+
+                    Log.d(TAG, "Sending dec API request (refreshAttempt=$refreshAttempt, attempt=$attempt, skew=${tsSkew}s)")
+
+                    val req = Request.Builder()
+                        .url(apiUrl)
+                        .header("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.101 Safari/537.36")
+                        .header("X-Requested-With", "")
+                        .header("Accept-Language", "it")
+                        .build()
+
+                    val resp = try {
+                        httpClient.newCall(req).execute()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Dec API network exception on attempt $attempt: ${e.message}")
+                        break
+                    }
+
+                    Log.d(TAG, "Dec API response code: ${resp.code}")
+
+                    if (!resp.isSuccessful) {
+                        val errorSnippet = resp.body?.string()?.take(200)?.trim().orEmpty()
+                        Log.w(TAG, "Dec API returned HTTP ${resp.code}: $errorSnippet")
+                        break
+                    }
+
+                    val responseText = resp.body?.string()?.trim().orEmpty()
+                    val preview = if (responseText.length > 200) responseText.take(200) + "..." else responseText
+                    Log.d(TAG, "Dec API response received: length=${responseText.length}, body='$preview'")
+
+                    if (responseText.startsWith("MSDEC_TS") && attempt < 4) {
+                        val serverTs = responseText.split(" ").getOrNull(1)?.toLongOrNull()
+                        if (serverTs != null) {
+                            tsSkew = serverTs - System.currentTimeMillis() / 1000
+                            Log.d(TAG, "Clock skew detected. Server timestamp: $serverTs, adjusting skew: ${tsSkew}s. Retrying...")
+                        } else {
+                            Log.w(TAG, "Received MSDEC_TS but could not parse timestamp: '$responseText'")
+                        }
+                        continue
+                    }
+
+                    if (responseText.contains("error code: 1005", ignoreCase = true)) {
+                        isTemporaryError = true
+                        if (attempt < 4) {
+                            val delayMs = 700L + attempt * 300L
+                            Log.d(TAG, "Temporary API error (error code: 1005) detected on attempt $attempt. Retrying in ${delayMs}ms...")
+                            try { Thread.sleep(delayMs) } catch (_: InterruptedException) {}
+                            continue
+                        } else {
+                            Log.w(TAG, "Temporary API error (error code: 1005) persisted after $attempt attempts")
+                            break
+                        }
+                    }
+
+                    if (responseText.isNotBlank() && !responseText.contains("<") && !responseText.contains(" ")) {
+                        videoId = responseText
+                        Log.d(TAG, "Extracted valid videoId: $videoId")
+                    } else {
+                        Log.w(TAG, "Response text is not a valid videoId: '$preview'")
+                    }
+                    break
+                }
+
+                if (videoId != null) break
+
+                if (isTemporaryError) {
+                    Log.d(TAG, "Temporary error (error code: 1005) occurred; skipping remote config refresh")
+                    break
+                }
+
+                if (refreshAttempt == 0) {
+                    Log.d(TAG, "Initial dec attempt failed; triggering remote config refresh...")
+                    val refreshed = refreshConfig()
+                    if (refreshed != null && (refreshed.version != currentConfig.version || refreshed.signKey != currentConfig.signKey)) {
+                        Log.d(TAG, "Remote config updated with new parameters, retrying dec API...")
+                        uprotConfig = refreshed
+                    } else {
+                        Log.w(TAG, "Remote config was not updated or identical to current, aborting retry")
+                        break
+                    }
+                }
+            }
+        }
+
+        videoId?.let { "$MAXSTREAM_EMBED_BASE$it" }
+    } catch (e: Exception) {
+        Log.e(TAG, "Error resolving Uprot API: ${e.message}", e)
+        null
     }
 
-    private val P_S2 by lazy {
-        Pattern.compile(decode(byteArrayOf(
-            0x2b, 0x3c, 0x2f, 0x01, 0x2e, 0x76, 0x30, 0x6c, 0x30, 0x3b, 0x1a, 0x0f, 0x01, 0x2e, 0x77, 0x60, 0x01, 0x2e, 0x77, 0x06, 0x7f, 0x01, 0x7a, 0x00, 0x75, 0x06, 0x03, 0x7f, 0x01, 0x7a, 0x00, 0x76, 0x74, 0x06, 0x7f, 0x01, 0x7a, 0x00
-        )))
+    private fun hmacSHA256(message: String, key: String): String {
+        val mac = Mac.getInstance("HmacSHA256")
+        val secretKey = SecretKeySpec(key.toByteArray(Charsets.UTF_8), "HmacSHA256")
+        mac.init(secretKey)
+        return mac.doFinal(message.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
     }
 
-    private val P_O1 by lazy {
-        Pattern.compile(decode(byteArrayOf(
-            0x39, 0x05, 0x11, 0x10, 0x3a, 0x01, 0x73, 0x2e, 0x2d, 0x31, 0x34, 0x29, 0x01, 0x75, 0x73, 0x76, 0x62, 0x29, 0x01, 0x06, 0x2f, 0x01, 0x00, 0x01, 0x2e, 0x77, 0x70, 0x01, 0x2e, 0x77, 0x75, 0x01, 0x39, 0x76, 0x74
-        )))
-    }
-
-    private val P_HEX by lazy {
-        Pattern.compile(decode(byteArrayOf(
-            0x06, 0x7f, 0x01, 0x7a, 0x00, 0x75, 0x06, 0x6d, 0x70, 0x64, 0x3c, 0x70, 0x3b, 0x00, 0x26, 0x6c, 0x6d, 0x71, 0x20, 0x74, 0x06, 0x7f, 0x01, 0x7a, 0x00
-        )))
-    }
-
-    private val P_XOR by lazy {
-        Pattern.compile(decode(byteArrayOf(
-            0x0e, 0x29, 0x2f, 0x34, 0x33, 0x3a, 0x01, 0x73, 0x3b, 0x2f, 0x32, 0x30, 0x1e, 0x35, 0x3c, 0x2f, 0x1e, 0x32, 0x39, 0x38, 0x01, 0x75, 0x75, 0x01, 0x39, 0x76, 0x74, 0x01, 0x03, 0x2d, 0x3c, 0x2f, 0x2e, 0x38, 0x14, 0x33, 0x29
-        )))
-    }
-
-    private val P_O2 by lazy {
-        Pattern.compile(decode(byteArrayOf(
-            0x30, 0x6c, 0x30, 0x3b, 0x1a, 0x0f, 0x01, 0x73, 0x2e, 0x2d, 0x31, 0x34, 0x29, 0x01, 0x75, 0x73, 0x76, 0x62, 0x29, 0x01, 0x06, 0x2f, 0x01, 0x00, 0x01, 0x2e, 0x77, 0x70, 0x01, 0x2e, 0x77, 0x75, 0x01, 0x39, 0x76, 0x74
-        )))
-    }
-
-    private val DEF_HEX by lazy {
-        decode(byteArrayOf(
-            0x68, 0x38, 0x6d, 0x3f, 0x6d, 0x38, 0x6b, 0x38, 0x6e, 0x3f, 0x6b, 0x38, 0x6f, 0x3f, 0x6a, 0x3f, 0x68, 0x38, 0x6f, 0x3f, 0x64, 0x38
-        ))
-    }
-
+    /**
+     * Returns the Uprot configuration (version and signKey).
+     * 1. Uses in-memory cachedConfig if present.
+     * 2. Uses local persistent storage (UserPreferences) if present.
+     * 3. If absent, performs a refresh by downloading and decrypting the remote payload.
+     */
     fun getConfig(): Config? {
-        cachedConfig?.let { return it }
+        cachedConfig?.let {
+            Log.d(TAG, "getConfig(): Using in-memory cached config")
+            return it
+        }
 
         val savedVersion = runCatching { UserPreferences.uprotResolvedVersion }.getOrDefault(0)
         val savedKey = runCatching { UserPreferences.uprotResolvedSignKey }.getOrNull()
 
         if (savedVersion > 0 && !savedKey.isNullOrBlank()) {
+            Log.d(TAG, "getConfig(): Loaded config from UserPreferences")
             val cfg = Config(savedVersion, savedKey)
             cachedConfig = cfg
             return cfg
         }
 
+        Log.d(TAG, "getConfig(): No local config available, initiating remote refresh...")
         return refreshConfig()
     }
 
-    private fun resolveA(encoded: String, offset: Int): String {
-        return encoded.split(":")
-            .mapNotNull { it.trim().toIntOrNull() }
-            .map { (it - offset).toChar() }
-            .joinToString("")
-    }
-
-    private fun resolveB(encoded: String, offset: Int): String {
-        return encoded.split("-")
-            .mapNotNull { it.trim().toIntOrNull() }
-            .map { (it - offset).toChar() }
-            .joinToString("")
-    }
-
-    private fun resolveC(hexStr: String, xorVal: Int): String {
-        val reversed = hexStr.reversed()
-        val sb = StringBuilder()
-        var i = 0
-        while (i < reversed.length - 1) {
-            val chunk = reversed.substring(i, i + 2)
-            val byteVal = chunk.toIntOrNull(16) ?: break
-            sb.append((xorVal xor byteVal).toChar())
-            i += 2
-        }
-        return sb.toString()
-    }
-
-    private fun extractKey(payload: String): String? {
-        val m1 = P_S1.matcher(payload)
-        val m2 = P_S2.matcher(payload)
-
-        if (!m1.find() || !m2.find()) return null
-
-        val v1 = m1.group(1).orEmpty()
-        val v2 = m2.group(1).orEmpty()
-        if (v1.isBlank() || v2.isBlank()) return null
-
-        val mo1 = P_O1.matcher(payload)
-        val o1 = if (mo1.find()) mo1.group(1)?.toIntOrNull() ?: 78 else 78
-        val s1 = resolveA(v1, o1)
-
-        val mh = P_HEX.matcher(payload)
-        val hStr = if (mh.find()) mh.group(1).orEmpty() else DEF_HEX
-
-        val mx = P_XOR.matcher(payload)
-        val xVal = if (mx.find()) mx.group(1)?.toIntOrNull() ?: 209 else 209
-        val s2 = resolveC(hStr, xVal)
-
-        val mo2 = P_O2.matcher(payload)
-        val o2 = if (mo2.find()) mo2.group(1)?.toIntOrNull() ?: 43 else 43
-        val s3 = resolveB(v2, o2)
-
-        val key = s1 + s2 + s3
-        return key.ifBlank { null }
-    }
-
+    /**
+     * Downloads and decrypts the remote configuration using the AES key protected in C++/NDK.
+     * Saves decrypted parameters in memory and in UserPreferences.
+     */
     @Synchronized
     fun refreshConfig(): Config? {
-        val entryUrl = Keys.getUprotEntryUrl()
-        val jsName = Keys.getUprotJsName()
-        val searchToken = Keys.getUprotSearchToken()
-        if (entryUrl.isBlank() || jsName.isBlank() || searchToken.isBlank()) return null
-
+        Log.d(TAG, "refreshConfig(): Fetching payload from $UPROT_CONFIG_URL")
         return try {
-            val req1 = Request.Builder()
-                .url(entryUrl)
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+            val req = Request.Builder()
+                .url("$UPROT_CONFIG_URL?t=${System.currentTimeMillis()}")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36")
+                .header("Accept", "text/plain, */*")
                 .build()
 
-            val html = httpClient.newCall(req1).execute().use { resp ->
-                if (!resp.isSuccessful) return null
-                resp.body?.string().orEmpty()
+            val responseBody = httpClient.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.w(TAG, "Remote Uprot config download failed: HTTP ${resp.code}")
+                    return null
+                }
+                resp.body?.string().orEmpty().trim()
             }
 
-            val baseRegex = Pattern.compile("${Pattern.quote(searchToken)}\\s*=\\s*[\"']([^\"']+)[\"']")
-            val mBase = baseRegex.matcher(html)
-            if (!mBase.find()) return null
-            val baseUrl = mBase.group(1)?.trim().orEmpty()
-            if (baseUrl.isBlank()) return null
+            if (responseBody.isBlank()) {
+                Log.w(TAG, "Remote Uprot config response body is blank")
+                return null
+            }
+            Log.d(TAG, "refreshConfig(): Remote payload downloaded (length=${responseBody.length})")
 
-            val jsUrl = if (baseUrl.endsWith("/")) "$baseUrl$jsName" else "$baseUrl/$jsName"
-            val req2 = Request.Builder()
-                .url("$jsUrl?p=${System.currentTimeMillis()}")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-                .header("Referer", entryUrl)
-                .build()
-
-            val js = httpClient.newCall(req2).execute().use { resp ->
-                if (!resp.isSuccessful) return null
-                resp.body?.string().orEmpty()
+            val decrypted = decryptConfig(responseBody)
+            if (decrypted == null) {
+                Log.w(TAG, "refreshConfig(): Failed to decrypt remote payload")
+                return null
             }
 
-            val mV = P_VER.matcher(js)
-            val version = if (mV.find()) mV.group(1)?.toIntOrNull() ?: 6 else 6
-
-            val decodedKey = extractKey(js) ?: return null
-
-            val newConfig = Config(version, decodedKey)
-            cachedConfig = newConfig
-
+            cachedConfig = decrypted
             runCatching {
-                UserPreferences.uprotResolvedVersion = version
-                UserPreferences.uprotResolvedSignKey = decodedKey
+                UserPreferences.uprotResolvedVersion = decrypted.version
+                UserPreferences.uprotResolvedSignKey = decrypted.signKey
             }
 
-            newConfig
-        } catch (_: Throwable) {
+            Log.d(TAG, "Remote config successfully refreshed and stored")
+            decrypted
+        } catch (e: Exception) {
+            Log.e(TAG, "Error refreshing remote config: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Decrypts a Base64 string containing [IV (16 bytes) + AES-256-CBC ciphertext].
+     * The 256-bit AES key is securely retrieved from the native C++ NDK layer.
+     */
+    fun decryptConfig(base64Payload: String): Config? {
+        val hexKey = Keys.getUprotAesKey().takeIf { it.isNotBlank() } ?: run {
+            Log.w(TAG, "decryptConfig(): Uprot AES key from Keys is blank")
+            return null
+        }
+        return try {
+            val raw = Base64.decode(base64Payload.trim(), Base64.DEFAULT)
+            if (raw.size <= 16) {
+                Log.w(TAG, "decryptConfig(): Encrypted payload too short (size=${raw.size})")
+                return null
+            }
+
+            val iv = raw.copyOfRange(0, 16)
+            val ciphertext = raw.copyOfRange(16, raw.size)
+
+            val keyBytes = hexKey.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+            val secretKey = SecretKeySpec(keyBytes, "AES")
+
+            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
+
+            val decryptedJson = String(cipher.doFinal(ciphertext), Charsets.UTF_8)
+            val json = JSONObject(decryptedJson)
+            val version = json.getInt("version")
+            val signKey = json.getString("signKey")
+
+            if (signKey.isNotBlank()) {
+                Log.d(TAG, "decryptConfig(): Payload successfully decrypted JSON")
+                Config(version, signKey)
+            } else {
+                Log.w(TAG, "decryptConfig(): Decrypted JSON missing signKey")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error decrypting AES payload: ${e.message}", e)
             null
         }
     }

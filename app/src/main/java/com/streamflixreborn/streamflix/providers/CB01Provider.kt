@@ -32,6 +32,10 @@ import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import java.util.concurrent.TimeUnit
 import org.json.JSONObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 object CB01Provider : Provider {
 
@@ -605,157 +609,48 @@ object CB01Provider : Provider {
         }
     }
 
-    /**
-     * Resolves a Maxstream embed URL from a uprot.net URL.
-     *
-     * @param url The uprot.net URL (e.g. /msfi/..., /mse/...)
-     * @param isStayOnline True if the link originated from stayonline.pro
-     */
-    private suspend fun resolveMaxstreamUrl(url: String, isStayOnline: Boolean = false): String? {
-        // 1. Links from stayonline.pro or containing /msfi/
-        if (isStayOnline || url.contains("/msfi/", ignoreCase = true)) {
-            val uprotId = Regex("""/ms[a-zA-Z]+/([A-Za-z0-9+/=]+)""").find(url)?.groupValues?.getOrNull(1)
-                ?: return null
-            return callUprotApi(uprotId, "msi")
-        }
+    private data class CandidateLink(
+        val href: String,
+        val baseName: String,
+        val inHdSection: Boolean,
+        val in3dSection: Boolean
+    )
 
-        // 2. Direct uprot.net links (/mse/): Try HTML base64 decoding first
-        val uprotUrl = url.replace("/msf/", "/mse/")
-        try {
-            val doc = service.getPage(uprotUrl)
-            val html = doc.html()
+    private suspend fun resolveServerLink(href: String, baseName: String): String? {
+        val lowerName = baseName.lowercase()
+        return if (href.contains("stayonline.pro", ignoreCase = true)) {
+            val stayId = Regex("/l/([A-Za-z0-9]+)/?").find(href)?.groupValues?.getOrNull(1)
+            if (!stayId.isNullOrBlank()) {
+                try {
+                    val resp = stayService.postAjax(
+                        url = "https://stayonline.pro/ajax/linkEmbedView.php",
+                        id = stayId,
+                        ref = "",
+                        userAgent = DEFAULT_USER_AGENT,
+                        referer = "https://stayonline.pro/"
+                    )
+                    val body = resp.body()?.string().orEmpty()
+                    val targetUrl = try {
+                        val json = JSONObject(body)
+                        if (json.optString("status").equals("success", ignoreCase = true)) {
+                            json.optJSONObject("data")?.optString("value")?.takeIf { it.isNotBlank() }
+                        } else null
+                    } catch (_: Exception) { null }
 
-            val b64Base = Regex("""decodedBaseUrl\s*=\s*atob\(["']([^"']+)["']\)""").find(html)?.groupValues?.getOrNull(1)
-            val b64Val = Regex("""decodedEncryptedVal\s*=\s*atob\(["']([^"']+)["']\)""").find(html)?.groupValues?.getOrNull(1)
-
-            if (!b64Base.isNullOrBlank() && !b64Val.isNullOrBlank()) {
-                val decodedBase = String(android.util.Base64.decode(b64Base, android.util.Base64.DEFAULT), Charsets.UTF_8)
-                val decodedVal = String(android.util.Base64.decode(b64Val, android.util.Base64.DEFAULT), Charsets.UTF_8)
-                val maxstreamUrl = decodedBase + decodedVal
-                if (maxstreamUrl.isNotBlank()) return maxstreamUrl
-            }
-        } catch (_: Exception) { }
-
-        // 3. Fallback for direct uprot.net links when base64 fails
-        val uprotId = Regex("""/ms[a-zA-Z]+/([A-Za-z0-9+/=]+)""").find(url)?.groupValues?.getOrNull(1)
-            ?: return null
-        return callUprotApi(uprotId, "ms")
-
-    }
-
-
-
-
-    private fun hmacSHA256(message: String, key: String): String {
-        val mac = javax.crypto.Mac.getInstance("HmacSHA256")
-        val secretKey = javax.crypto.spec.SecretKeySpec(key.toByteArray(Charsets.UTF_8), "HmacSHA256")
-        mac.init(secretKey)
-        return mac.doFinal(message.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
-    }
-
-    private const val MAXSTREAM_EMBED_BASE = "https://maxstream.video/emilpy0n/"
-
-    private val uprotClient by lazy {
-        OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .build()
-    }
-
-    private fun callUprotApi(uprotId: String, apiType: String = "ms"): String? = try {
-        var videoId: String? = null
-
-        // Direct API
-        /*
-        val directBase = Keys.getUprotDirectApiBase()
-        val directKey = Keys.getUprotDirectKey()
-        if (directBase.isNotBlank() && directKey.isNotBlank()) {
-            val endpoint = if (apiType == "msi") "api_msi_dec.php" else "api_ms_dec.php"
-            val directUrl = "$directBase$endpoint?fc=$uprotId&key=$directKey"
-            val directReq = okhttp3.Request.Builder()
-                .url(directUrl)
-                .header("Accept-Language", "it")
-                .header("Sec-Fetch-Dest", "empty")
-                .header("Sec-Fetch-Mode", "no-cors")
-                .header("Sec-Fetch-Site", "none")
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 9.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36")
-                .header("X-Requested-With", "")
-                .build()
-            val directResp = uprotClient.newCall(directReq).execute()
-            if (directResp.isSuccessful) {
-                val body = directResp.body?.string()?.trim().orEmpty()
-                if (body.isNotBlank() && body != "not found" && !body.contains("<") && !body.contains(" ")) {
-                    videoId = body
-                }
-            }
-        }
-        */
-
-        // Fallback API
-
-        if (videoId == null) {
-            val apiBase = Keys.getUprotApiBase()
-            var uprotConfig = UprotResolver.getConfig()
-
-            if (apiBase.isNotBlank()) {
-                for (refreshAttempt in 0..1) {
-                    val currentConfig = uprotConfig ?: break
-                    if (currentConfig.signKey.isBlank()) break
-
-                    var tsSkew = 0L
-
-                    // Retry once if the server asks us to sync the clock (MSDEC_TS response)
-                    for (attempt in 0..1) {
-                        val ts = System.currentTimeMillis() / 1000 + tsSkew
-                        val message = "$uprotId|$apiType|$ts"
-                        val sig = hmacSHA256(message, currentConfig.signKey)
-                        val apiUrl = "$apiBase$uprotId&t=$apiType&ts=$ts&v=${currentConfig.version}&sig=$sig"
-
-                        val req = okhttp3.Request.Builder()
-                            .url(apiUrl)
-                            .header("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.101 Safari/537.36")
-                            .header("X-Requested-With", "")
-                            .header("Accept-Language", "it")
-                            .build()
-
-                        val resp = uprotClient.newCall(req).execute()
-                        if (!resp.isSuccessful) break
-
-                        val responseText = resp.body?.string()?.trim().orEmpty()
-
-                        // Server signals clock drift — sync and retry
-                        if (responseText.startsWith("MSDEC_TS") && attempt == 0) {
-                            val serverTs = responseText.split(" ").getOrNull(1)?.toLongOrNull()
-                            if (serverTs != null) {
-                                tsSkew = serverTs - System.currentTimeMillis() / 1000
-                            }
-                            continue
-                        }
-
-                        if (responseText.isNotBlank() && !responseText.contains("<") && !responseText.contains(" ")) {
-                            videoId = responseText
-                        }
-                        break
-                    }
-
-                    if (videoId != null) break
-
-                    // If failed on first pass, attempt dynamic resolution and retry once
-                    if (refreshAttempt == 0) {
-                        val refreshed = UprotResolver.refreshConfig()
-                        if (refreshed != null && (refreshed.version != currentConfig.version || refreshed.signKey != currentConfig.signKey)) {
-                            uprotConfig = refreshed
+                    if (!targetUrl.isNullOrBlank()) {
+                        if (lowerName.contains("maxstream")) {
+                            UprotResolver.resolve(targetUrl, isStayOnline = true)
                         } else {
-                            break
+                            targetUrl
                         }
-                    }
-                }
-            }
+                    } else null
+                } catch (_: Exception) { null }
+            } else null
+        } else if (lowerName.contains("maxstream") || href.contains("uprot.net", ignoreCase = true)) {
+            UprotResolver.resolve(href)
+        } else {
+            href
         }
-
-        videoId?.let { "$MAXSTREAM_EMBED_BASE$it" }
-    } catch (_: Exception) {
-        null
     }
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
@@ -769,6 +664,8 @@ object CB01Provider : Provider {
                 var includeLinks = false
                 var inHdSection = false
                 var in3dSection = false
+
+                val candidates = mutableListOf<CandidateLink>()
 
                 for (tbl in doc.select("table.tableinside, table.cbtable")) {
                     val heading = tbl.selectFirst("u > strong")?.text()?.trim()?.lowercase()
@@ -786,64 +683,39 @@ object CB01Provider : Provider {
                         val href = a.attr("href").trim()
                         if (href.isBlank()) continue
                         val baseName = a.text().trim().ifBlank { "Server" }
-                        val normalized = href
                         val lowerName = baseName.lowercase()
                         if (!lowerName.contains("mixdrop") && !lowerName.contains("maxstream")) continue
-                        if (lowerName.contains("maxstream") && !normalized.contains("uprot.net", ignoreCase = true) && !normalized.contains("stayonline.pro", ignoreCase = true)) continue
+                        if (lowerName.contains("maxstream") && !href.contains("uprot.net", ignoreCase = true) && !href.contains("stayonline.pro", ignoreCase = true)) continue
 
-                        fun addServer(finalUrl: String) {
-                            val labeled = when {
-                                in3dSection && !baseName.endsWith("3D", true) -> "$baseName 3D"
-                                inHdSection && !baseName.endsWith("HD", true) -> "$baseName HD"
-                                else -> baseName
-                            }
-                            val server = Video.Server(id = finalUrl, name = labeled, src = finalUrl)
-                            when {
-                                in3dSection -> servers3D.add(server)
-                                inHdSection -> hdServers.add(server)
-                                else -> sdServers.add(server)
-                            }
+                        candidates.add(CandidateLink(href, baseName, inHdSection, in3dSection))
+                    }
+                }
+
+                val resolvedList = coroutineScope {
+                    candidates.map { candidate ->
+                        async(Dispatchers.IO) {
+                            val resolvedUrl = resolveServerLink(candidate.href, candidate.baseName)
+                            if (!resolvedUrl.isNullOrBlank()) {
+                                val labeled = when {
+                                    candidate.in3dSection && !candidate.baseName.endsWith("3D", true) -> "${candidate.baseName} 3D"
+                                    candidate.inHdSection && !candidate.baseName.endsWith("HD", true) -> "${candidate.baseName} HD"
+                                    else -> candidate.baseName
+                                }
+                                Triple(
+                                    Video.Server(id = resolvedUrl, name = labeled, src = resolvedUrl),
+                                    candidate.inHdSection,
+                                    candidate.in3dSection
+                                )
+                            } else null
                         }
+                    }.awaitAll().filterNotNull()
+                }
 
-                        if (normalized.contains("stayonline.pro", ignoreCase = true)) {
-                            val stayId = Regex("/l/([A-Za-z0-9]+)/?").find(normalized)?.groupValues?.getOrNull(1)
-                            if (!stayId.isNullOrBlank()) {
-                                try {
-                                    val resp = stayService.postAjax(
-                                        url = "https://stayonline.pro/ajax/linkEmbedView.php",
-                                        id = stayId,
-                                        ref = "",
-                                        userAgent = DEFAULT_USER_AGENT,
-                                        referer = "https://stayonline.pro/"
-                                    )
-                                    val body = resp.body()?.string().orEmpty()
-                                    val stayUrl = try {
-                                        val json = JSONObject(body)
-                                        if (json.optString("status").equals("success", ignoreCase = true)) {
-                                            json.optJSONObject("data")?.optString("value")?.takeIf { it.isNotBlank() }
-                                        } else null
-                                    } catch (_: Exception) { null }
-
-                                    if (!stayUrl.isNullOrBlank()) {
-                                        if (lowerName.contains("mixdrop")) {
-                                            addServer(stayUrl)
-                                        } else if (lowerName.contains("maxstream")) {
-                                            val finalMaxstream = resolveMaxstreamUrl(stayUrl, isStayOnline = true)
-                                            if (!finalMaxstream.isNullOrBlank()) {
-                                                addServer(finalMaxstream)
-                                            }
-                                        }
-                                    }
-                                } catch (_: Exception) { }
-                            }
-                        } else if (normalized.contains("uprot.net", ignoreCase = true)) {
-                            val finalMaxstream = resolveMaxstreamUrl(normalized, isStayOnline = false)
-                            if (!finalMaxstream.isNullOrBlank()) {
-                                addServer(finalMaxstream)
-                            }
-                        } else {
-                            addServer(normalized)
-                        }
+                for ((server, isHd, is3d) in resolvedList) {
+                    when {
+                        is3d -> servers3D.add(server)
+                        isHd -> hdServers.add(server)
+                        else -> sdServers.add(server)
                     }
                 }
 
@@ -853,11 +725,9 @@ object CB01Provider : Provider {
                 if (id.contains("#epUrl=")) {
                     val watchUrl = id.substringAfter("#epUrl=")
                     val servers = mutableListOf<Video.Server>()
-                    val finalMaxstream = resolveMaxstreamUrl(watchUrl, isStayOnline = watchUrl.contains("stayonline.pro"))
+                    val finalMaxstream = UprotResolver.resolve(watchUrl, isStayOnline = watchUrl.contains("stayonline.pro"))
                     if (!finalMaxstream.isNullOrBlank()) {
                         servers.add(Video.Server(id = finalMaxstream, name = "Maxstream", src = finalMaxstream))
-                    } else {
-                        servers.add(Video.Server(id = watchUrl, name = "Maxstream", src = watchUrl))
                     }
                     return servers
                 }
@@ -879,51 +749,28 @@ object CB01Provider : Provider {
                     Regex("(\\d+)[x×](\\d+)").find(text)?.groupValues?.getOrNull(2)?.toIntOrNull() == episodeNum
                 } ?: return emptyList()
 
-                val servers = mutableListOf<Video.Server>()
-                for (a in line.select("a[href]")) {
+                val rawLinks = line.select("a[href]").mapNotNull { a ->
                     val href = a.attr("href").trim()
-                    val name = a.text().trim().lowercase()
-                    if (href.isBlank() || (!name.contains("mixdrop") && !name.contains("maxstream"))) continue
+                    val name = a.text().trim()
+                    val lowerName = name.lowercase()
+                    if (href.isBlank() || (!lowerName.contains("mixdrop") && !lowerName.contains("maxstream"))) null
+                    else Pair(href, name)
+                }
 
-                    if (href.contains("stayonline.pro", ignoreCase = true)) {
-                        val stayId = Regex("/l/([A-Za-z0-9]+)/?").find(href)?.groupValues?.getOrNull(1)
-                        if (!stayId.isNullOrBlank()) {
-                            try {
-                                val resp = stayService.postAjax(
-                                    url = "https://stayonline.pro/ajax/linkEmbedView.php",
-                                    id = stayId,
-                                    ref = "",
-                                    userAgent = DEFAULT_USER_AGENT,
-                                    referer = "https://stayonline.pro/"
-                                )
-                                val body = resp.body()?.string().orEmpty()
-                                val targetUrl = try {
-                                    val json = JSONObject(body)
-                                    if (json.optString("status").equals("success", ignoreCase = true)) {
-                                        json.optJSONObject("data")?.optString("value")?.takeIf { it.isNotBlank() }
-                                    } else null
-                                } catch (_: Exception) { null }
-
-                                if (!targetUrl.isNullOrBlank()) {
-                                    if (name.contains("mixdrop")) {
-                                        servers.add(Video.Server(id = targetUrl, name = "Mixdrop", src = targetUrl))
-                                    } else if (name.contains("maxstream")) {
-                                        val finalMaxstream = resolveMaxstreamUrl(targetUrl, isStayOnline = true)
-                                        if (!finalMaxstream.isNullOrBlank()) {
-                                            servers.add(Video.Server(id = finalMaxstream, name = "Maxstream", src = finalMaxstream))
-                                        }
-                                    }
+                val servers = coroutineScope {
+                    rawLinks.map { (href, name) ->
+                        async(Dispatchers.IO) {
+                            val resolvedUrl = resolveServerLink(href, name)
+                            if (!resolvedUrl.isNullOrBlank()) {
+                                val finalName = when {
+                                    name.lowercase().contains("mixdrop") -> "Mixdrop"
+                                    name.lowercase().contains("maxstream") -> "Maxstream"
+                                    else -> name
                                 }
-                            } catch (_: Exception) { }
+                                Video.Server(id = resolvedUrl, name = finalName, src = resolvedUrl)
+                            } else null
                         }
-                    } else if (name.contains("maxstream") || href.contains("uprot.net", ignoreCase = true)) {
-                        val finalMaxstream = resolveMaxstreamUrl(href, isStayOnline = false)
-                        if (!finalMaxstream.isNullOrBlank()) {
-                            servers.add(Video.Server(id = finalMaxstream, name = "Maxstream", src = finalMaxstream))
-                        }
-                    } else {
-                        servers.add(Video.Server(id = href, name = if (name.contains("mixdrop")) "Mixdrop" else "Server", src = href))
-                    }
+                    }.awaitAll().filterNotNull()
                 }
 
                 servers

@@ -123,7 +123,10 @@ abstract class Extractor {
             VidloveExtractor(),
             VidemExtractor(),
             HexloadExtractor(),
-            MovieMasterExtractor()
+            MovieMasterExtractor(),
+            DeltaBitExtractor(),
+            TurbovidExtractor(),
+            VideoappExtractor()
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {
