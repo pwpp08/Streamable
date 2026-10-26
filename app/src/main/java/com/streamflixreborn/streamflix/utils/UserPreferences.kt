@@ -447,16 +447,10 @@ object UserPreferences {
             effectiveGlobalPrefs.edit().putBoolean("UPDATE_CHECK_ENABLED", value).apply()
         }
 
-    var uprotResolvedVersion: Int
-        get() = effectiveGlobalPrefs.getInt("UPROT_RESOLVED_VERSION", 0)
+    var uprotConfigJson: String?
+        get() = effectiveGlobalPrefs.getString("UPROT_CONFIG_JSON", null)
         set(value) {
-            effectiveGlobalPrefs.edit().putInt("UPROT_RESOLVED_VERSION", value).apply()
-        }
-
-    var uprotResolvedSignKey: String?
-        get() = effectiveGlobalPrefs.getString("UPROT_RESOLVED_SIGN_KEY", null)
-        set(value) {
-            effectiveGlobalPrefs.edit().putString("UPROT_RESOLVED_SIGN_KEY", value).apply()
+            effectiveGlobalPrefs.edit().putString("UPROT_CONFIG_JSON", value).apply()
         }
 
     fun unlockParentalControls() {

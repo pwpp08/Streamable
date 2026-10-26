@@ -21,6 +21,13 @@ object UprotResolver {
     data class Config(
         val version: Int,
         val signKey: String,
+        val endpoint: String,
+        val paramId: String,
+        val paramType: String,
+        val paramTs: String,
+        val paramVer: String,
+        val paramSig: String,
+        val skewPrefix: String,
     )
 
     @Volatile
@@ -105,7 +112,14 @@ object UprotResolver {
                     val ts = System.currentTimeMillis() / 1000 + tsSkew
                     val message = "$uprotId|$apiType|$ts"
                     val sig = hmacSHA256(message, currentConfig.signKey)
-                    val apiUrl = "$apiBase$uprotId&t=$apiType&ts=$ts&v=${currentConfig.version}&sig=$sig"
+
+                    val base = if (apiBase.contains("?")) {
+                        apiBase.substringBeforeLast("/") + "/"
+                    } else {
+                        apiBase.trimEnd('/') + "/"
+                    }
+                    val encodedId = java.net.URLEncoder.encode(uprotId, "UTF-8")
+                    val apiUrl = "$base${currentConfig.endpoint}?${currentConfig.paramId}=$encodedId&${currentConfig.paramType}=$apiType&${currentConfig.paramTs}=$ts&${currentConfig.paramVer}=${currentConfig.version}&${currentConfig.paramSig}=$sig"
 
                     Log.d(TAG, "Sending dec API request (refreshAttempt=$refreshAttempt, attempt=$attempt, skew=${tsSkew}s)")
 
@@ -135,13 +149,17 @@ object UprotResolver {
                     val preview = if (responseText.length > 200) responseText.take(200) + "..." else responseText
                     Log.d(TAG, "Dec API response received: length=${responseText.length}, body='$preview'")
 
-                    if (responseText.startsWith("MSDEC_TS") && attempt < 4) {
+                    val isClockSkew = attempt < 4 && (
+                        (currentConfig.skewPrefix.isNotBlank() && responseText.startsWith(currentConfig.skewPrefix)) ||
+                        responseText.matches(Regex("""^[A-Z0-9_]+\s+\d+$"""))
+                    )
+                    if (isClockSkew) {
                         val serverTs = responseText.split(" ").getOrNull(1)?.toLongOrNull()
                         if (serverTs != null) {
                             tsSkew = serverTs - System.currentTimeMillis() / 1000
                             Log.d(TAG, "Clock skew detected. Server timestamp: $serverTs, adjusting skew: ${tsSkew}s. Retrying...")
                         } else {
-                            Log.w(TAG, "Received MSDEC_TS but could not parse timestamp: '$responseText'")
+                            Log.w(TAG, "Received clock skew response but could not parse timestamp: '$responseText'")
                         }
                         continue
                     }
@@ -214,17 +232,17 @@ object UprotResolver {
             return it
         }
 
-        val savedVersion = runCatching { UserPreferences.uprotResolvedVersion }.getOrDefault(0)
-        val savedKey = runCatching { UserPreferences.uprotResolvedSignKey }.getOrNull()
-
-        if (savedVersion > 0 && !savedKey.isNullOrBlank()) {
-            Log.d(TAG, "getConfig(): Loaded config from UserPreferences")
-            val cfg = Config(savedVersion, savedKey)
-            cachedConfig = cfg
-            return cfg
+        val jsonStr = runCatching { UserPreferences.uprotConfigJson }.getOrNull()
+        if (!jsonStr.isNullOrBlank()) {
+            val parsed = parseConfigJson(jsonStr)
+            if (parsed != null) {
+                Log.d(TAG, "getConfig(): Loaded valid config from UserPreferences")
+                cachedConfig = parsed
+                return parsed
+            }
         }
 
-        Log.d(TAG, "getConfig(): No local config available, initiating remote refresh...")
+        Log.d(TAG, "getConfig(): No valid local config available, initiating remote refresh...")
         return refreshConfig()
     }
 
@@ -256,16 +274,14 @@ object UprotResolver {
             }
             Log.d(TAG, "refreshConfig(): Remote payload downloaded (length=${responseBody.length})")
 
-            val decrypted = decryptConfig(responseBody)
-            if (decrypted == null) {
+            val (decrypted, rawJson) = decryptConfig(responseBody) ?: run {
                 Log.w(TAG, "refreshConfig(): Failed to decrypt remote payload")
                 return null
             }
 
             cachedConfig = decrypted
             runCatching {
-                UserPreferences.uprotResolvedVersion = decrypted.version
-                UserPreferences.uprotResolvedSignKey = decrypted.signKey
+                UserPreferences.uprotConfigJson = rawJson
             }
 
             Log.d(TAG, "Remote config successfully refreshed and stored")
@@ -280,7 +296,7 @@ object UprotResolver {
      * Decrypts a Base64 string containing [IV (16 bytes) + AES-256-CBC ciphertext].
      * The 256-bit AES key is securely retrieved from the native C++ NDK layer.
      */
-    fun decryptConfig(base64Payload: String): Config? {
+    fun decryptConfig(base64Payload: String): Pair<Config, String>? {
         val hexKey = Keys.getUprotAesKey().takeIf { it.isNotBlank() } ?: run {
             Log.w(TAG, "decryptConfig(): Uprot AES key from Keys is blank")
             return null
@@ -302,19 +318,57 @@ object UprotResolver {
             cipher.init(Cipher.DECRYPT_MODE, secretKey, IvParameterSpec(iv))
 
             val decryptedJson = String(cipher.doFinal(ciphertext), Charsets.UTF_8)
-            val json = JSONObject(decryptedJson)
-            val version = json.getInt("version")
-            val signKey = json.getString("signKey")
-
-            if (signKey.isNotBlank()) {
-                Log.d(TAG, "decryptConfig(): Payload successfully decrypted JSON")
-                Config(version, signKey)
+            val config = parseConfigJson(decryptedJson)
+            if (config != null) {
+                Log.d(TAG, "decryptConfig(): Payload successfully decrypted")
+                Pair(config, decryptedJson)
             } else {
-                Log.w(TAG, "decryptConfig(): Decrypted JSON missing signKey")
+                Log.w(TAG, "decryptConfig(): Decrypted payload invalid or missing required parameters")
                 null
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error decrypting AES payload: ${e.message}", e)
+            null
+        }
+    }
+
+    private fun parseConfigJson(jsonStr: String): Config? {
+        return try {
+            val json = JSONObject(jsonStr)
+            val version = json.optInt("version", 0)
+            val signKey = json.optString("signKey", "")
+            val endpoint = json.optString("endpoint", "")
+            val paramId = json.optString("paramId", "")
+            val paramType = json.optString("paramType", "")
+            val paramTs = json.optString("paramTs", "")
+            val paramVer = json.optString("paramVer", "")
+            val paramSig = json.optString("paramSig", "")
+            val skewPrefix = json.optString("skewPrefix", "")
+
+            if (version > 0 &&
+                signKey.isNotBlank() &&
+                endpoint.isNotBlank() &&
+                paramId.isNotBlank() &&
+                paramType.isNotBlank() &&
+                paramTs.isNotBlank() &&
+                paramVer.isNotBlank() &&
+                paramSig.isNotBlank()
+            ) {
+                Config(
+                    version = version,
+                    signKey = signKey,
+                    endpoint = endpoint,
+                    paramId = paramId,
+                    paramType = paramType,
+                    paramTs = paramTs,
+                    paramVer = paramVer,
+                    paramSig = paramSig,
+                    skewPrefix = skewPrefix,
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
             null
         }
     }
