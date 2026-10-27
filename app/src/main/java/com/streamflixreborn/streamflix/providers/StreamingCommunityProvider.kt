@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.annotations.SerializedName
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.adapters.AppAdapter
+import com.streamflixreborn.streamflix.extractors.VixSrcExtractor
 import com.streamflixreborn.streamflix.extractors.VixcloudExtractor
 import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Episode
@@ -42,6 +43,7 @@ class StreamingCommunityProvider(private val _language: String? = null) : Provid
 
     private val mutex = Mutex()
     private val totalCounts = mutableMapOf<String, Int>()
+    private val tmdbIds = mutableMapOf<String, Int>()
 
     override val language: String
         get() = _language ?: UserPreferences.providerLanguage ?: "it"
@@ -407,6 +409,7 @@ class StreamingCommunityProvider(private val _language: String? = null) : Provid
             }
         }
         val title = res.props!!.title
+        title.tmdbId?.let { tmdbIds[title.id] = it }
         val tmdbMovieDeferred = async { title.tmdbId?.let { TmdbUtils.getMovieById(it, language = language) } }
         val tmdbMovie = tmdbMovieDeferred.await()
 
@@ -453,6 +456,7 @@ class StreamingCommunityProvider(private val _language: String? = null) : Provid
             }
         }
         val title = res.props!!.title
+        title.tmdbId?.let { tmdbIds[title.id] = it }
         val tmdbShowDeferred = async { title.tmdbId?.let { TmdbUtils.getTvShowById(it, language = language) } }
         val tmdbShow = tmdbShowDeferred.await()
 
@@ -538,30 +542,68 @@ class StreamingCommunityProvider(private val _language: String? = null) : Provid
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
         Log.i("StreamFlixES", "[PROV] -> StreamingCommunity: getServers for $id")
+        val servers = mutableListOf<Video.Server>()
         val base = "https://$domain/"
-        
-        val isEpisode = videoType is Video.Type.Episode || id.contains("?episode_id=")
-        val iframeUrl = if (isEpisode) {
-            base + "$LANG/iframe/" + id.substringBefore("?") + "?episode_id=" + id.substringAfter("episode_id=").substringBefore("&") + "&next_episode=1" + "&language=$LANG"
-        } else {
-            base + "$LANG/iframe/" + id.substringBefore("-") + "?language=$LANG"
-        }
-        
-        Log.d(TAG, "Fetching iframe from: $iframeUrl")
-        val document = StreamingCommunityService.fetchDocumentWithRedirectsAndSslFallback(iframeUrl, base, language)
-        val src = document.selectFirst("iframe")?.attr("src") ?: ""
 
-        if (src.isEmpty()) {
-            Log.e(TAG, "No iframe found in /iframe/ endpoint")
-            return listOf()
+        // Vixcloud
+        try {
+            val isEpisode = videoType is Video.Type.Episode || id.contains("?episode_id=")
+            val iframeUrl = if (isEpisode) {
+                base + "$LANG/iframe/" + id.substringBefore("?") + "?episode_id=" + id.substringAfter("episode_id=").substringBefore("&") + "&next_episode=1" + "&language=$LANG"
+            } else {
+                base + "$LANG/iframe/" + id.substringBefore("-") + "?language=$LANG"
+            }
+            
+            Log.d(TAG, "Fetching iframe from: $iframeUrl")
+            val document = StreamingCommunityService.fetchDocumentWithRedirectsAndSslFallback(iframeUrl, base, language)
+            val src = document.selectFirst("iframe")?.attr("src") ?: ""
+
+            if (src.isNotEmpty()) {
+                Log.i("StreamFlixES", "[PROV] -> Found Vixcloud src: $src")
+                servers.add(Video.Server(id = id, name = "Vixcloud", src = src))
+            } else {
+                Log.w(TAG, "No iframe found in /iframe/ endpoint")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching Vixcloud iframe: ${e.message}")
         }
 
-        Log.i("StreamFlixES", "[PROV] -> Found Vixcloud src: $src")
-        return listOf(Video.Server(id = id, name = "Vixcloud", src = src))
+        // Vixsrc
+        try {
+            val titleId = id.substringBefore("?").substringBefore("-")
+            val tmdbId = tmdbIds[titleId] ?: runCatching {
+                withSslFallback {
+                    it.getDetails(titleId, version = ensureVersion(), language = LANG)
+                }.props?.title?.tmdbId?.also { tmdbIds[titleId] = it }
+            }.getOrNull()
+
+            if (tmdbId != null) {
+                val vixsrcUrl = when (videoType) {
+                    is Video.Type.Episode -> "https://vixsrc.to/api/tv/$tmdbId/${videoType.season.number}/${videoType.number}"
+                    is Video.Type.Movie -> "https://vixsrc.to/api/movie/$tmdbId"
+                }
+                Log.i("StreamFlixES", "[PROV] -> Adding VixSrc server: $vixsrcUrl (tmdbId=$tmdbId)")
+                servers.add(
+                    Video.Server(
+                        id = vixsrcUrl,
+                        name = "Vixsrc",
+                        src = vixsrcUrl
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error adding VixSrc server: ${e.message}")
+        }
+
+        return servers
     }
 
     override suspend fun getVideo(server: Video.Server): Video {
         Log.i("StreamFlixES", "[SERVER] -> StreamingCommunity: Using ${server.name} (Src: ${server.src})")
+
+        if (server.name == "Vixsrc") {
+            return VixSrcExtractor().extract(server.src)
+        }
         
         val base = "https://$domain/"
         val isEpisode = server.id.contains("?episode_id=")

@@ -453,6 +453,12 @@ object UserPreferences {
             effectiveGlobalPrefs.edit().putString("UPROT_CONFIG_JSON", value).apply()
         }
 
+    var maxstreamEmbedBase: String?
+        get() = effectiveGlobalPrefs.getString("MAXSTREAM_EMBED_BASE", null)
+        set(value) {
+            effectiveGlobalPrefs.edit().putString("MAXSTREAM_EMBED_BASE", value).apply()
+        }
+
     fun unlockParentalControls() {
         parentalControlFailedAttempts = 0
         parentalControlLockedUntilMillis = 0L

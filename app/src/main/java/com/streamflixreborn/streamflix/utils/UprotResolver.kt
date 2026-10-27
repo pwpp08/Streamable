@@ -16,7 +16,14 @@ object UprotResolver {
     private const val TAG = "UprotResolver"
     private const val UPROT_CONFIG_URL =
         "https://git.gay/streamflix-reborn2/streamflix/raw/branch/main/uprot.enc"
-    const val MAXSTREAM_EMBED_BASE = "https://maxstream.video/emisvjoe/"
+    private const val MAXSTREAM_EMBED_CONFIG_URL =
+        "https://git.gay/streamflix-reborn2/streamflix/raw/branch/main/maxstream_embed.json"
+
+    @Volatile
+    private var cachedMaxstreamEmbedBase: String? = null
+
+    @Volatile
+    private var videoIdToUprotMap = java.util.concurrent.ConcurrentHashMap<String, Pair<String, String>>()
 
     data class Config(
         val version: Int,
@@ -28,6 +35,8 @@ object UprotResolver {
         val paramVer: String,
         val paramSig: String,
         val skewPrefix: String,
+        val userAgent: String,
+        val apiBase: String = "",
     )
 
     @Volatile
@@ -54,7 +63,9 @@ object UprotResolver {
             return null
         }
 
-        if (urlOrId.contains("maxstream.video", ignoreCase = true)) {
+        val currentEmbedBase = getMaxstreamEmbedBase()
+        val embedHost = currentEmbedBase?.let { runCatching { java.net.URI(it).host }.getOrNull() }
+        if (!embedHost.isNullOrBlank() && urlOrId.contains(embedHost, ignoreCase = true)) {
             Log.d(TAG, "Input is already a MaxStream URL: $urlOrId")
             return urlOrId
         }
@@ -90,45 +101,44 @@ object UprotResolver {
         Log.d(TAG, "callUprotApi() started: uprotId='$uprotId', apiType='$apiType'")
         var videoId: String? = null
 
-        val apiBase = Keys.getUprotApiBase()
+        val defaultApiBase = Keys.getUprotApiBase()
         var uprotConfig = getConfig()
 
-        if (apiBase.isBlank()) {
-            Log.w(TAG, "Uprot API base URL from native Keys is blank")
-        }
-        if (uprotConfig == null || uprotConfig.signKey.isBlank()) {
-            Log.w(TAG, "Uprot config or signKey is missing/blank")
-        }
+        for (refreshAttempt in 0..1) {
+            val currentConfig = uprotConfig ?: break
+            if (currentConfig.signKey.isBlank()) break
 
-        if (apiBase.isNotBlank()) {
-            for (refreshAttempt in 0..1) {
-                val currentConfig = uprotConfig ?: break
-                if (currentConfig.signKey.isBlank()) break
+            val effectiveApiBase = currentConfig.apiBase.ifBlank { defaultApiBase }
+            if (effectiveApiBase.isBlank()) {
+                Log.w(TAG, "Uprot API base URL is blank")
+                break
+            }
 
-                var tsSkew = 0L
-                var isTemporaryError = false
+            var tsSkew = 0L
+            var isTemporaryError = false
 
-                for (attempt in 0..4) {
-                    val ts = System.currentTimeMillis() / 1000 + tsSkew
-                    val message = "$uprotId|$apiType|$ts"
-                    val sig = hmacSHA256(message, currentConfig.signKey)
+            for (attempt in 0..4) {
+                val ts = System.currentTimeMillis() / 1000 + tsSkew
+                val message = "$uprotId|$apiType|$ts"
+                val sig = hmacSHA256(message, currentConfig.signKey)
 
-                    val base = if (apiBase.contains("?")) {
-                        apiBase.substringBeforeLast("/") + "/"
-                    } else {
-                        apiBase.trimEnd('/') + "/"
-                    }
-                    val encodedId = java.net.URLEncoder.encode(uprotId, "UTF-8")
-                    val apiUrl = "$base${currentConfig.endpoint}?${currentConfig.paramId}=$encodedId&${currentConfig.paramType}=$apiType&${currentConfig.paramTs}=$ts&${currentConfig.paramVer}=${currentConfig.version}&${currentConfig.paramSig}=$sig"
+                val base = if (effectiveApiBase.contains("?")) {
+                    effectiveApiBase.substringBeforeLast("/") + "/"
+                } else {
+                    effectiveApiBase.trimEnd('/') + "/"
+                }
+                val encodedId = java.net.URLEncoder.encode(uprotId, "UTF-8")
+                val apiUrl = "$base${currentConfig.endpoint}?${currentConfig.paramId}=$encodedId&${currentConfig.paramType}=$apiType&${currentConfig.paramTs}=$ts&${currentConfig.paramVer}=${currentConfig.version}&${currentConfig.paramSig}=$sig"
 
-                    Log.d(TAG, "Sending dec API request (refreshAttempt=$refreshAttempt, attempt=$attempt, skew=${tsSkew}s)")
+                Log.d(TAG, "Sending dec API request (refreshAttempt=$refreshAttempt, attempt=$attempt, skew=${tsSkew}s)")
 
-                    val req = Request.Builder()
-                        .url(apiUrl)
-                        .header("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.101 Safari/537.36")
-                        .header("X-Requested-With", "")
-                        .header("Accept-Language", "it")
-                        .build()
+                val req = Request.Builder()
+                    .url(apiUrl)
+                    .header("User-Agent", currentConfig.userAgent)
+                    .header("Accept", "application/json, text/plain, */*")
+                    .header("X-Requested-With", "")
+                    .header("Accept-Language", "it")
+                    .build()
 
                     val resp = try {
                         httpClient.newCall(req).execute()
@@ -179,6 +189,7 @@ object UprotResolver {
 
                     if (responseText.isNotBlank() && !responseText.contains("<") && !responseText.contains(" ")) {
                         videoId = responseText
+                        videoIdToUprotMap[responseText] = Pair(uprotId, apiType)
                         Log.d(TAG, "Extracted valid videoId: $videoId")
                     } else {
                         Log.w(TAG, "Response text is not a valid videoId: '$preview'")
@@ -205,9 +216,17 @@ object UprotResolver {
                     }
                 }
             }
-        }
 
-        videoId?.let { "$MAXSTREAM_EMBED_BASE$it" }
+        videoId?.let { id ->
+            val embedBase = getMaxstreamEmbedBase()
+            if (!embedBase.isNullOrBlank()) {
+                val base = if (embedBase.endsWith("/")) embedBase else "$embedBase/"
+                "$base$id"
+            } else {
+                Log.w(TAG, "Cannot format Maxstream URL for videoId='$id': embedBase is not available (remote fetch failed and no local cache)")
+                null
+            }
+        }
     } catch (e: Exception) {
         Log.e(TAG, "Error resolving Uprot API: ${e.message}", e)
         null
@@ -344,6 +363,8 @@ object UprotResolver {
             val paramVer = json.optString("paramVer", "")
             val paramSig = json.optString("paramSig", "")
             val skewPrefix = json.optString("skewPrefix", "")
+            val userAgent = json.optString("userAgent", "").trim()
+            val apiBase = json.optString("apiBase", "").trim()
 
             if (version > 0 &&
                 signKey.isNotBlank() &&
@@ -352,7 +373,8 @@ object UprotResolver {
                 paramType.isNotBlank() &&
                 paramTs.isNotBlank() &&
                 paramVer.isNotBlank() &&
-                paramSig.isNotBlank()
+                paramSig.isNotBlank() &&
+                userAgent.isNotBlank()
             ) {
                 Config(
                     version = version,
@@ -364,6 +386,8 @@ object UprotResolver {
                     paramVer = paramVer,
                     paramSig = paramSig,
                     skewPrefix = skewPrefix,
+                    userAgent = userAgent,
+                    apiBase = apiBase,
                 )
             } else {
                 null
@@ -371,5 +395,112 @@ object UprotResolver {
         } catch (e: Exception) {
             null
         }
+    }
+
+    /**
+     * Retrieves the current MaxStream embed base URL.
+     * 1. Uses in-memory cachedMaxstreamEmbedBase if present.
+     * 2. Uses local persistent storage (UserPreferences) if present.
+     * 3. If absent, performs a refresh by downloading maxstream_embed.json from git.gay.
+     * Refreshed only if absent or upon receiving a 404 error during playback.
+     */
+    fun getMaxstreamEmbedBase(): String? {
+        cachedMaxstreamEmbedBase?.let {
+            Log.d(TAG, "getMaxstreamEmbedBase(): Using in-memory cached embed base")
+            return it
+        }
+
+        val saved = runCatching { UserPreferences.maxstreamEmbedBase }.getOrNull()
+        if (!saved.isNullOrBlank()) {
+            Log.d(TAG, "getMaxstreamEmbedBase(): Loaded valid embed base from UserPreferences")
+            cachedMaxstreamEmbedBase = saved
+            return saved
+        }
+
+        Log.d(TAG, "getMaxstreamEmbedBase(): No valid local embed base available, initiating remote refresh...")
+        return refreshMaxstreamEmbedBase()
+    }
+
+    /**
+     * Fetches the dynamic MaxStream embed base URL from maxstream_embed.json on git.gay.
+     * Expects a JSON with the "url" property.
+     * Updates memory cache and local persistent storage (UserPreferences).
+     */
+    @Synchronized
+    fun refreshMaxstreamEmbedBase(): String? {
+        Log.d(TAG, "refreshMaxstreamEmbedBase(): Fetching from $MAXSTREAM_EMBED_CONFIG_URL")
+        return try {
+            val req = Request.Builder()
+                .url("$MAXSTREAM_EMBED_CONFIG_URL?t=${System.currentTimeMillis()}")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36")
+                .header("Accept", "application/json, text/plain, */*")
+                .build()
+
+            val responseBody = httpClient.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) {
+                    Log.w(TAG, "Remote Maxstream embed config download failed: HTTP ${resp.code}")
+                    return null
+                }
+                resp.body?.string().orEmpty().trim()
+            }
+
+            if (responseBody.isBlank()) {
+                Log.w(TAG, "Remote Maxstream embed config response body is blank")
+                return null
+            }
+
+            val json = JSONObject(responseBody)
+            val raw = json.optString("url").trim()
+
+            if (raw.isNotBlank()) {
+                val fullUrl = if (raw.startsWith("http://") || raw.startsWith("https://")) {
+                    raw
+                } else {
+                    "https://$raw"
+                }
+                val normalizedUrl = if (fullUrl.endsWith("/")) fullUrl else "$fullUrl/"
+                cachedMaxstreamEmbedBase = normalizedUrl
+                runCatching {
+                    UserPreferences.maxstreamEmbedBase = normalizedUrl
+                }
+                Log.d(TAG, "Remote Maxstream embed base updated: $normalizedUrl")
+                normalizedUrl
+            } else {
+                Log.w(TAG, "Remote Maxstream embed config JSON did not contain 'url': '$responseBody'")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching remote Maxstream embed base: ${e.message}", e)
+            null
+        }
+    }
+
+    /**
+     * Called when Maxstream indicates the video was expired or deleted
+     * (often caused by an outdated user-agent producing a fake honeypot video ID).
+     * Refreshes uprot.enc from remote and re-resolves the uprot ID with the new user-agent/config.
+     */
+    fun reResolveOnExpired(videoId: String): String? {
+        Log.w(TAG, "reResolveOnExpired() triggered for videoId='$videoId'")
+        val refreshed = refreshConfig()
+        if (refreshed != null) {
+            cachedConfig = refreshed
+        }
+        val (uprotId, apiType) = videoIdToUprotMap[videoId] ?: run {
+            Log.w(TAG, "reResolveOnExpired(): videoId '$videoId' not found in cache map")
+            return null
+        }
+        val newUrl = callUprotApi(uprotId, apiType)
+        if (newUrl.isNullOrBlank()) {
+            Log.w(TAG, "reResolveOnExpired(): Re-resolution produced null or empty URL")
+            return null
+        }
+        val newVideoId = newUrl.substringBefore("?").trimEnd('/').substringAfterLast('/')
+        if (newVideoId == videoId) {
+            Log.w(TAG, "reResolveOnExpired(): Re-resolution produced same videoId ('$newVideoId')")
+            return null
+        }
+        Log.i(TAG, "reResolveOnExpired() succeeded -> $newUrl")
+        return newUrl
     }
 }
