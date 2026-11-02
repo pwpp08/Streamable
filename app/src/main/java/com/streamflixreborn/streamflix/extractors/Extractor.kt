@@ -21,7 +21,6 @@ abstract class Extractor {
     companion object {
         private val extractors = listOf(
             FirestreamExtractor(),
-            JKPlayerExtractor(),
             RabbitstreamExtractor(),
             RabbitstreamExtractor.MegacloudExtractor(),
             RabbitstreamExtractor.DokicloudExtractor(),
@@ -40,8 +39,6 @@ abstract class Extractor {
             VidplayExtractor.MyCloud(),
             VidplayExtractor.VidplayOnline(),
             MyFileStorageExtractor(),
-            MoflixExtractor(),
-            MStreamDayExtractor(),
             VidsrcNetExtractor(),
             StreamWishExtractor(),
             StreamWishExtractor.UqloadsXyz(),
@@ -80,7 +77,6 @@ abstract class Extractor {
             UchExtractor(),
             VixSrcExtractor(),
             GoodstreamExtractor(),
-            LamovieExtractor(),
             UqloadExtractor(),
             MailRuExtractor(),
             MixDropExtractor(),
@@ -97,7 +93,6 @@ abstract class Extractor {
             VidzyExtractor(),
             GuploadExtractor(),
             StreamUpExtractor(),
-            EinschaltenExtractor(),
             VidLinkExtractor(),
             VidsrcRuExtractor(),
             VidflixExtractor(),
@@ -109,7 +104,6 @@ abstract class Extractor {
             GxPlayerExtractor(),
             UpZurExtractor(),
             DailymotionExtractor(),
-            ApiVoirFilmExtractor(),
             StreamixExtractor(),
             ShareCloudyExtractor(),
             StreamrubyExtractor(),
@@ -123,10 +117,8 @@ abstract class Extractor {
             VidloveExtractor(),
             VidemExtractor(),
             HexloadExtractor(),
-            MovieMasterExtractor(),
             DeltaBitExtractor(),
             TurbovidExtractor(),
-            VideoappExtractor()
         )
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {

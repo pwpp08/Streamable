@@ -1,9 +1,7 @@
 package com.streamflixreborn.streamflix.providers
 
 import com.streamflixreborn.streamflix.adapters.AppAdapter
-import com.streamflixreborn.streamflix.extractors.AfterDarkExtractor
 import com.streamflixreborn.streamflix.extractors.Extractor
-import com.streamflixreborn.streamflix.extractors.MoflixExtractor
 import com.streamflixreborn.streamflix.extractors.MoviesapiExtractor
 import com.streamflixreborn.streamflix.extractors.TwoEmbedExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcNetExtractor
@@ -12,15 +10,11 @@ import com.streamflixreborn.streamflix.extractors.VidzeeExtractor
 import com.streamflixreborn.streamflix.extractors.VixSrcExtractor
 import com.streamflixreborn.streamflix.extractors.VidLinkExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcRuExtractor
-import com.streamflixreborn.streamflix.extractors.EinschaltenExtractor
-import com.streamflixreborn.streamflix.extractors.FrembedExtractor
 import com.streamflixreborn.streamflix.extractors.VidflixExtractor
 import com.streamflixreborn.streamflix.extractors.VidrockExtractor
 import com.streamflixreborn.streamflix.extractors.VidloveExtractor
 import com.streamflixreborn.streamflix.extractors.PrimeSrcExtractor
 import com.streamflixreborn.streamflix.extractors.VidemExtractor
-import com.streamflixreborn.streamflix.extractors.MovieMasterExtractor
-import com.streamflixreborn.streamflix.extractors.VideoappExtractor
 import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Genre
@@ -746,529 +740,46 @@ class TmdbProvider(override val language: String) : Provider {
     }
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
-        val servers = mutableListOf<Video.Server>()
-        val lang = language.lowercase().substringBefore("-")
-
-        Log.d("TmdbProvider", "getServers: lang=$language, simplifiedLang=$lang")
-
-        when (lang) {
-            "it" -> {
-                // Se la lingua è italiano, includiamo solo i server noti per l'italiano.
-                servers.add(VixSrcExtractor().server(videoType))
-            }
-            "de" -> {
-                // German TMDb sources:
-                // keep the existing extractors and additionally search
-                // supported native German providers.
-                /*
-                 * MOFLIX_TMDB_NONBLOCKING_V1
-                 *
-                 * Moflix can spend time in its anti-bot/session path.
-                 * Run it in parallel with the native German providers so
-                 * it can never hold the whole TMDb-DE source list hostage.
-                 */
-                val discoveredGermanServers = coroutineScope {
-                    val moflixTask =
-                        async(Dispatchers.IO) {
-                            val result =
-                                withTimeoutOrNull(10_000L) {
-                                    MoflixExtractor()
-                                        .servers(videoType)
-                                }
-
-                            if (result == null) {
-                                Log.w(
-                                    "TmdbProvider",
-                                    "Moflix discovery timed out after 10000ms"
-                                )
-                            }
-
-                            result.orEmpty()
-                        }
-
-                    val nativeTasks =
-                        germanTmdbProviders(videoType)
-                            .map { candidate ->
-                                async(Dispatchers.IO) {
-                                    runCatching {
-                                        findGermanProviderServers(
-                                            candidate,
-                                            videoType
-                                        )
-                                    }.getOrElse { error ->
-                                        Log.w(
-                                            "TmdbProvider",
-                                            "TMDB-DE ${candidate.label} failed",
-                                            error
-                                        )
-                                        emptyList()
-                                    }
-                                }
-                            }
-
-                    (listOf(moflixTask) + nativeTasks)
-                        .awaitAll()
-                        .flatten()
-                }
-
-                servers.addAll(discoveredGermanServers)
-
-                if (videoType is Video.Type.Movie) {
-                    servers.add(EinschaltenExtractor().server(videoType))
-                }
-            }
-            "fr" -> {
-                // Solo server francesi
-                servers.addAll(FrembedExtractor(UserPreferences.getProviderCache(FrembedProvider, UserPreferences.PROVIDER_URL)).servers(videoType))
-                servers.addAll(AfterDarkExtractor(UserPreferences.getProviderCache(AfterDarkProvider, UserPreferences.PROVIDER_URL)).servers(videoType))
-                servers.addAll(VidemExtractor().servers(videoType, "fr"))
-            }
-            "es" -> {
-                // TMDB Spagnolo: Utilizza ESCLUSIVAMENTE server certificati con audio spagnolo ([LAT] o [CAST])
-                
-                val targetTitle = when (videoType) {
-                    is Video.Type.Movie -> videoType.title
-                    is Video.Type.Episode -> videoType.tvShow.title
-                }
-                
-                Log.i("StreamFlixES", "[SEARCH START] -> Target: $targetTitle (${if (videoType is Video.Type.Movie) "Movie" else "TV Show"})")
-
-                // Funzione di matching rigorosa per i titoli e tipo
-                fun isMatch(item: AppAdapter.Item, target: String): Boolean {
-                    val isCorrectType = if (videoType is Video.Type.Movie) item is Movie else item is TvShow
-                    if (!isCorrectType) return false
-
-                    val itemTitle = if (item is Movie) item.title else (item as TvShow).title
-                    val nItem = itemTitle.lowercase().replace(Regex("[^a-z0-9]"), "")
-                    val nTarget = target.lowercase().replace(Regex("[^a-z0-9]"), "")
-                    
-                    // Match esatto (normalizzato) ha la priorità
-                    if (nItem == nTarget) return true
-                    
-                    // Match parziale se contenuto e differenza lunghezza minima
-                    if (nItem.contains(nTarget) || nTarget.contains(nItem)) {
-                        val diff = Math.abs(nItem.length - nTarget.length)
-                        if (diff <= 5) return true
-                    }
-                    
-                    // Match per parole (almeno una deve corrispondere esattamente se il target è corto, o tutte se lungo)
-                    val cleanWords: (String) -> Set<String> = { s ->
-                        s.lowercase()
-                            .replace(Regex("[^a-z0-9 ]"), " ")
-                            .split(Regex("\\s+"))
-                            .filter { it.length > 2 }
-                            .toSet()
-                    }
-                    val nItemWords = cleanWords(itemTitle)
-                    val nTargetWords = cleanWords(target)
-                    
-                    if (nItemWords.isEmpty() || nTargetWords.isEmpty()) return false
-                    
-                    // Se il target ha solo una parola importante, deve esserci
-                    if (nTargetWords.size == 1) return nItemWords.contains(nTargetWords.first())
-                    
-                    // Altrimenti tutte le parole del target devono essere presenti nell'item
-                    return nItemWords.containsAll(nTargetWords) || nTargetWords.containsAll(nItemWords)
-                }
-
-                coroutineScope {
-                    val providers = listOf(CuevanaEuProvider, PelisplustoProvider, SoloLatinoProvider, CineCalidadProvider, PoseidonHD2Provider)
-                    val deferred = providers.map { provider ->
-                        async {
-                            try {
-                                val searchResults = provider.search(targetTitle, 1)
-                                val bestMatch = searchResults.firstOrNull { isMatch(it, targetTitle) }
-                                val id = if (bestMatch is Movie) bestMatch.id else (bestMatch as? TvShow)?.id
-                                
-                                if (id != null) {
-                                    val matchTitle = if (bestMatch is Movie) bestMatch.title else (bestMatch as? TvShow)?.title
-                                    Log.i("StreamFlixES", "[MATCH FOUND] -> Provider: ${provider.name}, Matched: '$matchTitle', ID: $id")
-                                    
-                                    val allServers = provider.getServers(id, videoType)
-                                    val filtered = allServers.filter { s ->
-                                        val n = s.name.uppercase()
-                                        n.contains("[LAT]") || n.contains("[CAST]") || n.contains("[CAS]") || n.contains("[ES]") ||
-                                        n.contains("(LAT)") || n.contains("(ESP)") || n.contains("LATINO") || n.contains("CASTELLANO")
-                                    }
-                                    Log.i("StreamFlixES", "[SERVERS OK] -> ${provider.name}: ${filtered.size}/${allServers.size} servers kept")
-                                    filtered
-                                } else {
-                                    Log.d("StreamFlixES", "[NO MATCH] -> ${provider.name} did not find a valid match for '$targetTitle'")
-                                    emptyList()
-                                }
-                            } catch (e: Exception) { 
-                                Log.e("StreamFlixES", "[PROVIDER ERROR] -> ${provider.name}: ${e.message}")
-                                emptyList() 
-                            }
-                        }
-                    }
-                    servers.addAll(deferred.awaitAll().flatten())
-                    servers.addAll(MovieMasterExtractor().servers(videoType))
-                    servers.addAll(VidemExtractor().servers(videoType, "es"))
-                    servers.add(VideoappExtractor().server(videoType))
-                }
-            }
-            else -> {
-                // Per inglese (en) o altre lingue non specifiche, usiamo i server globali
-                servers.addAll(listOf(
-                    VixSrcExtractor().server(videoType),
-                    TwoEmbedExtractor().server(videoType),
-                    VidsrcNetExtractor().server(videoType),
-                    VidLinkExtractor().server(videoType),
-                    VidsrcRuExtractor().server(videoType),
-                    VidflixExtractor().server(videoType),
-                ))
-
-                if (videoType is Video.Type.Movie) {
-                    servers.add(2, MoviesapiExtractor().server(videoType))
-                }
-
-                servers.addAll(VidrockExtractor().servers(videoType))
-                servers.addAll(VidzeeExtractor().servers(videoType))
-                servers.addAll(PrimeSrcExtractor().servers(videoType))
-
-                if (language == "en") {
-                    servers.addAll(VidemExtractor().servers(videoType, "en"))
-                    servers.addAll(VidloveExtractor().servers(videoType))
-                }
-            }
-        }
-
-        // ORDINE PRIORITÀ FINALE: Portiamo i server con audio Spagnolo e Filemoon in cima
-        val finalServers = if (language.startsWith("es")) {
-            servers.sortedByDescending { server ->
-                val n = server.name.uppercase()
-                when {
-                    // Filemoon e tag audio spagnoli hanno la massima priorità
-                    n.contains("FILEMOON") -> 110
-                    n.contains("[CAS]") || n.contains("[LAT]") || n.contains("[ES]") || n.contains("SPAIN") || n.contains("[CAST]") ||
-                    n.contains("LATINO") || n.contains("SPANISH") || n.contains("CASTELLANO") || n.contains("(LAT)") || n.contains("(ESP)") -> 100
-                    
-                    // Altri aggregatori multi-lingua
-                    n.contains("VIDSRC") || n.contains("VIDLINK") -> 80
-                    
-                    // Sottotitoli o inglese
-                    n.contains("[EN]") || n.contains("[SUB]") || n.contains("(EN)") || n.contains("(SUB)") -> 50
-                    
-                    else -> 0
-                }
-            }
-        } else {
-            servers
-        }
-
-        Log.i("StreamFlixES", "[SERVERS LIST] -> Found ${finalServers.size} servers: ${finalServers.joinToString { it.name }}")
-        return finalServers.distinctBy { it.id }
-    }
-
-
-    private data class GermanTmdbProvider(
-        val key: String,
-        val label: String,
-        val provider: Provider,
-        val movies: Boolean,
-        val tvShows: Boolean,
-    )
-
-    private fun germanTmdbProviders(
-        videoType: Video.Type
-    ): List<GermanTmdbProvider> {
-        val all = listOf(
-            GermanTmdbProvider(
-                "vavoo",
-                "Vavoo VOD",
-                VavooVodProvider.DE,
-                movies = true,
-                tvShows = true,
-            ),
-            GermanTmdbProvider(
-                "hdfilme",
-                "HDFilme",
-                HDFilmeProvider,
-                movies = true,
-                tvShows = true,
-            ),
-            GermanTmdbProvider(
-                "megakino",
-                "MegaKino",
-                MEGAKinoProvider,
-                movies = true,
-                tvShows = true,
-            ),
-            GermanTmdbProvider(
-                "filmpalast",
-                "FilmPalast",
-                FilmPalastProvider,
-                movies = true,
-                tvShows = true,
-            ),
-            GermanTmdbProvider(
-                "serienstream",
-                "SerienStream",
-                SerienStreamProvider,
-                movies = false,
-                tvShows = true,
-            ),
-            GermanTmdbProvider(
-                "aniworld",
-                "AniWorld",
-                AniWorldProvider,
-                movies = false,
-                tvShows = true,
-            ),
+        val servers = mutableListOf(
+            VixSrcExtractor().server(videoType),
+            TwoEmbedExtractor().server(videoType),
+            VidsrcNetExtractor().server(videoType),
+            VidLinkExtractor().server(videoType),
+            VidsrcRuExtractor().server(videoType),
+            VidflixExtractor().server(videoType),
         )
 
-        return when (videoType) {
-            is Video.Type.Movie -> all.filter { it.movies }
-            is Video.Type.Episode -> all.filter { it.tvShows }
-        }
-    }
-
-    private fun normalizeGermanTitle(value: String): String =
-        value.lowercase()
-            .replace("ä", "ae")
-            .replace("ö", "oe")
-            .replace("ü", "ue")
-            .replace("ß", "ss")
-            .replace(Regex("[^a-z0-9]"), "")
-
-    private fun titleScore(
-        candidate: String,
-        target: String
-    ): Int {
-        val c = normalizeGermanTitle(candidate)
-        val t = normalizeGermanTitle(target)
-
-        if (c.isBlank() || t.isBlank()) return 0
-        if (c == t) return 100
-        if (c.startsWith(t) || t.startsWith(c)) return 80
-        if (c.contains(t) || t.contains(c)) return 60
-
-        return 0
-    }
-
-    private suspend fun findGermanProviderServers(
-        candidate: GermanTmdbProvider,
-        videoType: Video.Type,
-    ): List<Video.Server> = withTimeoutOrNull(15_000L) {
-
-        val targetTitle = when (videoType) {
-            is Video.Type.Movie -> videoType.title
-            is Video.Type.Episode -> videoType.tvShow.title
+        if (videoType is Video.Type.Movie) {
+            servers.add(2, MoviesapiExtractor().server(videoType))
         }
 
-        val results =
-            candidate.provider.search(targetTitle, 1)
+        servers.addAll(VidrockExtractor().servers(videoType))
+        servers.addAll(VidzeeExtractor().servers(videoType))
+        servers.addAll(PrimeSrcExtractor().servers(videoType))
+        servers.addAll(VidemExtractor().servers(videoType, "en"))
+        servers.addAll(VidloveExtractor().servers(videoType))
 
-        when (videoType) {
-            is Video.Type.Movie -> {
-                val match = results
-                    .filterIsInstance<Movie>()
-                    .map {
-                        it to titleScore(it.title, targetTitle)
-                    }
-                    .filter { it.second >= 60 }
-                    .maxByOrNull { it.second }
-                    ?.first
-                    ?: return@withTimeoutOrNull emptyList()
-
-                candidate.provider
-                    .getServers(match.id, videoType)
-                    .map {
-                        wrapGermanTmdbServer(candidate, it)
-                    }
-            }
-
-            is Video.Type.Episode -> {
-                val match = results
-                    .filterIsInstance<TvShow>()
-                    .map {
-                        it to titleScore(it.title, targetTitle)
-                    }
-                    .filter { it.second >= 60 }
-                    .maxByOrNull { it.second }
-                    ?.first
-                    ?: return@withTimeoutOrNull emptyList()
-
-                val details =
-                    candidate.provider.getTvShow(match.id)
-
-                val season =
-                    details.seasons.firstOrNull {
-                        it.number == videoType.season.number
-                    }
-                    ?: return@withTimeoutOrNull emptyList()
-
-                val episodes =
-                    candidate.provider
-                        .getEpisodesBySeason(season.id)
-
-                val episode =
-                    episodes.firstOrNull {
-                        it.number == videoType.number
-                    }
-                    ?: return@withTimeoutOrNull emptyList()
-
-                candidate.provider
-                    .getServers(episode.id, videoType)
-                    .map {
-                        wrapGermanTmdbServer(candidate, it)
-                    }
-            }
-        }
-    } ?: emptyList()
-
-    private fun wrapGermanTmdbServer(
-        candidate: GermanTmdbProvider,
-        server: Video.Server,
-    ): Video.Server =
-        Video.Server(
-            id = "tmdbde:${candidate.key}:${server.id}",
-            name = "${candidate.label} • ${server.name}",
-            src = server.src,
-        ).also {
-            it.video = server.video
-        }
-
-    private fun germanProviderByKey(
-        key: String
-    ): Provider? =
-        when (key) {
-            "vavoo" -> VavooVodProvider.DE
-            "hdfilme" -> HDFilmeProvider
-            "megakino" -> MEGAKinoProvider
-            "filmpalast" -> FilmPalastProvider
-            "kellerkino" -> KellerKinoProvider
-            "serienstream" -> SerienStreamProvider
-            "aniworld" -> AniWorldProvider
-            else -> null
-        }
-
-    private suspend fun getGermanProviderVideo(
-        server: Video.Server
-    ): Video? {
-        if (!server.id.startsWith("tmdbde:")) {
-            return null
-        }
-
-        val parts =
-            server.id.split(":", limit = 3)
-
-        if (parts.size != 3) {
-            return null
-        }
-
-        val provider =
-            germanProviderByKey(parts[1])
-                ?: return null
-
-        val original =
-            Video.Server(
-                id = parts[2],
-                name = server.name.substringAfter(
-                    " • ",
-                    server.name
-                ),
-                src = server.src,
-            ).also {
-                it.video = server.video
-            }
-
-        return provider.getVideo(original)
+        return servers.distinctBy { it.id }
     }
 
     override suspend fun getVideo(server: Video.Server): Video {
-        getGermanProviderVideo(server)?.let { return it }
-
         val url = server.src.ifEmpty { server.id }
-        Log.i("StreamFlixES", "[SERVER] -> Using: ${server.name} (URL: $url)")
-        
-        val video = when {
-            server.video != null -> server.video!!
-            else -> Extractor.extract(url, server)
-        }
-
-        // LOGICA SOTTOTITOLI FORZATI: Se siamo in spagnolo, attiviamo solo i forced di default
-        if (language.startsWith("es")) {
-            var forcedFound = false
-            video.subtitles.forEach { sub ->
-                val label = sub.label.lowercase()
-                val isSpanish = label.contains("spanish") || label.contains("español") || 
-                                label.contains("espanol") || label.contains("castellano") || 
-                                label.contains(" lat ")
-                val isForced = label.contains("forced") || label.contains("forzati") || label.contains("forzato")
-
-                if (isSpanish && isForced) {
-                    sub.default = true
-                    forcedFound = true
-                    Log.i("StreamFlixES", "[SUBTITLE] -> TMDb (es): Selected FORCED subtitle: ${sub.label}")
-                } else {
-                    sub.default = false
-                }
-            }
-            
-            if (!forcedFound) {
-                video.subtitles.forEach { it.default = false }
-                Log.i("StreamFlixES", "[SUBTITLE] -> TMDb (es): No forced subs found, keeping them OFF")
-            }
-        }
-        
-        Log.i("StreamFlixES", "[VIDEO] -> Final source: ${video.source}")
-        return video
+        return server.video ?: Extractor.extract(url, server)
     }
 
     private fun getTranslation(key: String): String {
         return when (language) {
-            "it" -> when (key) {
-                "Trending" -> "Di tendenza"
-                "Popular Movies" -> "Film popolari"
-                "Popular TV Shows" -> "Serie TV popolari"
-                "Popular Anime" -> "Anime popolari"
-                "Popular on Netflix" -> "Popolari su Netflix"
-                "Popular on Amazon" -> "Popolari su Amazon"
-                "Popular on Disney+" -> "Popolari su Disney+"
-                "Popular on Hulu" -> "Popolari su Hulu"
-                "Popular on Apple TV+" -> "Popolari su Apple TV+"
-                "Popular on HBO" -> "Popolari su HBO"
-                else -> key
-            }
-            "es" -> when (key) {
-                "Trending" -> "Tendencias"
-                "Popular Movies" -> "Películas populares"
-                "Popular TV Shows" -> "Series de TV populares"
-                "Popular Anime" -> "Anime populares"
-                "Popular on Netflix" -> "Popular en Netflix"
-                "Popular on Amazon" -> "Popular en Amazon"
-                "Popular on Disney+" -> "Popular en Disney+"
-                "Popular on Hulu" -> "Popular en Hulu"
-                "Popular on Apple TV+" -> "Popular en Apple TV+"
-                "Popular on HBO" -> "Popular en HBO"
-                else -> key
-            }
-            "de" -> when (key) {
-                "Trending" -> "Trends"
-                "Popular Movies" -> "Beliebte Filme"
-                "Popular TV Shows" -> "Beliebte Serien"
-                "Popular Anime" -> "Beliebte Anime"
-                "Popular on Netflix" -> "Beliebt bei Netflix"
-                "Popular on Amazon" -> "Beliebt bei Amazon"
-                "Popular on Disney+" -> "Beliebt bei Disney+"
-                "Popular on Hulu" -> "Beliebt bei Hulu"
-                "Popular on Apple TV+" -> "Beliebt bei Apple TV+"
-                "Popular on HBO" -> "Beliebt bei HBO"
-                else -> key
-            }
-            "fr" -> when (key) {
-                "Trending" -> "Tendances"
-                "Popular Movies" -> "Films populaires"
-                "Popular TV Shows" -> "Séries populaires"
-                "Popular Anime" -> "Animes populaires"
-                "Popular on Netflix" -> "Populaire sur Netflix"
-                "Popular on Amazon" -> "Populaire sur Amazon"
-                "Popular on Disney+" -> "Populaire sur Disney+"
-                "Popular on Hulu" -> "Populaire sur Hulu"
-                "Popular on Apple TV+" -> "Populaire sur Apple TV+"
-                "Popular on HBO" -> "Populaire sur HBO"
+            "hu" -> when (key) {
+                "Trending" -> "Felkapott"
+                "Popular Movies" -> "Népszerű filmek"
+                "Popular TV Shows" -> "Népszerű sorozatok"
+                "Popular Anime" -> "Népszerű animék"
+                "Popular on Netflix" -> "Népszerű a Netflixen"
+                "Popular on Amazon" -> "Népszerű az Amazonon"
+                "Popular on Disney+" -> "Népszerű a Disney+-on"
+                "Popular on Hulu" -> "Népszerű a Hulun"
+                "Popular on Apple TV+" -> "Népszerű az Apple TV+-on"
+                "Popular on HBO" -> "Népszerű az HBO-n"
                 else -> key
             }
             else -> key

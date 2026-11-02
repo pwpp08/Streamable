@@ -92,7 +92,7 @@ class GlideCustomModule : AppGlideModule() {
         registry.replace(
             GlideUrl::class.java,
             InputStream::class.java,
-            AnimeOnlineNinjaCronetUrlLoader.Factory(context, okHttpClient),
+            com.bumptech.glide.integration.okhttp3.OkHttpUrlLoader.Factory(okHttpClient),
         )
         registry.append(
             InputStream::class.java,

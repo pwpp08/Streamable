@@ -24,12 +24,8 @@ import com.streamflixreborn.streamflix.BuildConfig
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.ActivityMainMobileBinding
 import com.streamflixreborn.streamflix.fragments.player.PlayerMobileFragment
-import com.streamflixreborn.streamflix.providers.Cine24hProvider
-import com.streamflixreborn.streamflix.providers.FilmyOnlineCcProvider
-import com.streamflixreborn.streamflix.providers.GuardaSerieProvider
 import com.streamflixreborn.streamflix.providers.IptvProvider
 import com.streamflixreborn.streamflix.providers.Provider
-import com.streamflixreborn.streamflix.providers.ZaluknijProvider
 import com.streamflixreborn.streamflix.ui.UpdateAppMobileDialog
 import com.streamflixreborn.streamflix.utils.AppLanguageManager
 import com.streamflixreborn.streamflix.utils.ProfileManager
@@ -37,9 +33,6 @@ import com.streamflixreborn.streamflix.utils.ProviderChangeNotifier
 import com.streamflixreborn.streamflix.utils.ThemeManager
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
-import com.streamflixreborn.streamflix.providers.AnimeOnlineNinjaProvider
-import com.streamflixreborn.streamflix.providers.euroStreamingProvider
-import com.streamflixreborn.streamflix.providers.SoloLatinoProvider
 import kotlinx.coroutines.launch
 
 class MainMobileActivity : FragmentActivity() {
@@ -58,14 +51,6 @@ class MainMobileActivity : FragmentActivity() {
         setTheme(ThemeManager.mobileThemeRes(UserPreferences.selectedTheme))
 
         super.onCreate(savedInstanceState)
-
-        AnimeOnlineNinjaProvider.init(this)
-        Cine24hProvider.init(this)
-        FilmyOnlineCcProvider.init(this)
-        GuardaSerieProvider.init(this)
-        ZaluknijProvider.init(this)
-        euroStreamingProvider.init(this)
-        SoloLatinoProvider.init(this)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val palette = ThemeManager.palette(UserPreferences.selectedTheme)

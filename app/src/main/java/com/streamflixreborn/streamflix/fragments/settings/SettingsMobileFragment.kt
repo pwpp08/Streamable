@@ -30,13 +30,9 @@ import com.streamflixreborn.streamflix.activities.main.MainMobileActivity
 import com.streamflixreborn.streamflix.backup.BackupRestoreManager
 import com.streamflixreborn.streamflix.backup.ProviderBackupContext
 import com.streamflixreborn.streamflix.database.AppDatabase
-import com.streamflixreborn.streamflix.providers.AnimeOnlineNinjaProvider
-import com.streamflixreborn.streamflix.providers.FrenchStreamProvider
 import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.providers.ProviderConfigUrl
 import com.streamflixreborn.streamflix.providers.ProviderPortalUrl
-import com.streamflixreborn.streamflix.providers.MStreamProvider
-import com.streamflixreborn.streamflix.providers.SerienStreamProvider
 import com.streamflixreborn.streamflix.providers.StreamingCommunityProvider
 import com.streamflixreborn.streamflix.providers.TmdbProvider
 import com.streamflixreborn.streamflix.utils.AppLanguageManager
@@ -50,7 +46,6 @@ import com.streamflixreborn.streamflix.utils.ThemeManager
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.DomainRedirectChecker
 import com.streamflixreborn.streamflix.utils.VavooDomainSelector
-import com.streamflixreborn.streamflix.providers.VavooConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -277,9 +272,8 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
                 val effectiveDomain = typed.ifBlank { DEFAULT_SERIENSTREAM_DOMAIN_VALUE }
                 UserPreferences.serienstreamDomain = effectiveDomain
                 preference.summary = effectiveDomain
-                if (UserPreferences.currentProvider is SerienStreamProvider) {
+                if (false) {
                     viewLifecycleOwner.lifecycleScope.launch {
-                        SerienStreamProvider.reloadService()
                         requireActivity().apply {
                             finish()
                             startActivity(Intent(this, this::class.java))
@@ -297,9 +291,8 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
                 text = null
             }
             Toast.makeText(requireContext(), getString(R.string.settings_serienstream_domain_reset_done), Toast.LENGTH_SHORT).show()
-            if (UserPreferences.currentProvider is SerienStreamProvider) {
+            if (false) {
                 viewLifecycleOwner.lifecycleScope.launch {
-                    SerienStreamProvider.reloadService()
                     requireActivity().apply {
                         finish()
                         startActivity(Intent(this, this::class.java))
@@ -681,7 +674,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<SwitchPreference>("pc_frenchstream_new_interface")?.apply {
-            isVisible = UserPreferences.currentProvider is FrenchStreamProvider
+            isVisible = false
             if (isVisible) {
                 val useNewInterface = UserPreferences
                     .getProviderCache(
@@ -888,7 +881,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
         providerName: String,
     ): String =
         if (isVavooProviderName(providerName)) {
-            VavooConfig.SETTINGS_KEY
+            "Vavoo"
         } else {
             providerName
         }
@@ -900,7 +893,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
         if (providerName == "Filmo") return "https://filmo.to/"
 
         if (isVavooProviderName(providerName)) {
-            return VavooConfig.DEFAULT_BASE_URL
+            return ""
         }
 
         return when (providerName) {
@@ -1044,11 +1037,11 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
 
     private fun updateProviderVisibilityState() {
         val isStreamingCommunity = UserPreferences.currentProvider is StreamingCommunityProvider
-        val isSerienStream = UserPreferences.currentProvider is SerienStreamProvider
-        val isMoflix = UserPreferences.currentProvider is MStreamProvider
+        val isSerienStream = false
+        val isMoflix = false
         val isCuevana = UserPreferences.currentProvider?.name == "Cuevana 3"
         val isPoseidon = UserPreferences.currentProvider?.name == "Poseidonhd2"
-        val isAnimeOnlineNinja = UserPreferences.currentProvider is AnimeOnlineNinjaProvider
+        val isAnimeOnlineNinja = false
         val hasGenericDomain =
             configurableDomainDefault(UserPreferences.currentProvider?.name) != null
         val hasConfigProvider = UserPreferences.currentProvider is ProviderConfigUrl
@@ -1287,7 +1280,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
             }
 
             val current =
-                VavooConfig.baseUrl()
+                ""
 
             viewLifecycleOwner
                 .lifecycleScope
@@ -1306,7 +1299,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
 
                             UserPreferences
                                 .setProviderCustomDomain(
-                                    VavooConfig.SETTINGS_KEY,
+                                    "Vavoo",
                                     newDomain,
                                 )
 
@@ -1397,7 +1390,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
     private fun bindAnimeOnlineNinjaPreferredServer() {
         val preference = findPreference<ListPreference>("provider_animeonlineninja_preferred_server") ?: return
         val currentValue = UserPreferences.getProviderCache(
-            AnimeOnlineNinjaProvider,
+            UserPreferences.currentProvider!!,
             UserPreferences.PROVIDER_PREFERRED_SERVER
         )
         preference.value = currentValue
@@ -1407,7 +1400,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
         preference.setOnPreferenceChangeListener { pref, newValue ->
             val value = (newValue as String).trim()
             UserPreferences.setProviderCache(
-                AnimeOnlineNinjaProvider,
+                UserPreferences.currentProvider!!,
                 UserPreferences.PROVIDER_PREFERRED_SERVER,
                 value
             )

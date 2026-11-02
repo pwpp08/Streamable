@@ -14,9 +14,7 @@ import com.bumptech.glide.load.HttpException
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
-import com.streamflixreborn.streamflix.providers.AniWorldProvider
 import com.streamflixreborn.streamflix.providers.Provider
-import com.streamflixreborn.streamflix.providers.SerienStreamProvider
 import java.io.FileNotFoundException
 
 object ArtworkRepair {
@@ -138,10 +136,6 @@ object ArtworkRepair {
     }
 
     private suspend fun prepareProvider(context: Context, provider: Provider) {
-        when (provider) {
-            SerienStreamProvider -> SerienStreamProvider.initialize(context)
-            AniWorldProvider -> AniWorldProvider.initialize(context)
-        }
     }
 
     private fun hasUsableArtwork(poster: String?, banner: String?): Boolean {
