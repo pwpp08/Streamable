@@ -318,6 +318,81 @@ object UserPreferences {
             Key.AUTOPLAY_BUFFER.setLong(value)
         }
 
+    // --- Languages & playback (overhaul) ---
+
+    /** ISO-639-1 codes in priority order; audio and subtitle tracks outside this list are hidden. */
+    var spokenLanguages: List<String>
+        get() = (Key.SPOKEN_LANGUAGES.getString() ?: "en,hu")
+            .split(',').map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+            .ifEmpty { listOf("en") }
+        set(value) = Key.SPOKEN_LANGUAGES.setString(value.joinToString(","))
+
+    enum class SubtitleMode { OFF, AUTO, ALWAYS }
+
+    var subtitleMode: SubtitleMode
+        get() = runCatching { SubtitleMode.valueOf(Key.SUBTITLE_MODE.getString() ?: "") }.getOrDefault(SubtitleMode.AUTO)
+        set(value) = Key.SUBTITLE_MODE.setString(value.name)
+
+    var showAllTrackLanguages: Boolean
+        get() = Key.SHOW_ALL_TRACK_LANGUAGES.getBoolean() ?: false
+        set(value) = Key.SHOW_ALL_TRACK_LANGUAGES.setBoolean(value)
+
+    enum class QualityMode { MAX, AUTO }
+
+    var qualityMode: QualityMode
+        get() = runCatching { QualityMode.valueOf(Key.QUALITY_MODE.getString() ?: "") }.getOrDefault(QualityMode.MAX)
+        set(value) = Key.QUALITY_MODE.setString(value.name)
+
+    /** 0 = limited by the display only. */
+    var maxResolution: Int
+        get() = Key.MAX_RESOLUTION.getString()?.toIntOrNull() ?: 0
+        set(value) = Key.MAX_RESOLUTION.setString(value.toString())
+
+    var dataSaverOnMobile: Boolean
+        get() = Key.DATA_SAVER_ON_MOBILE.getBoolean() ?: false
+        set(value) = Key.DATA_SAVER_ON_MOBILE.setBoolean(value)
+
+    var upNextSeconds: Int
+        get() = Key.UP_NEXT_SECONDS.getString()?.toIntOrNull() ?: 10
+        set(value) = Key.UP_NEXT_SECONDS.setString(value.toString())
+
+    enum class SkipSegmentsMode { OFF, BUTTON, AUTO }
+
+    var skipSegmentsMode: SkipSegmentsMode
+        get() = runCatching { SkipSegmentsMode.valueOf(Key.SKIP_SEGMENTS_MODE.getString() ?: "") }.getOrDefault(SkipSegmentsMode.BUTTON)
+        set(value) = Key.SKIP_SEGMENTS_MODE.setString(value.name)
+
+    enum class BufferProfile { AUTO, LOW_MEMORY, LARGE }
+
+    var bufferProfile: BufferProfile
+        get() = runCatching { BufferProfile.valueOf(Key.BUFFER_PROFILE.getString() ?: "") }
+            .getOrDefault(if (forceExtraBuffering) BufferProfile.LARGE else BufferProfile.AUTO)
+        set(value) = Key.BUFFER_PROFILE.setString(value.name)
+
+    var matchFrameRate: Boolean
+        get() = Key.MATCH_FRAME_RATE.getBoolean() ?: false
+        set(value) = Key.MATCH_FRAME_RATE.setBoolean(value)
+
+    var tunneledPlayback: Boolean
+        get() = Key.TUNNELED_PLAYBACK.getBoolean() ?: false
+        set(value) = Key.TUNNELED_PLAYBACK.setBoolean(value)
+
+    enum class SubtitlePreset { CLASSIC, YELLOW, OUTLINE, LARGE }
+
+    var subtitlePreset: SubtitlePreset
+        get() = runCatching { SubtitlePreset.valueOf(Key.SUBTITLE_PRESET.getString() ?: "") }.getOrDefault(SubtitlePreset.CLASSIC)
+        set(value) = Key.SUBTITLE_PRESET.setString(value.name)
+
+    /** JSON owned by the home-rows feature (order + hidden flags). */
+    var homeRowsConfig: String?
+        get() = Key.HOME_ROWS_CONFIG.getString()
+        set(value) = Key.HOME_ROWS_CONFIG.setString(value)
+
+    /** JSON array of recent search queries, newest first. */
+    var searchHistory: String?
+        get() = Key.SEARCH_HISTORY.getString()
+        set(value) = Key.SEARCH_HISTORY.setString(value)
+
     var serverAutoSubtitlesDisabled: Boolean
         get() = Key.SERVER_AUTO_SUBTITLES_DISABLED.getBoolean() ?: true
         set(value) {
@@ -767,6 +842,20 @@ object UserPreferences {
         SELECTED_THEME,
         UPDATE_CHECK_ENABLED,
         PROVIDER_LANGUAGE,
+        SPOKEN_LANGUAGES,
+        SUBTITLE_MODE,
+        SHOW_ALL_TRACK_LANGUAGES,
+        QUALITY_MODE,
+        MAX_RESOLUTION,
+        DATA_SAVER_ON_MOBILE,
+        UP_NEXT_SECONDS,
+        SKIP_SEGMENTS_MODE,
+        BUFFER_PROFILE,
+        MATCH_FRAME_RATE,
+        TUNNELED_PLAYBACK,
+        SUBTITLE_PRESET,
+        HOME_ROWS_CONFIG,
+        SEARCH_HISTORY,
         FAVORITE_PROVIDERS;
 
         private fun getPrefs(): SharedPreferences {
