@@ -1,9 +1,8 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.JsUnpacker
-import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.GET
@@ -19,9 +18,7 @@ class FastreamExtractor : Extractor() {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     }
 
-    private val client = OkHttpClient.Builder()
-        .dns(DnsResolver.doh)
-        .build()
+    private val client = NetworkClient.noCookies
 
     private val service = Retrofit.Builder()
         .baseUrl(mainUrl)

@@ -1,6 +1,8 @@
 package com.streamflixreborn.streamflix.utils
 
 import android.util.Log
+import com.streamflixreborn.streamflix.BuildConfig
+import okhttp3.Dispatcher
 import okhttp3.Dns
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.util.concurrent.TimeUnit
@@ -28,12 +30,16 @@ object DnsResolver : Dns {
     private val sslContext = SSLContext.getInstance("TLS").apply { init(null, trustAllCerts, SecureRandom()) }
     private val trustManager = trustAllCerts[0] as X509TrustManager
 
-    private var client: OkHttpClient = OkHttpClient.Builder()
+    // Shares NetworkClient's connection pool, but keeps its own Dispatcher: DnsOverHttps enqueues
+    // the A/AAAA queries and blocks on them from inside other calls' connect phase, so sharing the
+    // app dispatcher could deadlock once it is saturated.
+    private var client: OkHttpClient = NetworkClient.bare.newBuilder()
+        .dispatcher(Dispatcher())
         .readTimeout(30, TimeUnit.SECONDS)
         .connectTimeout(30, TimeUnit.SECONDS)
         .sslSocketFactory(sslContext.socketFactory, trustManager)
         .hostnameVerifier { _, _ -> true }
-        .addInterceptor(logging)
+        .apply { if (BuildConfig.DEBUG) addInterceptor(logging) }
         .build()
 
     private var _url: String = UserPreferences.dohProviderUrl

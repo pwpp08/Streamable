@@ -1,9 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Base64
 import androidx.media3.common.MimeTypes
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -111,7 +111,7 @@ class VidrockExtractor : Extractor() {
     private interface Service {
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder().build()
+                val client = NetworkClient.noCookies
                 val retrofit = Retrofit.Builder()
                     .baseUrl(baseUrl)
                     .addConverterFactory(GsonConverterFactory.create())

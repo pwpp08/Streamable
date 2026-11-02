@@ -3,7 +3,6 @@ package com.streamflixreborn.streamflix.utils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
@@ -47,9 +46,7 @@ object VavooDomainSelector {
     )
 
     private val client =
-        OkHttpClient.Builder()
-            .followRedirects(true)
-            .followSslRedirects(true)
+        NetworkClient.noCookies.newBuilder()
             .connectTimeout(4, TimeUnit.SECONDS)
             .readTimeout(4, TimeUnit.SECONDS)
             .callTimeout(6, TimeUnit.SECONDS)

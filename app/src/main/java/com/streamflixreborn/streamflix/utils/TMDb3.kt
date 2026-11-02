@@ -8,7 +8,6 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.annotations.SerializedName
 import com.streamflixreborn.streamflix.BuildConfig
-import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -940,6 +939,20 @@ object TMDb3 {
             else -> this
         }
 
+    /** Poster size: enough for cards and detail pages, far lighter than w500/original. */
+    val String.w342: String
+        get() = when (this.startsWith("/")) {
+            true -> "https://image.tmdb.org/t/p/w342/$this"
+            else -> this
+        }
+
+    /** Backdrop/banner size: sharp on 720p-1080p screens, much smaller than original. */
+    val String.w780: String
+        get() = when (this.startsWith("/")) {
+            true -> "https://image.tmdb.org/t/p/w780/$this"
+            else -> this
+        }
+
 
     private interface ApiService {
 
@@ -947,7 +960,7 @@ object TMDb3 {
             fun build(): ApiService {
                 val apiKey = UserPreferences.tmdbApiKey.ifEmpty { BuildConfig.TMDB_API_KEY }
 
-                val client = OkHttpClient.Builder().addInterceptor { chain ->
+                val client = NetworkClient.noCookies.newBuilder().addInterceptor { chain ->
                     val original = chain.request()
 
                     val requestBuilder = original.newBuilder()

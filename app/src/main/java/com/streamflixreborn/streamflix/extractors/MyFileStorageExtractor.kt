@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.StringConverterFactory
 import okhttp3.ResponseBody
@@ -72,6 +73,7 @@ class MyFileStorageExtractor : Extractor() {
         companion object {
             fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl(baseUrl)
                     .addConverterFactory(StringConverterFactory.create())
                     .build()

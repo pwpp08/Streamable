@@ -24,7 +24,8 @@ import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.TMDb3
-import com.streamflixreborn.streamflix.utils.TMDb3.original
+import com.streamflixreborn.streamflix.utils.TMDb3.w342
+import com.streamflixreborn.streamflix.utils.TMDb3.w780
 import com.streamflixreborn.streamflix.utils.TMDb3.w500
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.safeSubList
@@ -59,8 +60,8 @@ class TmdbProvider(override val language: String) : Provider {
                     overview = multi.overview,
                     released = multi.releaseDate,
                     rating = multi.voteAverage.toDouble(),
-                    poster = multi.posterPath?.w500,
-                    banner = multi.backdropPath?.original,
+                    poster = multi.posterPath?.w342,
+                    banner = multi.backdropPath?.w780,
                 )
 
                 is TMDb3.Tv -> TvShow(
@@ -69,8 +70,8 @@ class TmdbProvider(override val language: String) : Provider {
                     overview = multi.overview,
                     released = multi.firstAirDate,
                     rating = multi.voteAverage.toDouble(),
-                    poster = multi.posterPath?.w500,
-                    banner = multi.backdropPath?.original,
+                    poster = multi.posterPath?.w342,
+                    banner = multi.backdropPath?.w780,
                 )
 
                 else -> null
@@ -409,8 +410,8 @@ class TmdbProvider(override val language: String) : Provider {
                     overview = multi.overview,
                     released = multi.releaseDate,
                     rating = multi.voteAverage.toDouble(),
-                    poster = multi.posterPath?.w500,
-                    banner = multi.backdropPath?.original,
+                    poster = multi.posterPath?.w342,
+                    banner = multi.backdropPath?.w780,
                 )
 
                 is TMDb3.Tv -> TvShow(
@@ -419,8 +420,8 @@ class TmdbProvider(override val language: String) : Provider {
                     overview = multi.overview,
                     released = multi.firstAirDate,
                     rating = multi.voteAverage.toDouble(),
-                    poster = multi.posterPath?.w500,
-                    banner = multi.backdropPath?.original,
+                    poster = multi.posterPath?.w342,
+                    banner = multi.backdropPath?.w780,
                 )
 
                 else -> null
@@ -438,8 +439,8 @@ class TmdbProvider(override val language: String) : Provider {
                 overview = movie.overview,
                 released = movie.releaseDate,
                 rating = movie.voteAverage.toDouble(),
-                poster = movie.posterPath?.w500,
-                banner = movie.backdropPath?.original,
+                poster = movie.posterPath?.w342,
+                banner = movie.backdropPath?.w780,
             )
         }
 
@@ -454,8 +455,8 @@ class TmdbProvider(override val language: String) : Provider {
                 overview = tv.overview,
                 released = tv.firstAirDate,
                 rating = tv.voteAverage.toDouble(),
-                poster = tv.posterPath?.w500,
-                banner = tv.backdropPath?.original,
+                poster = tv.posterPath?.w342,
+                banner = tv.backdropPath?.w780,
             )
         }
 
@@ -484,8 +485,8 @@ class TmdbProvider(override val language: String) : Provider {
                     ?.firstOrNull { it.site == TMDb3.Video.VideoSite.YOUTUBE }
                     ?.let { "https://www.youtube.com/watch?v=${it.key}" },
                 rating = movie.voteAverage.toDouble(),
-                poster = movie.posterPath?.original,
-                banner = movie.backdropPath?.original,
+                poster = movie.posterPath?.w342,
+                banner = movie.backdropPath?.w780,
                 imdbId = movie.externalIds?.imdbId,
 
                 genres = movie.genres.map { genre ->
@@ -509,8 +510,8 @@ class TmdbProvider(override val language: String) : Provider {
                             overview = multi.overview,
                             released = multi.releaseDate,
                             rating = multi.voteAverage.toDouble(),
-                            poster = multi.posterPath?.w500,
-                            banner = multi.backdropPath?.original,
+                            poster = multi.posterPath?.w342,
+                            banner = multi.backdropPath?.w780,
                         )
 
                         is TMDb3.Tv -> TvShow(
@@ -519,8 +520,8 @@ class TmdbProvider(override val language: String) : Provider {
                             overview = multi.overview,
                             released = multi.firstAirDate,
                             rating = multi.voteAverage.toDouble(),
-                            poster = multi.posterPath?.w500,
-                            banner = multi.backdropPath?.original,
+                            poster = multi.posterPath?.w342,
+                            banner = multi.backdropPath?.w780,
                         )
 
                         else -> null
@@ -553,8 +554,8 @@ class TmdbProvider(override val language: String) : Provider {
                     ?.firstOrNull { it.site == TMDb3.Video.VideoSite.YOUTUBE }
                     ?.let { "https://www.youtube.com/watch?v=${it.key}" },
                 rating = tv.voteAverage.toDouble(),
-                poster = tv.posterPath?.original,
-                banner = tv.backdropPath?.original,
+                poster = tv.posterPath?.w342,
+                banner = tv.backdropPath?.w780,
                 imdbId = tv.externalIds?.imdbId,
 
                 seasons = tv.seasons.map { season ->
@@ -562,7 +563,7 @@ class TmdbProvider(override val language: String) : Provider {
                         id = "${tv.id}-${season.seasonNumber}",
                         number = season.seasonNumber,
                         title = season.name,
-                        poster = season.posterPath?.w500,
+                        poster = season.posterPath?.w342,
                     )
                 },
                 genres = tv.genres.map { genre ->
@@ -586,8 +587,8 @@ class TmdbProvider(override val language: String) : Provider {
                             overview = multi.overview,
                             released = multi.releaseDate,
                             rating = multi.voteAverage.toDouble(),
-                            poster = multi.posterPath?.w500,
-                            banner = multi.backdropPath?.original,
+                            poster = multi.posterPath?.w342,
+                            banner = multi.backdropPath?.w780,
                         )
 
                         is TMDb3.Tv -> TvShow(
@@ -596,8 +597,8 @@ class TmdbProvider(override val language: String) : Provider {
                             overview = multi.overview,
                             released = multi.firstAirDate,
                             rating = multi.voteAverage.toDouble(),
-                            poster = multi.posterPath?.w500,
-                            banner = multi.backdropPath?.original,
+                            poster = multi.posterPath?.w342,
+                            banner = multi.backdropPath?.w780,
                         )
 
                         else -> null
@@ -659,8 +660,8 @@ class TmdbProvider(override val language: String) : Provider {
                     overview = movie.overview,
                     released = movie.releaseDate,
                     rating = movie.voteAverage.toDouble(),
-                    poster = movie.posterPath?.w500,
-                    banner = movie.backdropPath?.original,
+                    poster = movie.posterPath?.w342,
+                    banner = movie.backdropPath?.w780,
                 )
             }.mix(TMDb3.Discover.tv(
                 page = page,
@@ -673,8 +674,8 @@ class TmdbProvider(override val language: String) : Provider {
                     overview = tv.overview,
                     released = tv.firstAirDate,
                     rating = tv.voteAverage.toDouble(),
-                    poster = tv.posterPath?.w500,
-                    banner = tv.backdropPath?.original,
+                    poster = tv.posterPath?.w342,
+                    banner = tv.backdropPath?.w780,
                 )
             })
         )
@@ -708,8 +709,8 @@ class TmdbProvider(override val language: String) : Provider {
                                 overview = multi.overview,
                                 released = multi.releaseDate,
                                 rating = multi.voteAverage.toDouble(),
-                                poster = multi.posterPath?.w500,
-                                banner = multi.backdropPath?.original,
+                                poster = multi.posterPath?.w342,
+                                banner = multi.backdropPath?.w780,
                             )
 
                             is TMDb3.Tv -> TvShow(
@@ -718,8 +719,8 @@ class TmdbProvider(override val language: String) : Provider {
                                 overview = multi.overview,
                                 released = multi.firstAirDate,
                                 rating = multi.voteAverage.toDouble(),
-                                poster = multi.posterPath?.w500,
-                                banner = multi.backdropPath?.original,
+                                poster = multi.posterPath?.w342,
+                                banner = multi.backdropPath?.w780,
                             )
 
                         else -> null

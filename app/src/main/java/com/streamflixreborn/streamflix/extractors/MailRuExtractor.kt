@@ -1,9 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.models.Video
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import okhttp3.OkHttpClient
 import okhttp3.Request
 
 class MailRuExtractor : Extractor() {
@@ -18,7 +18,7 @@ class MailRuExtractor : Extractor() {
             
             val metaUrl = "$mainUrl/+/video/meta/$videoId?xemail=&ajax_call=1&func_name=&mna=&mnb=&ext=1&_=$timestamp"
             
-            val client = OkHttpClient.Builder().build()
+            val client = NetworkClient.noCookies
             
             val request = Request.Builder()
                 .url(metaUrl)

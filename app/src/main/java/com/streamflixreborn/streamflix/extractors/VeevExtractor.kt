@@ -1,6 +1,7 @@
 package com.streamflixreborn.streamflix.extractors
 
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import androidx.media3.common.MimeTypes
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
@@ -177,6 +178,7 @@ open class VeevExtractor : Extractor() {
         companion object {
             fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl(baseUrl)
                     .addConverterFactory(JsoupConverterFactory.create())
                     .build()

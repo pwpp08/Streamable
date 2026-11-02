@@ -1,9 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.net.Uri
 import androidx.media3.common.MimeTypes
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import org.json.JSONObject
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
@@ -98,7 +98,7 @@ class VidemExtractor : Extractor() {
     private interface Service {
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("User-Agent", USER_AGENT)

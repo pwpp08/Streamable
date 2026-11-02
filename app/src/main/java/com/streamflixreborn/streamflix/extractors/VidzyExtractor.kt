@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.JsUnpacker
@@ -7,9 +8,7 @@ import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Url
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.UserPreferences
-import okhttp3.OkHttpClient
 
 class VidzyExtractor : Extractor() {
 
@@ -108,8 +107,7 @@ class VidzyExtractor : Extractor() {
 
     private interface Service {
         companion object {
-            val client = OkHttpClient.Builder()
-                .dns(DnsResolver.doh)
+            val client = NetworkClient.noCookies.newBuilder()
                 .addInterceptor { chain ->
                     val request = chain.request().newBuilder()
                         .header("User-Agent", USER_AGENT)

@@ -1,11 +1,10 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Base64
 import android.util.Log
 import android.net.Uri
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.*
@@ -21,11 +20,7 @@ class VidxGoExtractor : Extractor() {
 
     @OptIn(DelicateCoroutinesApi::class)
     override suspend fun extract(link: String): Video {
-        val client = OkHttpClient.Builder()
-            .dns(DnsResolver.doh)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
+        val client = NetworkClient.noCookies
 
         val uri = Uri.parse(link)
         val referer = "${uri.scheme}://${uri.host}/"

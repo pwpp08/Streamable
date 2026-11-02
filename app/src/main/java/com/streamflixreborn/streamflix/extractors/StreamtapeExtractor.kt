@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import okhttp3.ResponseBody
@@ -64,6 +65,7 @@ class StreamtapeExtractor : Extractor() {
         companion object {
             fun build(baseUrl: String): StreamtapeExtractorService {
                 val retrofit = Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl(baseUrl)
                     .addConverterFactory(JsoupConverterFactory.create())
                     .build()

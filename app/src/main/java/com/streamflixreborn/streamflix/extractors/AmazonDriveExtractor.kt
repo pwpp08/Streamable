@@ -1,10 +1,10 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -62,7 +62,7 @@ class AmazonDriveExtractor : Extractor() {
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("Accept", "application/json, text/plain, */*")

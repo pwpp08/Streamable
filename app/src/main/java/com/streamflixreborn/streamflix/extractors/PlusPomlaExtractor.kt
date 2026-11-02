@@ -1,8 +1,8 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
@@ -50,12 +50,7 @@ class PlusPomlaExtractor : Extractor() {
 
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .followRedirects(true)
-                    .followSslRedirects(true)
-                    .build()
+                val client = NetworkClient.noCookies
 
                 val retrofit = Retrofit.Builder()
                     .baseUrl(baseUrl)

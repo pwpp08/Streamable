@@ -40,6 +40,7 @@ object GitGay {
         companion object {
             fun build(): ApiService {
                 val retrofit = Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl("https://git.gay/api/v1/")
                     .addConverterFactory(GsonConverterFactory.create())
                     .build()

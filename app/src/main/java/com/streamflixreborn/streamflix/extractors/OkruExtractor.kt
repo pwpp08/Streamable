@@ -1,8 +1,8 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import org.json.JSONObject
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
@@ -69,8 +69,7 @@ class OkruExtractor : Extractor() {
     private interface Service {
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
-                    .followRedirects(true)
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")

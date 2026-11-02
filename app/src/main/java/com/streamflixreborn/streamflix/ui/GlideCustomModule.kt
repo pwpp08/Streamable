@@ -1,67 +1,47 @@
 package com.streamflixreborn.streamflix.ui
 
+import android.app.ActivityManager
 import android.content.Context
 import android.graphics.drawable.PictureDrawable
-import android.webkit.CookieManager
 import com.bumptech.glide.Glide
+import com.bumptech.glide.GlideBuilder
 import com.bumptech.glide.annotation.GlideModule
+import com.bumptech.glide.load.DecodeFormat
+import com.bumptech.glide.load.engine.cache.MemorySizeCalculator
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.module.AppGlideModule
+import com.bumptech.glide.request.RequestOptions
 import com.caverock.androidsvg.SVG
 import com.streamflixreborn.streamflix.utils.ArtworkRequestHeaders
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.NetworkClient
-import okhttp3.*
-import okhttp3.OkHttpClient.Builder
-import okhttp3.logging.HttpLoggingInterceptor
-import java.io.File
+import okhttp3.OkHttpClient
 import java.io.InputStream
-import java.security.SecureRandom
-import java.util.concurrent.TimeUnit
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
 
 @GlideModule
 class GlideCustomModule : AppGlideModule() {
 
-    private fun getOkHttpClient(context: Context): OkHttpClient {
-        val appCache = Cache(File(context.cacheDir, "glide-okhttp-cache"), 10 * 1024 * 1024)
-
-        val logging = HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC)
-
-        val trustAllCerts = arrayOf<TrustManager>(
-            object : X509TrustManager {
-                override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
-                override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
-                override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
-            }
-        )
-        val sslContext = SSLContext.getInstance("TLS").apply { init(null, trustAllCerts, SecureRandom()) }
-        val trustManager = trustAllCerts[0] as X509TrustManager
-
-        return Builder()
-            .cache(appCache)
-            .cookieJar(imageCookieJar)
+    /**
+     * Derived from [NetworkClient.trustAll] (artwork hosts often have broken certificates), so it
+     * shares the app's connection pool, dispatcher, DoH and cookie jar. No OkHttp cache: Glide keeps
+     * its own disk cache, and images must not evict API JSON from the shared HTTP cache.
+     */
+    private fun getOkHttpClient(): OkHttpClient {
+        return NetworkClient.trustAll.newBuilder()
+            .cache(null)
             .addInterceptor { chain ->
                 val original = chain.request()
                 val requestBuilder = original.newBuilder()
-
-                if (original.header("User-Agent") == null) {
-                    requestBuilder.header("User-Agent", NetworkClient.USER_AGENT)
-                }
                 if (original.header("Accept") == null) {
                     requestBuilder.header("Accept", "image/avif,image/webp,image/apng,image/*,*/*;q=0.8")
                 }
-                if (original.header("Accept-Language") == null) {
-                    requestBuilder.header(
-                        "Accept-Language", "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7"
-                    )
+                // Image fetch metadata, so NetworkClient doesn't add document-navigation headers.
+                if (original.header("Sec-Fetch-Dest") == null) {
+                    requestBuilder.header("Sec-Fetch-Dest", "image")
+                    requestBuilder.header("Sec-Fetch-Mode", "no-cors")
+                    requestBuilder.header("Sec-Fetch-Site", "cross-site")
                 }
                 chain.proceed(requestBuilder.build())
             }
-            .readTimeout(30, TimeUnit.SECONDS)
-            .connectTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val request = chain.request()
                 val headers = ArtworkRequestHeaders.headersFor(request.url)
@@ -78,17 +58,31 @@ class GlideCustomModule : AppGlideModule() {
                 }
                 chain.proceed(fixedRequest)
             }
-            .addInterceptor(logging)
-            .sslSocketFactory(sslContext.socketFactory, trustManager)
-            .hostnameVerifier { _, _ -> true }
-            .dns(DnsResolver.doh)
             .build()
+    }
+
+    override fun applyOptions(context: Context, builder: GlideBuilder) {
+        if (isLowMemoryDevice(context)) {
+            // Posters/backdrops have no alpha; RGB_565 halves bitmap memory. Glide still uses
+            // ARGB_8888 for images that do have transparency.
+            builder.setDefaultRequestOptions(RequestOptions().format(DecodeFormat.PREFER_RGB_565))
+            builder.setMemorySizeCalculator(
+                MemorySizeCalculator.Builder(context)
+                    .setMemoryCacheScreens(1f)
+                    .setBitmapPoolScreens(1f)
+            )
+        }
+    }
+
+    private fun isLowMemoryDevice(context: Context): Boolean {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return false
+        return am.isLowRamDevice || am.memoryClass <= 192
     }
 
     override fun registerComponents(
         context: Context, glide: Glide, registry: com.bumptech.glide.Registry
     ) {
-        val okHttpClient = getOkHttpClient(context)
+        val okHttpClient = getOkHttpClient()
         registry.replace(
             GlideUrl::class.java,
             InputStream::class.java,
@@ -104,16 +98,6 @@ class GlideCustomModule : AppGlideModule() {
             PictureDrawable::class.java,
             SvgDrawableTranscoder(),
         )
-    }
-
-    private val imageCookieJar = object : CookieJar {
-        override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-            NetworkClient.cookieJar.saveFromResponse(url, cookies)
-        }
-
-        override fun loadForRequest(url: HttpUrl): List<Cookie> {
-            return NetworkClient.cookieJar.loadForRequest(url)
-        }
     }
 
 }

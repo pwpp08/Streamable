@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
@@ -7,8 +8,6 @@ import androidx.media3.common.MimeTypes
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URI
 import java.net.ServerSocket
@@ -29,11 +28,7 @@ class NekostreamExtractor : Extractor() {
         "https://vidwish.live",
     )
 
-    private val client = OkHttpClient.Builder()
-        .dns(DnsResolver.doh)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .build()
+    private val client = NetworkClient.noCookies
 
     private var relayServerSocket: ServerSocket? = null
     private var relayServerThread: Thread? = null

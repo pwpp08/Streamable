@@ -1,10 +1,10 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import androidx.media3.common.MimeTypes
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.JsUnpacker
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -28,7 +28,7 @@ open class LoadXExtractor: Extractor() {
     override suspend fun extract(link: String): Video {
         val videoId = link.substringAfterLast("/")
 
-        val client = OkHttpClient()
+        val client = NetworkClient.noCookies
 
         val getRequest = Request.Builder()
             .url(link)
@@ -109,6 +109,7 @@ open class LoadXExtractor: Extractor() {
 
             fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl(baseUrl)
                     .addConverterFactory(JsoupConverterFactory.create())
                     .build()

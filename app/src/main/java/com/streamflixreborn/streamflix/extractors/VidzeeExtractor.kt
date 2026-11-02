@@ -1,11 +1,11 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
 import androidx.media3.common.MimeTypes
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.security.MessageDigest
@@ -27,7 +27,7 @@ class VidzeeExtractor : Extractor() {
     private val coreApi = "https://core.vidzee.wtf"
     private val staticPass = "4f2a9c7d1e8b3a6f0d5c2e9a7b1f4d8c"
 
-    private val client = OkHttpClient.Builder().build()
+    private val client = NetworkClient.noCookies
 
     data class ServerConfig(
         val name: String,

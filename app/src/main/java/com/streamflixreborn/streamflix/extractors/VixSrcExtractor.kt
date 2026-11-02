@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Base64
 import android.util.Log
 import androidx.media3.common.MimeTypes
@@ -7,9 +8,7 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -24,6 +23,12 @@ class VixSrcExtractor : Extractor() {
 
     override val name = "VixSrc"
     override val mainUrl = "https://vixsrc.to"
+
+    private val playlistClient by lazy {
+        NetworkClient.noCookies.newBuilder()
+            .readTimeout(15, TimeUnit.SECONDS)
+            .build()
+    }
 
     fun server(videoType: Video.Type): Video.Server {
         return Video.Server(
@@ -119,15 +124,11 @@ class VixSrcExtractor : Extractor() {
         var videoSource = finalUrl
 
         try {
-            val client = OkHttpClient.Builder()
-                .dns(DnsResolver.doh)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .build()
             val headersBuilder = okhttp3.Headers.Builder()
             finalHeaders.forEach { (k, v) -> headersBuilder.add(k, v) }
             val request = Request.Builder().url(finalUrl).headers(headersBuilder.build()).build()
             
-            client.newCall(request).execute().use { response ->
+            playlistClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful && response.body != null) {
                     var playlistContent = response.body!!.string()
                     val langCode = providerLang
@@ -215,10 +216,7 @@ class VixSrcExtractor : Extractor() {
     private interface VixSrcExtractorService {
         companion object {
             fun build(baseUrl: String): VixSrcExtractorService {
-                val client = OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
-                    .followRedirects(true)
-                    .followSslRedirects(true)
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("Referer", baseUrl)

@@ -1,9 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import java.util.regex.Pattern
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -57,7 +57,7 @@ class VideoSibNetExtractor : Extractor() {
         companion object {
             fun build(baseUrl: String): Service = Retrofit.Builder()
                 .baseUrl(baseUrl)
-                .client(OkHttpClient.Builder().build())
+                .client(NetworkClient.noCookies)
                 .addConverterFactory(JsoupConverterFactory.create())
                 .build()
                 .create(Service::class.java)

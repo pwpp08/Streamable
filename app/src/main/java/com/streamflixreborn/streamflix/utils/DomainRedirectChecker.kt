@@ -2,7 +2,6 @@ package com.streamflixreborn.streamflix.utils
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.util.concurrent.TimeUnit
@@ -15,9 +14,7 @@ object DomainRedirectChecker {
         val changed: Boolean,
     )
 
-    private val client = OkHttpClient.Builder()
-        .followRedirects(true)
-        .followSslRedirects(true)
+    private val client = NetworkClient.noCookies.newBuilder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .callTimeout(25, TimeUnit.SECONDS)

@@ -1,10 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Base64
 import android.util.Log
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
-import okhttp3.OkHttpClient
 import org.json.JSONObject
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -339,9 +338,9 @@ open class FilemoonExtractor : Extractor() {
                     }
                 }
 
-                val client = OkHttpClient.Builder()
+                val client = NetworkClient.default.newBuilder()
                     .cookieJar(cookieJar)
-                    .dns(DnsResolver.doh).build()
+                    .build()
 
                 return Retrofit.Builder()
                     .baseUrl(baseUrl)

@@ -1,10 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.google.gson.JsonParser
 import com.google.gson.annotations.SerializedName
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
-import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -80,9 +79,7 @@ class VidaraExtractor : Extractor() {
 
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
-                    .build()
+                val client = NetworkClient.noCookies
 
                 val retrofit = Retrofit.Builder()
                     .baseUrl(baseUrl)

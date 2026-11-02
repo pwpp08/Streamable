@@ -1,9 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.net.Uri
 import com.streamflixreborn.streamflix.models.Video
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -50,10 +50,7 @@ class VtubeExtractor : Extractor() {
 
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .build()
+                val client = NetworkClient.noCookies
 
                 return Retrofit.Builder()
                     .baseUrl(baseUrl)

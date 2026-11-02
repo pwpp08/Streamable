@@ -1,18 +1,17 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import java.util.Locale
 import java.util.UUID
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
-import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Path
 import retrofit2.http.Query
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.google.gson.JsonParser
 
 class DailymotionExtractor : Extractor() {
@@ -52,8 +51,7 @@ class DailymotionExtractor : Extractor() {
             private const val DEFAULT_USER_AGENT =
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
 
-            val client = OkHttpClient.Builder()
-                .dns(DnsResolver.doh)
+            val client = NetworkClient.noCookies.newBuilder()
                 .addInterceptor { chain ->
                     val request = chain.request().newBuilder()
                         .header("User-Agent", DEFAULT_USER_AGENT)

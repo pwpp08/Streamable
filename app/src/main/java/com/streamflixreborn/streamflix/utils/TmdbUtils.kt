@@ -6,7 +6,8 @@ import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.People
 import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
-import com.streamflixreborn.streamflix.utils.TMDb3.original
+import com.streamflixreborn.streamflix.utils.TMDb3.w342
+import com.streamflixreborn.streamflix.utils.TMDb3.w780
 import com.streamflixreborn.streamflix.utils.TMDb3.w500
 import java.text.Normalizer
 import java.util.concurrent.ConcurrentHashMap
@@ -47,8 +48,8 @@ object TmdbUtils {
                     ?.firstOrNull { it.site == TMDb3.Video.VideoSite.YOUTUBE }
                     ?.let { "https://www.youtube.com/watch?v=${it.key}" },
                 rating = details.voteAverage.toDouble(),
-                poster = details.posterPath?.original,
-                banner = details.backdropPath?.original,
+                poster = details.posterPath?.w342,
+                banner = details.backdropPath?.w780,
                 imdbId = details.externalIds?.imdbId,
                 genres = details.genres.map { Genre(it.id.toString(), it.name) },
                 cast = details.credits?.cast?.map { People(it.id.toString(), it.name, it.profilePath?.w500) } ?: listOf(),
@@ -83,15 +84,15 @@ object TmdbUtils {
                     ?.firstOrNull { it.site == TMDb3.Video.VideoSite.YOUTUBE }
                     ?.let { "https://www.youtube.com/watch?v=${it.key}" },
                 rating = details.voteAverage.toDouble(),
-                poster = details.posterPath?.original,
-                banner = details.backdropPath?.original,
+                poster = details.posterPath?.w342,
+                banner = details.backdropPath?.w780,
                 imdbId = details.externalIds?.imdbId,
                 seasons = details.seasons.map {
                     Season(
                         id = "${details.id}-${it.seasonNumber}",
                         number = it.seasonNumber,
                         title = it.name,
-                        poster = it.posterPath?.w500,
+                        poster = it.posterPath?.w342,
                     )
                 },
                 genres = details.genres.map { Genre(it.id.toString(), it.name) },
@@ -179,8 +180,8 @@ object TmdbUtils {
                     ?.firstOrNull { it.site == TMDb3.Video.VideoSite.YOUTUBE }
                     ?.let { "https://www.youtube.com/watch?v=${it.key}" },
                 rating = details.voteAverage.toDouble(),
-                poster = details.posterPath?.original,
-                banner = details.backdropPath?.original,
+                poster = details.posterPath?.w342,
+                banner = details.backdropPath?.w780,
                 imdbId = details.externalIds?.imdbId,
                 genres = details.genres.map { Genre(it.id.toString(), it.name) },
                 cast = details.credits?.cast?.map { People(it.id.toString(), it.name, it.profilePath?.w500) } ?: listOf(),
@@ -232,15 +233,15 @@ object TmdbUtils {
                     ?.firstOrNull { it.site == TMDb3.Video.VideoSite.YOUTUBE }
                     ?.let { "https://www.youtube.com/watch?v=${it.key}" },
                 rating = details.voteAverage.toDouble(),
-                poster = details.posterPath?.original,
-                banner = details.backdropPath?.original,
+                poster = details.posterPath?.w342,
+                banner = details.backdropPath?.w780,
                 imdbId = details.externalIds?.imdbId,
                 seasons = details.seasons.map {
                     Season(
                         id = "${details.id}-${it.seasonNumber}",
                         number = it.seasonNumber,
                         title = it.name,
-                        poster = it.posterPath?.w500,
+                        poster = it.posterPath?.w342,
                     )
                 },
                 genres = details.genres.map { Genre(it.id.toString(), it.name) },

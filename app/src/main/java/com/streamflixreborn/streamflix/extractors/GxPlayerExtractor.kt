@@ -1,10 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import androidx.media3.common.MimeTypes
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -60,11 +59,7 @@ class GxPlayerExtractor : Extractor() {
 
         companion object {
             fun build(baseUrl: String): GxPlayerService {
-                val client = OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .build()
+                val client = NetworkClient.noCookies
 
                 return Retrofit.Builder()
                     .baseUrl(baseUrl)

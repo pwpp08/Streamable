@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.JsUnpacker
@@ -91,9 +92,7 @@ class MixDropExtractor : Extractor() {
 
         companion object {
             fun build(baseUrl: String): Service {
-                val client = okhttp3.OkHttpClient.Builder()
-                    .followRedirects(true)
-                    .followSslRedirects(true)
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("Referer", baseUrl)

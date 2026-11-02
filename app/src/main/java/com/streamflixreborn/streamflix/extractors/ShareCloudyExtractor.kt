@@ -1,8 +1,7 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
-import okhttp3.OkHttpClient
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
@@ -30,14 +29,13 @@ class ShareCloudyExtractor : Extractor() {
         companion object {
 
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val newRequest = chain.request().newBuilder()
                             .addHeader("Referer", baseUrl)
                             .build()
                         chain.proceed(newRequest)
                     }
-                    .dns(DnsResolver.doh)
                     .build()
 
                 val retrofit = Retrofit.Builder()
