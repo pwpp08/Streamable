@@ -65,8 +65,8 @@ class SubtitleOffsetRenderersFactory(context: Context) : DefaultRenderersFactory
                 )
             }
 
-            override fun resetPosition(positionUs: Long) {
-                super.resetPosition(adjustedPositionUs(positionUs))
+            override fun resetPosition(positionUs: Long, sampleStreamIsResetToKeyFrame: Boolean) {
+                super.resetPosition(adjustedPositionUs(positionUs), sampleStreamIsResetToKeyFrame)
             }
         })
     }
