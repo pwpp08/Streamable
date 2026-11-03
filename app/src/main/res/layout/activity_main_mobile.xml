@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phone shell: content above an Expressive navigation bar (pill indicator, labels). The
+     search / remote / downloads icon buttons float at the end of each top-level screen's top
+     bar. Tablets use layout-sw600dp (navigation rail). -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -20,55 +23,60 @@
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/nav_main_graph_mobile" />
 
-    <ImageButton
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_main_search"
+        style="@style/Widget.StreamFlix.Browse.TopIconButton"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/main_menu_search"
         android:elevation="8dp"
-        android:padding="12dp"
-        android:src="@drawable/ic_search_white"
+        android:outlineProvider="none"
+        android:stateListAnimator="@null"
         android:visibility="gone"
-        app:tint="@android:color/white"
+        app:icon="@drawable/ic_search_white"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
 
-    <ImageButton
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_main_remote"
+        style="@style/Widget.StreamFlix.Browse.TopIconButton"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginTop="4dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:layout_marginTop="8dp"
         android:contentDescription="@string/remote_title"
         android:elevation="8dp"
-        android:padding="12dp"
-        android:src="@drawable/ic_sync_remote"
+        android:outlineProvider="none"
+        android:stateListAnimator="@null"
         android:visibility="gone"
-        app:tint="@android:color/white"
+        app:icon="@drawable/ic_sync_remote"
         app:layout_constraintEnd_toStartOf="@id/btn_main_search"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_goneMarginEnd="8dp" />
+        app:layout_goneMarginEnd="8dp"
+        tools:visibility="visible" />
 
-    <ImageButton
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_main_downloads"
+        style="@style/Widget.StreamFlix.Browse.TopIconButton"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginTop="4dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:layout_marginTop="8dp"
         android:contentDescription="@string/downloads_title"
         android:elevation="8dp"
-        android:padding="12dp"
-        android:src="@drawable/ic_download"
+        android:outlineProvider="none"
+        android:stateListAnimator="@null"
         android:visibility="gone"
+        app:icon="@drawable/ic_download"
         app:layout_constraintEnd_toStartOf="@id/btn_main_remote"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_goneMarginEnd="8dp" />
+        app:layout_goneMarginEnd="8dp"
+        tools:visibility="visible" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bnv_main"
+        style="@style/Widget.StreamFlix.BottomNavigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:labelVisibilityMode="labeled"

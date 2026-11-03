@@ -15,6 +15,9 @@ import androidx.appcompat.view.menu.MenuView.ItemView
 import androidx.appcompat.widget.TooltipCompat
 import androidx.core.view.PointerIconCompat
 import androidx.core.view.ViewCompat
+import androidx.dynamicanimation.animation.DynamicAnimation
+import androidx.dynamicanimation.animation.SpringAnimation
+import androidx.dynamicanimation.animation.SpringForce
 import com.tanasi.navigation.R
 
 class NavigationSlideItemView(
@@ -121,11 +124,28 @@ class NavigationSlideItemView(
     fun getItemLayoutResId(): Int = R.layout.item_navigation
 
 
-    fun open() {
+    private val labelFade by lazy {
+        SpringAnimation(label, DynamicAnimation.ALPHA, 1f).apply {
+            spring.stiffness = 800f
+            spring.dampingRatio = SpringForce.DAMPING_RATIO_NO_BOUNCY
+        }
+    }
+
+    /** Shows the label; [animate] fades it in while the rail widens. */
+    fun open(animate: Boolean = false) {
+        if (label.visibility == View.VISIBLE) return
         label.visibility = View.VISIBLE
+        if (animate) {
+            label.alpha = 0f
+            labelFade.animateToFinalPosition(1f)
+        } else {
+            labelFade.cancel()
+            label.alpha = 1f
+        }
     }
 
     fun close() {
+        labelFade.cancel()
         label.visibility = View.GONE
     }
 

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- TV shell. The content is laid out against the collapsed rail width (the spacer), and the
+     rail springs wider over it on focus, so opening the rail never re-lays-out the content. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -9,20 +11,13 @@
     tools:deviceIds="tv"
     tools:ignore="MergeRootFrame">
 
-    <com.tanasi.navigation.widget.NavigationSlideView
-        android:id="@+id/nav_main"
-        android:layout_width="wrap_content"
+    <View
+        android:id="@+id/v_nav_main_spacer"
+        android:layout_width="@dimen/browse_tv_rail_collapsed"
         android:layout_height="0dp"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:background="?attr/app_background_color"
-        app:headerLayout="@layout/content_header_menu_main_tv"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:menu="@menu/menu_main_activity_tv"
-        app:menuGravity="center"
-        app:menuSpacing="8dp" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_main_fragment"
@@ -33,9 +28,26 @@
         app:defaultNavHost="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/nav_main"
+        app:layout_constraintStart_toEndOf="@id/v_nav_main_spacer"
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/nav_main_graph_tv" />
+
+    <com.tanasi.navigation.widget.NavigationSlideView
+        android:id="@+id/nav_main"
+        android:layout_width="@dimen/browse_tv_rail_collapsed"
+        android:layout_height="0dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="16dp"
+        app:railCollapsedWidth="@dimen/browse_tv_rail_collapsed"
+        app:railExpandedWidth="@dimen/browse_tv_rail_expanded"
+        app:headerLayout="@layout/content_header_menu_main_tv"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:menu="@menu/menu_main_activity_tv"
+        app:menuGravity="center"
+        app:menuSpacing="8dp" />
 
     <!-- Overlay per mostrare la "S" del logo durante il caricamento -->
     <ImageView

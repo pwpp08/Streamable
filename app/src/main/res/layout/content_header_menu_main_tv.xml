@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- TV rail header: provider logo and profile avatar, centred on the collapsed rail's icon
+     column; their names appear when the rail expands. -->
 <com.tanasi.navigation.widget.NavigationSlideHeaderView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="16dp"
-    android:padding="10dp"
-    android:background="?attr/app_background_color">
+    android:layout_marginTop="24dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="4dp">
 
     <ImageView
         android:id="@+id/iv_navigation_header_icon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        android:foreground="@drawable/fg_navigation_header_icon_tv"
+        android:foreground="@drawable/fg_browse_rail_header_focus"
         android:nextFocusDown="@id/fl_header_profile_avatar"
-        android:padding="2dp"
+        android:padding="3dp"
         android:scaleType="fitCenter"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -24,56 +26,53 @@
 
     <TextView
         android:id="@+id/tv_navigation_header_title"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="12dp"
         android:duplicateParentState="true"
+        android:ellipsize="end"
         android:maxLines="1"
-        android:paddingStart="0dp"
-        android:paddingEnd="10dp"
+        android:textAppearance="?attr/textAppearanceTitleSmallEmphasized"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_navigation_header_icon"
         app:layout_constraintTop_toTopOf="@id/iv_navigation_header_icon"
         tools:text="Title" />
 
     <TextView
         android:id="@+id/tv_navigation_header_subtitle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="12dp"
         android:duplicateParentState="true"
+        android:ellipsize="end"
         android:maxLines="1"
-        android:paddingStart="0dp"
-        android:paddingEnd="10dp"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="9sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_navigation_header_icon"
         app:layout_constraintTop_toBottomOf="@id/tv_navigation_header_title"
-        tools:ignore="SmallSp"
         tools:text="Subtitle" />
 
     <View
         android:id="@+id/view_provider_profile_divider"
-        android:layout_width="0dp"
+        android:layout_width="32dp"
         android:layout_height="1dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="16dp"
         android:background="?attr/colorOutlineVariant"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_navigation_header_subtitle" />
+        app:layout_constraintTop_toBottomOf="@id/iv_navigation_header_icon" />
 
     <FrameLayout
         android:id="@+id/fl_header_profile_avatar"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginTop="8dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginTop="16dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
+        android:foreground="@drawable/fg_browse_rail_header_focus"
         android:nextFocusUp="@id/iv_navigation_header_icon"
         android:nextFocusDown="@id/search"
-        android:background="@drawable/bg_profile_header_tv"
-        android:foreground="@drawable/fg_item_provider_image_tv"
         app:layout_constraintStart_toStartOf="@id/iv_navigation_header_icon"
         app:layout_constraintTop_toBottomOf="@id/view_provider_profile_divider">
 
@@ -88,40 +87,39 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
+            android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="9sp"
-            android:textStyle="bold"
             tools:text="D" />
     </FrameLayout>
 
     <TextView
         android:id="@+id/tv_header_profile_name"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="12dp"
+        android:ellipsize="end"
         android:maxLines="1"
-        android:paddingEnd="10dp"
+        android:textAppearance="?attr/textAppearanceTitleSmall"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="13sp"
         android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/fl_header_profile_avatar"
         app:layout_constraintTop_toTopOf="@id/fl_header_profile_avatar"
-        tools:ignore="SmallSp"
         tools:text="Profile Name" />
 
     <TextView
         android:id="@+id/tv_header_profile_subtitle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="12dp"
+        android:ellipsize="end"
         android:maxLines="1"
-        android:paddingEnd="10dp"
         android:text="@string/main_menu_change_profile"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="9sp"
         android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/fl_header_profile_avatar"
-        app:layout_constraintTop_toBottomOf="@id/tv_header_profile_name"
-        tools:ignore="SmallSp" />
+        app:layout_constraintTop_toBottomOf="@id/tv_header_profile_name" />
 
 </com.tanasi.navigation.widget.NavigationSlideHeaderView>

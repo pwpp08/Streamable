@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.navigation.NavigationBarView
 import com.streamflixreborn.streamflix.BuildConfig
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.ActivityMainMobileBinding
@@ -44,6 +45,10 @@ class MainMobileActivity : FragmentActivity() {
     private val binding get() = _binding!!
 
     private val viewModel by viewModels<MainViewModel>()
+
+    /** Bottom bar on phones, navigation rail on tablets (layout-sw600dp); same menu. */
+    private val navigationBar: NavigationBarView
+        get() = binding.bnvMain ?: binding.navRailMain!!
     private var updateAppDialog: UpdateAppMobileDialog? = null
 
     override fun attachBaseContext(newBase: android.content.Context) {
@@ -67,7 +72,8 @@ class MainMobileActivity : FragmentActivity() {
             val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
 
             val isPlayer = currentFragment is PlayerMobileFragment
-            val isBottomNavVisible = binding.bnvMain.visibility == View.VISIBLE
+            // Only the phone bar covers the bottom edge; the tablet rail leaves it to the content.
+            val isBottomNavVisible = binding.bnvMain?.visibility == View.VISIBLE
 
             val bottomPadding = if (isPlayer || isBottomNavVisible) 0 else insets.bottom
             val topPadding = if (isPlayer) 0 else insets.top
@@ -124,7 +130,7 @@ class MainMobileActivity : FragmentActivity() {
 
         viewModel.checkUpdate()
 
-        binding.bnvMain.setupWithNavController(navController)
+        navigationBar.setupWithNavController(navController)
         binding.btnMainRemote.setOnClickListener {
             if (navController.currentDestination?.id != R.id.remote) {
                 navController.navigate(R.id.remote)
@@ -265,7 +271,7 @@ class MainMobileActivity : FragmentActivity() {
     private fun updateBottomNavigationVisibility(destinationId: Int?) {
         val showBottomNav =
             UserPreferences.currentProvider != null && isTopLevelProviderDestination(destinationId)
-        binding.bnvMain.visibility = if (showBottomNav) View.VISIBLE else View.GONE
+        navigationBar.visibility = if (showBottomNav) View.VISIBLE else View.GONE
         binding.btnMainSearch.visibility = if (
             UserPreferences.currentProvider != null &&
             isTopLevelProviderDestination(destinationId) &&
@@ -292,8 +298,8 @@ class MainMobileActivity : FragmentActivity() {
         val supportsMovies = Provider.supportsMovies(provider)
         val supportsTvShows = Provider.supportsTvShows(provider)
 
-        binding.bnvMain.menu.findItem(R.id.movies)?.isVisible = supportsMovies
-        binding.bnvMain.menu.findItem(R.id.tv_shows)?.apply {
+        navigationBar.menu.findItem(R.id.movies)?.isVisible = supportsMovies
+        navigationBar.menu.findItem(R.id.tv_shows)?.apply {
             isVisible = supportsTvShows
             title = if (provider is IptvProvider) {
                 getString(R.string.main_menu_all_channels)
