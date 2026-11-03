@@ -23,6 +23,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.streamflixreborn.streamflix.BuildConfig
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.ActivityMainMobileBinding
+import com.streamflixreborn.streamflix.downloads.DownloadUtil
 import com.streamflixreborn.streamflix.fragments.player.PlayerMobileFragment
 import com.streamflixreborn.streamflix.providers.IptvProvider
 import com.streamflixreborn.streamflix.providers.Provider
@@ -130,6 +131,11 @@ class MainMobileActivity : FragmentActivity() {
         binding.btnMainRemote.setOnClickListener {
             if (navController.currentDestination?.id != R.id.remote) {
                 navController.navigate(R.id.remote)
+            }
+        }
+        binding.btnMainDownloads.setOnClickListener {
+            if (navController.currentDestination?.id != R.id.downloads) {
+                navController.navigate(R.id.downloads)
             }
         }
         binding.btnMainSearch.setOnClickListener {
@@ -271,6 +277,10 @@ class MainMobileActivity : FragmentActivity() {
         binding.btnMainRemote.visibility = if (
             showBottomNav && CloudSyncManager.currentUserId() != null
         ) View.VISIBLE else View.GONE
+        // Downloads (phone only): BottomNavigationView holds at most 5 items, so it sits in the top bar.
+        binding.btnMainDownloads.visibility = if (
+            showBottomNav && destinationId != R.id.downloads && DownloadUtil.isSupported(this)
+        ) View.VISIBLE else View.GONE
     }
 
     override fun onResume() {
@@ -317,6 +327,7 @@ class MainMobileActivity : FragmentActivity() {
             R.id.tv_shows,
             R.id.favorites,
             R.id.settings,
+            R.id.downloads,
         )
     }
 

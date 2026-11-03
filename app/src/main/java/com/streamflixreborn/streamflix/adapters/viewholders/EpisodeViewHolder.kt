@@ -21,6 +21,7 @@ import com.streamflixreborn.streamflix.fragments.season.SeasonTvFragmentDirectio
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowMobileFragmentDirections
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowTvFragmentDirections
 import com.streamflixreborn.streamflix.models.Episode
+import com.streamflixreborn.streamflix.downloads.DownloadStarter
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.sync.SyncProviders
 import com.streamflixreborn.streamflix.ui.ShowOptionsMobileDialog
@@ -151,7 +152,54 @@ class EpisodeViewHolder(
             }
         }
         binding.tvEpisodeOverview.text = episode.overview ?: ""
+
+        // Offline download (phone only; the button hides itself on TV).
+        binding.btnEpisodeDownload.bind(
+            (episode.tvShow?.providerName ?: UserPreferences.currentProvider?.name)?.let { providerName ->
+                DownloadStarter.Target(
+                    providerName = providerName,
+                    videoType = Video.Type.Episode(
+                        id = episode.id,
+                        number = episode.number,
+                        title = episode.title,
+                        poster = episode.poster,
+                        overview = episode.overview,
+                        tvShow = Video.Type.Episode.TvShow(
+                            id = episode.tvShow?.id ?: "",
+                            title = episode.tvShow?.title ?: "",
+                            poster = episode.tvShow?.poster,
+                            banner = episode.tvShow?.banner,
+                            releaseDate = episode.tvShow?.released?.format("yyyy-MM-dd"),
+                            imdbId = episode.tvShow?.imdbId,
+                        ),
+                        season = Video.Type.Episode.Season(
+                            number = episode.season?.number ?: 0,
+                            title = episode.season?.title,
+                        ),
+                    ),
+                    title = episode.tvShow?.title ?: "",
+                    subtitle = mobilePlayerSubtitle(),
+                    poster = episode.poster ?: episode.tvShow?.poster,
+                )
+            }
+        )
+        binding.btnEpisodeDownload.beforeStart = { SyncProviders.switchTo(episode.tvShow?.providerName) }
     }
+
+    /** Player header line for this episode ("S1 E2 • Title"). */
+    private fun mobilePlayerSubtitle(): String =
+        episode.season?.takeIf { it.number != 0 }?.let { season ->
+            context.getString(
+                R.string.player_subtitle_tv_show,
+                season.number,
+                episode.number,
+                episode.title ?: context.getString(R.string.episode_number, episode.number)
+            )
+        } ?: context.getString(
+            R.string.player_subtitle_tv_show_episode_only,
+            episode.number,
+            episode.title ?: context.getString(R.string.episode_number, episode.number)
+        )
 
     private fun displayTvItem(binding: ItemEpisodeTvBinding) {
         binding.root.apply {

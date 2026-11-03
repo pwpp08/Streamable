@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads_title">Letöltések</string>
+    <string name="downloads_channel_name">Letöltések</string>
+    <string name="downloads_empty">Még nincs letöltés. Egy film vagy epizód letöltés gombjával offline is megnézheted.</string>
+    <string name="downloads_storage">Foglalt: %1$s · Szabad: %2$s</string>
+    <string name="downloads_wifi_only">Letöltés csak Wi-Fi-n</string>
+    <string name="downloads_save_space">Helytakarékos (720p)</string>
+    <string name="downloads_offline_server">Letöltve</string>
+
+    <string name="download_action">Letöltés</string>
+    <string name="download_state_resolving">Szerver keresése…</string>
+    <string name="download_state_queued">Sorban áll</string>
+    <string name="download_state_waiting_wifi">Wi-Fi-re vár</string>
+    <string name="download_state_waiting">Várakozik</string>
+    <string name="download_state_downloading">Letöltés: %1$d%%</string>
+    <string name="download_state_paused">Szüneteltetve</string>
+    <string name="download_state_completed">Letöltve</string>
+    <string name="download_state_failed">A letöltés nem sikerült</string>
+    <string name="download_state_removing">Törlés…</string>
+
+    <string name="download_menu_pause">Szüneteltetés</string>
+    <string name="download_menu_resume">Folytatás</string>
+    <string name="download_menu_cancel">Letöltés megszakítása</string>
+    <string name="download_menu_delete">Letöltés törlése</string>
+    <string name="download_menu_retry">Másik szerver kipróbálása</string>
+    <string name="download_menu_play">Lejátszás</string>
+
+    <string name="download_delete_confirm">Törlöd a(z) \"%1$s\" letöltött példányát?</string>
+    <string name="download_delete">Törlés</string>
+    <string name="download_cancel">Mégse</string>
+    <string name="download_started">Letöltés elindítva: %1$s</string>
+    <string name="download_completed_notification">Letöltve: %1$s</string>
+    <string name="download_failed_notification">Sikertelen letöltés: %1$s</string>
+    <string name="download_error_no_servers">Egyik szerverről sem sikerült letölteni.</string>
+    <string name="download_error_no_provider">Nincs kiválasztott szolgáltató.</string>
+    <string name="download_error_unsupported">Ez a stream nem tölthető le.</string>
+    <string name="download_item_subtitle_episode">%1$d. évad · %2$d. rész %3$s</string>
+</resources>

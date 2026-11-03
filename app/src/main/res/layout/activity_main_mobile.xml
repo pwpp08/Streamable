@@ -52,6 +52,21 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_goneMarginEnd="8dp" />
 
+    <ImageButton
+        android:id="@+id/btn_main_downloads"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/downloads_title"
+        android:elevation="8dp"
+        android:padding="12dp"
+        android:src="@drawable/ic_download"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/btn_main_remote"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginEnd="8dp" />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bnv_main"
         android:layout_width="0dp"
