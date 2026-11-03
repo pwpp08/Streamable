@@ -58,4 +58,47 @@ class PlayerEngineTest {
         assertEquals(m60, FrameRateMatcher.pickMode(modes, m60, 30f))
         assertNull(FrameRateMatcher.pickMode(listOf(m60), m60, 23.976f))
     }
+
+    @Test
+    fun `a server that played in full HD outranks one that stops at 720p`() {
+        val heights = mapOf("Fast" to 720, "Sharp" to 1080)
+        val ranked = ServerRanker.rank(
+            servers("Fast", "Sharp", "Unknown"),
+            score = { 80 },
+            height = { heights[it] },
+        )
+        assertEquals(listOf("Sharp", "Unknown", "Fast"), ranked.map { it.name })
+    }
+
+    @Test
+    fun `sticky server loses its lead when it is low-res and another server plays in full HD`() {
+        val heights = mapOf("Sticky" to 720, "Sharp" to 1080)
+        val ranked = ServerRanker.rank(
+            servers("Sticky", "Sharp"),
+            stickyName = "Sticky",
+            score = { 50 },
+            height = { heights[it] },
+        )
+        assertEquals("Sharp", ranked.first().name)
+    }
+
+    @Test
+    fun `sticky server keeps its lead when nothing else is known to be full HD`() {
+        val ranked = ServerRanker.rank(
+            servers("A", "Sticky"),
+            stickyName = "Sticky",
+            score = { 50 },
+            height = { if (it == "Sticky") 720 else null },
+        )
+        assertEquals("Sticky", ranked.first().name)
+    }
+
+    @Test
+    fun `quality memory keeps the best recent height and expires old entries`() {
+        val now = 1_000_000_000_000L
+        assertEquals(1080, QualityMemory.decode("1080|$now", now))
+        assertNull(QualityMemory.decode("1080|${now - 15L * 24 * 60 * 60 * 1000}", now))
+        assertNull(QualityMemory.decode("garbage", now))
+        assertNull(QualityMemory.decode(null, now))
+    }
 }

@@ -134,8 +134,10 @@ object UserPreferences {
 
     var currentProvider: Provider?
         get() {
-            val providerName = Key.CURRENT_PROVIDER.getString()
-            if (providerName?.startsWith("TMDb (") == true && providerName.endsWith(")")) {
+            // Fresh installs start on TMDb (English), the multi-source provider, so nobody has to
+            // pick one first. The provider list stays reachable from the logo on the home screen.
+            val providerName = Key.CURRENT_PROVIDER.getString() ?: DEFAULT_PROVIDER_NAME
+            if (providerName.startsWith("TMDb (") && providerName.endsWith(")")) {
                 val lang = providerName.substringAfter("TMDb (").substringBefore(")")
                 return TmdbProvider(lang)
             }
@@ -151,7 +153,9 @@ object UserPreferences {
             ProviderChangeNotifier.notifyProviderChanged()
         }
 
-    internal fun getCurrentProviderName(): String? = Key.CURRENT_PROVIDER.getString()
+    private const val DEFAULT_PROVIDER_NAME = "TMDb (en)"
+
+    internal fun getCurrentProviderName(): String? = Key.CURRENT_PROVIDER.getString() ?: DEFAULT_PROVIDER_NAME
 
     internal fun setCurrentProviderName(name: String?) {
         Key.CURRENT_PROVIDER.setString(name)

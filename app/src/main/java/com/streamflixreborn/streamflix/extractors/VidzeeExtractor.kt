@@ -42,13 +42,8 @@ class VidzeeExtractor : Extractor() {
         ServerConfig("Atlas", 4),
         ServerConfig("Drag", 5),
         ServerConfig("Achilles", 6),
-        ServerConfig("Viet", 7),
-        ServerConfig("Velocità", 8),
-        ServerConfig("Hindi", 9),
-        ServerConfig("Bengali", 10),
-        ServerConfig("Tamil", 11),
-        ServerConfig("Telugu", 12),
-        ServerConfig("Malayalam", 13)
+        // Indexes 7-13 (Viet, Velocità, Hindi, Bengali, Tamil, Telugu, Malayalam) are dubs in
+        // other languages. They are left out because only English audio is offered.
     )
 
     fun servers(videoType: Video.Type): List<Video.Server> {

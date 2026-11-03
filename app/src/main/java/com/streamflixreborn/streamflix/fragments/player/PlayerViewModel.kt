@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.streamflixreborn.streamflix.StreamFlixApp
 import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.fragments.player.engine.NextEpisodePrefetch
+import com.streamflixreborn.streamflix.fragments.player.engine.QualityMemory
 import com.streamflixreborn.streamflix.fragments.player.engine.ServerRanker
 import com.streamflixreborn.streamflix.fragments.player.engine.StickyServers
 import com.streamflixreborn.streamflix.models.Video
@@ -349,6 +350,7 @@ class PlayerViewModel(
 
     private suspend fun emitSuccess(video: Video, server: Video.Server, failover: Boolean) {
         currentServerId = server.id
+        QualityMemory.currentServer = server.name
         Log.d(TAG, "playing ${server.name} (failover=$failover)")
         _state.emit(State.SuccessLoadingVideo(prepareVideo(video), server, failover))
     }

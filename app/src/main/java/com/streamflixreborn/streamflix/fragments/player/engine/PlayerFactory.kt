@@ -125,6 +125,7 @@ object PlayerFactory {
         }
 
         val player = builder.build()
+        player.addAnalyticsListener(QualityMemory.Listener())
         val analytics = if (BuildConfig.DEBUG) PlaybackAnalytics().also(player::addAnalyticsListener) else null
         return Result(player, analytics, profile)
     }
