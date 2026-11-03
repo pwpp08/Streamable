@@ -21,8 +21,8 @@ object QrEncoder {
 
     private const val MAX_VERSION = 10
     // Level M, index = version.
-    private val ECC_CODEWORDS_PER_BLOCK = intArrayOf(-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26)
-    private val NUM_ERROR_CORRECTION_BLOCKS = intArrayOf(-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5)
+    internal val ECC_CODEWORDS_PER_BLOCK = intArrayOf(-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26)
+    internal val NUM_ERROR_CORRECTION_BLOCKS = intArrayOf(-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5)
     private const val ECC_FORMAT_BITS_M = 0
 
     fun encode(text: String): QrCode = encode(text.toByteArray(Charsets.UTF_8))
@@ -213,7 +213,7 @@ object QrEncoder {
 
     // --------------------------------------------------------------- drawing
 
-    private class Builder(val version: Int) {
+    internal class Builder(val version: Int) {
         val size = version * 4 + 17
         val modules = Array(size) { BooleanArray(size) }
         val isFunction = Array(size) { BooleanArray(size) }
