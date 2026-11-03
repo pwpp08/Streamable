@@ -4,7 +4,7 @@
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
             <corners android:radius="6dp" />
-            <solid android:color="#FFFFFFFF" />
+            <solid android:color="?attr/colorPrimary" />
             <stroke android:width="3dp" android:color="@color/favorite_selected" />
         </shape>
     </item>
@@ -13,15 +13,15 @@
         <shape android:shape="rectangle">
             <corners android:radius="6dp" />
             <solid android:color="@color/favorite_selected" />
-            <stroke android:width="3dp" android:color="#FFFFFFFF" />
+            <stroke android:width="3dp" android:color="?attr/colorPrimary" />
         </shape>
     </item>
 
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="6dp" />
-            <solid android:color="#CC4B4B4B" />
-            <stroke android:width="1dp" android:color="#FF8A8A8A" />
+            <solid android:color="?attr/colorSurfaceContainerHighest" />
+            <stroke android:width="1dp" android:color="?attr/colorOutline" />
         </shape>
     </item>
 

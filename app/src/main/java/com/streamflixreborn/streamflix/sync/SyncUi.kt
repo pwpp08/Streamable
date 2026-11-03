@@ -7,9 +7,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.streamflixreborn.streamflix.R
 
 /**
- * The activities use AppCompat (phone) and Leanback (TV) themes, which
- * Material Components reject. Sync screens and dialogs wrap their context in
- * [R.style.Theme_StreamFlix_Sync] through these helpers.
+ * Helpers for sync screens and dialogs. The activity themes are Material 3 Expressive now, so
+ * [R.style.Theme_StreamFlix_Sync] is an empty overlay and these contexts keep the app palette.
  */
 object SyncUi {
     fun themed(context: Context): Context = ContextThemeWrapper(context, R.style.Theme_StreamFlix_Sync)
