@@ -33,7 +33,6 @@
     <string name="profile_import_warning_title">استيراد عبر الملفات الشخصية</string>
     <string name="profile_import_warning_message">تم تصدير هذه البيانات من الملف الشخصي "%1$s". سيتم استيرادها إلى الملف الشخصي الحالي "%2$s". سيتم استبدال بيانات الملف الشخصي الحالي. هل تريد المتابعة؟</string>
     <string name="settings_screen_profiles_title">الملفات الشخصية</string>
-    <string name="settings_screen_profiles_summary">إدارة ملفات المستخدم الشخصية وبياناتهم</string>
     <string name="settings_profile_manage_summary">عرض أو إعادة تسمية أو حذف الملفات الشخصية</string>
     <string name="settings_profile_add_summary">إنشاء ملف شخصي جديد</string>
 
@@ -304,61 +303,22 @@
     <string name="settings_streamingcommunity_domain_reset_summary">استعادة اسم النطاق الافتراضي</string>
     <string name="settings_streamingcommunity_domain_reset_done">تم استعادة النطاق الافتراضي</string>
     <string name="settings_streamingcommunity_domain_blocked">تم اكتشاف نطاق محظور، تمت استعادة الافتراضي</string>
-    <string name="settings_category_serienstream">إعدادات SerienStream</string>
-    <string name="settings_category_serienstream_domain">نطاق SerienStream</string>
-    <string name="settings_serienstream_domain_reset">إعادة تعيين النطاق</string>
-    <string name="settings_serienstream_domain_reset_summary">استعادة اسم النطاق الافتراضي</string>
-    <string name="settings_serienstream_domain_reset_done">تمت استعادة النطاق الافتراضي</string>
-    <string name="settings_category_moflix">إعدادات Moflix</string>
-    <string name="settings_category_moflix_domain">نطاق Moflix</string>
-    <string name="settings_moflix_domain_reset">إعادة تعيين النطاق</string>
-    <string name="settings_moflix_domain_reset_summary">استعادة اسم النطاق الافتراضي</string>
-    <string name="settings_moflix_domain_reset_done">تمت استعادة النطاق الافتراضي</string>
-    <string name="settings_category_cuevana">إعدادات Cuevana 3</string>
-    <string name="settings_category_cuevana_domain">اسم نطاق Cuevana 3</string>
-    <string name="settings_category_poseidon">إعدادات Poseidonhd2</string>
-    <string name="settings_category_poseidon_domain">اسم نطاق Poseidonhd2</string>
     <string name="settings_close_app">إغلاق التطبيق</string>
     <string name="settings_category_streamingcommunity_dnsOverHttps">استخدام DNS آمن</string>
-    <string name="settings_section_content_title">المحتوى والأمان</string>
-    <string name="settings_screen_content_summary">الوصول إلى TMDb والرقابة الأبوية وقيود المحتوى</string>
     <string name="settings_category_network_title">الاتصال والخدمات</string>
-    <string name="settings_screen_network_summary">DNS ومفاتيح خدمات الترجمة</string>
 
-    <string name="settings_category_provider_title">إعدادات المزود</string>
-    <string name="settings_provider_connection_title">إعدادات المزود الحالي</string>
-    <string name="settings_screen_provider_summary">النطاق الرئيسي والبوابة وخيارات الاسترداد الخاصة بالمزود</string>
-    <string name="settings_screen_provider_summary_with_name">النطاق والبوابة وخيارات الاسترداد الخاصة بـ %1$s</string>
-    <string name="settings_provider_connection_category_title">اتصال %1$s</string>
-    <string name="settings_provider_no_options_title">لا توجد خيارات متاحة للمزود</string>
-    <string name="settings_provider_no_options_summary">هذا المزود لا يوفّر أي إعدادات إضافية حالياً.</string>
-    <string name="settings_category_provider_url">الرابط الرئيسي</string>
-    <string name="settings_category_provider_domain">نطاق المزود</string>
-    <string name="settings_provider_domain">النطاق</string>
-    <string name="settings_provider_domain_summary">تجاوز نطاق المزود في حال انتقال الموقع إلى عنوان جديد.</string>
-    <string name="settings_provider_domain_reset">إعادة تعيين النطاق</string>
-    <string name="settings_provider_domain_reset_summary">استعادة النطاق الافتراضي للمزود.</string>
-    <string name="settings_provider_domain_reset_done">تمت إعادة تعيين نطاق المزود.</string>
     <string name="settings_category_provider_url_manual">إدخال يدوي</string>
-    <string name="settings_category_provider_update_url">رابط البوابة</string>
-    <string name="settings_autoupdate">تحديث الرابط الرئيسي عند التشغيل</string>
     <string name="settings_autoupdate_on">تشغيل</string>
     <string name="settings_autoupdate_off">إيقاف</string>
-    <string name="settings_autoupdate_now">تحديث الرابط الرئيسي الآن</string>
-    <string name="settings_autoplay">تشغيل الحلقة التالية تلقائيًا</string>
     <string name="settings_autoplay_on">في</string>
     <string name="settings_autoplay_off">إيقاف</string>
     <string name="settings_autoplay_buffer_title">مهلة التشغيل التلقائي</string>
     <string name="settings_autoplay_buffer_dialog_message">حدد عدد الثواني قبل نهاية الحلقة للانتقال إلى الحلقة التالية.</string>
-    <string name="autoplay_settings">إعدادات التشغيل التلقائي</string>
-    <string name="player_settings">إعدادات المشغل</string>
-    <string name="settings_screen_playback_summary">التشغيل التلقائي والتخزين المؤقت وتشغيل العروض وسلوك المشغل</string>
     <string name="settings_player_gestures">إيماءات المشغل</string>
     <string name="settings_player_gestures_on">تشغيل</string>
     <string name="settings_player_gestures_off">إيقاف</string>
     <string name="settings_keep_screen_on_when_paused">إبقاء الشاشة مفعلة أثناء الإيقاف المؤقت</string>
     <string name="settings_keep_screen_on_when_paused_summary">يمنع الشاشة من الانطفاء عند إيقاف الفيديو مؤقتًا</string>
-    <string name="miscelaneous_title">متفرقات</string>
     <string name="settings_screen_misc_summary">معلومات الإصدار وروابط المساعدة واختصارات المجتمع</string>
     <string name="clear_cache_done">تم مسح الذاكرة المؤقتة</string>
     <string name="clear_cache_done_409">تم مسح الذاكرة المؤقتة تلقائيًا بسبب خطأ HTTP 409</string>
@@ -391,7 +351,6 @@
 
     <string name="backup_category_title">النسخ الاحتياطي والاستعادة</string>
     <string name="settings_screen_backup_summary">تصدير أو استعادة المفضلة والسجل وبيانات التطبيق المحفوظة</string>
-    <string name="cloud_sync_title">الحساب والمزامنة</string>
     <string name="cloud_sync_screen_summary">مزامنة المفضلة وسجل المشاهدة بين الأجهزة</string>
     <string name="cloud_sync_account_category">حساب Supabase</string>
     <string name="cloud_sync_account_status">حالة الحساب</string>
@@ -489,25 +448,10 @@
 
     <string name="doh_provider_updated">تم تحديث إعدادات DNS عبر HTTPS! أعد تشغيل التطبيق لتطبيق التغييرات.</string>
 
-    <string name="settings_category_frenchstream">إعدادات FrenchStream</string>
-    <string name="settings_frenchstream_use_new_interface">استخدم الواجهة الجديدة لـ FrenchStream</string>
-    <string name="settings_frenchstream_use_new_interface_on">تشغيل</string>
-    <string name="settings_frenchstream_use_new_interface_off">إيقاف</string>
 
-    <string name="settings_server_voe_category">إعدادات الخوادم</string>
-    <string name="settings_server_voe_title">تعطيل الترجمات التلقائية للخوادم</string>
-    <string name="settings_server_voe_summary">إذا تم تفعيل هذا الخيار، فلن يتم تفعيل ترجمات خوادم VOE وVidnest وVidzy تلقائيًا حتى لو كانت متاحة ومحددة كافتراضية</string>
-    <string name="settings_category_animeonlineninja">إعدادات Anime Online Ninja</string>
-    <string name="settings_provider_animeonlineninja_preferred_server">الخادم المفضل</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_summary">تفضيل خادم محدد إذا توفر على Anime Online Ninja، وإلا استخدام الترتيب الافتراضي.</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_default">الافتراضي</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_es">ES</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_lat">LAT</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_sub">SUB</string>
 
     <string name="settings_category_interface_title">إعدادات الواجهة</string>
     <string name="settings_immersive_mode">الوضع الغامر</string>
-    <string name="settings_immersive_mode_summary">إخفاء شريطي الحالة والتنقل</string>
     <string name="settings_immersive_mode_on">تشغيل (الأشرطة مخفية)</string>
     <string name="settings_immersive_mode_off">إيقاف (الأشرطة ظاهرة)</string>
 
@@ -564,10 +508,8 @@
     <string name="error_dialog_no_cause">لا يوجد سبب</string>
 
     <string name="settings_category_appearance">المظهر</string>
-    <string name="settings_screen_appearance_summary">السمة والوضع الغامر وتعديلات تخطيط الشاشة</string>
     <string name="settings_theme_title">سمة التطبيق</string>
     <string name="settings_app_language_title">لغة التطبيق</string>
-    <string name="settings_app_language_summary">اختر الترجمة المضمنة التي يجب أن يستخدمها التطبيق</string>
     <string name="settings_app_language_system">افتراضي النظام</string>
     <string name="settings_app_language_english">الإنجليزية</string>
     <string name="settings_app_language_arabic">العربية</string>
@@ -655,17 +597,6 @@
     <string name="settings_parental_locked_hard">الرقابة الأبوية مقفلة. استخدم رمز PIN للمشرف لإلغاء القفل.</string>
     <string name="settings_parental_unlocked">تم إلغاء قفل الرقابة الأبوية.</string>
     <string name="settings_parental_tmdb_disable_blocked">يجب عليك إلغاء قفل الرقابة الأبوية قبل تعطيل TMDb.</string>
-    <string name="settings_force_extra_buffer_title">التخزين المؤقت الإضافي العالمي</string>
-    <string name="settings_force_extra_buffer_summary">تمكين التخزين المؤقت الإضافي لجميع الخوادم افتراضيًا</string>
 
-    <string name="settings_provider_domain_check">فحص / تحديث النطاق</string>
-    <string name="settings_provider_domain_check_summary">تتبع عمليات إعادة التوجيه وحفظ النطاق الجديد تلقائياً</string>
-    <string name="settings_provider_domain_check_current">النطاق محدث بالفعل</string>
-    <string name="settings_provider_domain_check_updated">تم حفظ النطاق الجديد: %1$s</string>
-    <string name="settings_provider_domain_check_failed">فشل فحص النطاق: %1$s</string>
 
-    <!-- VAVOO_DOMAIN_ROTATION_V1 -->
-    <string name="settings_vavoo_domain_next">نطاق Vavoo التالي</string>
-    <string name="settings_vavoo_domain_next_summary">تجربة نطاق Vavoo المعروف التالي وحفظ أول نطاق يعمل</string>
-    <string name="settings_vavoo_domain_next_updated">تم تغيير نطاق Vavoo إلى: %1$s</string>
 </resources>

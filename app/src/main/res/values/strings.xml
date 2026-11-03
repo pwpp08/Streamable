@@ -33,7 +33,6 @@
     <string name="profile_import_warning_title">Cross-Profile Import</string>
     <string name="profile_import_warning_message">This data was exported from profile \"%1$s\". It will be imported into the current profile \"%2$s\". The current profile\'s data will be overwritten. Continue?</string>
     <string name="settings_screen_profiles_title">Profiles</string>
-    <string name="settings_screen_profiles_summary">Manage user profiles and their data</string>
     <string name="settings_profile_manage_summary">View, rename, or delete profiles</string>
     <string name="settings_profile_add_summary">Create a new profile</string>
 
@@ -304,61 +303,22 @@
     <string name="settings_streamingcommunity_domain_reset_summary">Restore the default domain name</string>
     <string name="settings_streamingcommunity_domain_reset_done">Domain restored to default</string>
     <string name="settings_streamingcommunity_domain_blocked">Blocked domain detected, restored to default</string>
-    <string name="settings_category_serienstream">SerienStream settings</string>
-    <string name="settings_category_serienstream_domain">SerienStream domain name</string>
-    <string name="settings_serienstream_domain_reset">Reset domain</string>
-    <string name="settings_serienstream_domain_reset_summary">Restore the default domain name</string>
-    <string name="settings_serienstream_domain_reset_done">Domain restored to default</string>
-    <string name="settings_category_moflix">Moflix settings</string>
-    <string name="settings_category_moflix_domain">Moflix domain name</string>
-    <string name="settings_moflix_domain_reset">Reset domain</string>
-    <string name="settings_moflix_domain_reset_summary">Restore the default domain name</string>
-    <string name="settings_moflix_domain_reset_done">Domain restored to default</string>
-    <string name="settings_category_cuevana">Cuevana 3 settings</string>
-    <string name="settings_category_cuevana_domain">Cuevana 3 domain name</string>
-    <string name="settings_category_poseidon">Poseidonhd2 settings</string>
-    <string name="settings_category_poseidon_domain">Poseidonhd2 domain name</string>
     <string name="settings_close_app">Close app</string>
     <string name="settings_category_streamingcommunity_dnsOverHttps">Use secure DNS</string>
-    <string name="settings_section_content_title">Content and Safety</string>
-    <string name="settings_screen_content_summary">TMDb access, parental control and content restrictions</string>
     <string name="settings_category_network_title">Connection &amp; Services</string>
-    <string name="settings_screen_network_summary">DNS and subtitle service keys</string>
 
-    <string name="settings_category_provider_title">Provider settings</string>
-    <string name="settings_provider_connection_title">Settings for current provider</string>
-    <string name="settings_screen_provider_summary">Main domain, portal and provider-specific recovery options</string>
-    <string name="settings_screen_provider_summary_with_name">%1$s domain, portal and provider-specific recovery options</string>
-    <string name="settings_provider_connection_category_title">%1$s connection</string>
-    <string name="settings_provider_no_options_title">No provider options available</string>
-    <string name="settings_provider_no_options_summary">This provider does not expose any extra configuration right now.</string>
-    <string name="settings_category_provider_url">Main URL</string>
-    <string name="settings_category_provider_domain">Provider domain</string>
-    <string name="settings_provider_domain">Domain</string>
-    <string name="settings_provider_domain_summary">Override the provider domain if the website moves to a new address.</string>
-    <string name="settings_provider_domain_reset">Reset domain</string>
-    <string name="settings_provider_domain_reset_summary">Restore the provider default domain.</string>
-    <string name="settings_provider_domain_reset_done">Provider domain reset to default.</string>
     <string name="settings_category_provider_url_manual">Enter manually</string>
-    <string name="settings_category_provider_update_url">Portal URL</string>
-    <string name="settings_autoupdate">Refresh main URL on startup</string>
     <string name="settings_autoupdate_on">On</string>
     <string name="settings_autoupdate_off">Off</string>
-    <string name="settings_autoupdate_now">Refresh main URL now</string>
-    <string name="settings_autoplay">Autoplay next episode</string>
     <string name="settings_autoplay_on">On</string>
     <string name="settings_autoplay_off">Off</string>
     <string name="settings_autoplay_buffer_title">Autoplay buffer</string>
     <string name="settings_autoplay_buffer_dialog_message">Set how many seconds before the end of the episode to switch to the next one.</string>
-    <string name="autoplay_settings">Autoplay settings</string>
-    <string name="player_settings">Player settings</string>
-    <string name="settings_screen_playback_summary">Autoplay, buffering, trailer playback and player behavior</string>
     <string name="settings_player_gestures">Player gestures</string>
     <string name="settings_player_gestures_on">On</string>
     <string name="settings_player_gestures_off">Off</string>
     <string name="settings_keep_screen_on_when_paused">Keep screen on when paused</string>
     <string name="settings_keep_screen_on_when_paused_summary">Prevents the screen from turning off when a video is paused</string>
-    <string name="miscelaneous_title">Miscellaneous</string>
     <string name="settings_screen_misc_summary">Version info, help links and community shortcuts</string>
     <string name="clear_cache_done">Cache cleared</string>
     <string name="clear_cache_done_409">Cache cleared automatically due to HTTP 409</string>
@@ -391,7 +351,6 @@
 
     <string name="backup_category_title">Backup and Restore</string>
     <string name="settings_screen_backup_summary">Export or restore favorites, history and saved app data</string>
-    <string name="cloud_sync_title">Account &amp; sync</string>
     <string name="cloud_sync_screen_summary">Synchronize favorites and watch history between devices</string>
     <string name="cloud_sync_account_category">Supabase account</string>
     <string name="cloud_sync_account_status">Account status</string>
@@ -485,25 +444,10 @@
 
     <string name="doh_provider_updated">DNS over HttPS settings updated! Restart the app to apply changes.</string>
 
-    <string name="settings_category_frenchstream">FrenchStream settings</string>
-    <string name="settings_frenchstream_use_new_interface">Use the new FrenchStream interface</string>
-    <string name="settings_frenchstream_use_new_interface_on">On</string>
-    <string name="settings_frenchstream_use_new_interface_off">Off</string>
  
-    <string name="settings_server_voe_category">VOE server settings</string>
-    <string name="settings_server_voe_title">Disable server auto subtitles</string>
-    <string name="settings_server_voe_summary">If enabled, subtitles from VOE, Vidnest and Vidzy servers will not be active by default even if they are available and have a default true value</string>
-    <string name="settings_category_animeonlineninja">Anime Online Ninja settings</string>
-    <string name="settings_provider_animeonlineninja_preferred_server">Preferred server</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_summary">Prefer a specific server label when Anime Online Ninja exposes it, and fall back to the default order if it is not available.</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_default">Default</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_es">ES</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_lat">LAT</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_sub">SUB</string>
 
     <string name="settings_category_interface_title">Interface settings</string>
     <string name="settings_immersive_mode">Immersive Mode</string>
-    <string name="settings_immersive_mode_summary">Hide status and navigation bars</string>
     <string name="settings_immersive_mode_on">On (Bars hidden)</string>
     <string name="settings_immersive_mode_off">Off (Bars visible)</string>
 
@@ -560,10 +504,8 @@
     <string name="error_dialog_no_cause">No cause</string>
 
     <string name="settings_category_appearance">Appearance</string>
-    <string name="settings_screen_appearance_summary">Theme, immersive mode and screen layout adjustments</string>
     <string name="settings_theme_title">App Theme</string>
     <string name="settings_app_language_title">App language</string>
-    <string name="settings_app_language_summary">Choose which bundled translation the app should use</string>
     <string name="settings_app_language_system">System default</string>
     <string name="settings_app_language_english">English</string>
     <string name="settings_app_language_arabic">Arabic</string>
@@ -651,17 +593,6 @@
     <string name="settings_parental_locked_hard">Parental controls are locked. Use the admin PIN to unlock them.</string>
     <string name="settings_parental_unlocked">Parental controls unlocked.</string>
     <string name="settings_parental_tmdb_disable_blocked">You must unlock parental controls before disabling TMDb.</string>
-    <string name="settings_force_extra_buffer_title">Global Extra Buffering</string>
-    <string name="settings_force_extra_buffer_summary">Enable extra buffering for all servers by default</string>
 
-    <string name="settings_provider_domain_check">Check / update domain</string>
-    <string name="settings_provider_domain_check_summary">Follow redirects and automatically save a new provider domain</string>
-    <string name="settings_provider_domain_check_current">Domain is already current</string>
-    <string name="settings_provider_domain_check_updated">New domain saved: %1$s</string>
-    <string name="settings_provider_domain_check_failed">Domain check failed: %1$s</string>
 
-    <!-- VAVOO_DOMAIN_ROTATION_V1 -->
-    <string name="settings_vavoo_domain_next">Next Vavoo domain</string>
-    <string name="settings_vavoo_domain_next_summary">Try the next known Vavoo domain and save the first reachable one</string>
-    <string name="settings_vavoo_domain_next_updated">Vavoo domain changed to: %1$s</string>
 </resources>

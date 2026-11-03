@@ -33,7 +33,6 @@
     <string name="profile_import_warning_title">Profilübergreifender Import</string>
     <string name="profile_import_warning_message">Diese Daten wurden aus dem Profil "%1$s" exportiert. Sie werden in das aktuelle Profil "%2$s" importiert. Die Daten des aktuellen Profils werden überschrieben. Fortfahren?</string>
     <string name="settings_screen_profiles_title">Profile</string>
-    <string name="settings_screen_profiles_summary">Benutzerprofile und ihre Daten verwalten</string>
     <string name="settings_profile_manage_summary">Profile ansehen, umbenennen oder löschen</string>
     <string name="settings_profile_add_summary">Ein neues Profil erstellen</string>
 
@@ -304,61 +303,22 @@
     <string name="settings_streamingcommunity_domain_reset_summary">Standard-Domain-Namen wiederherstellen</string>
     <string name="settings_streamingcommunity_domain_reset_done">Domain auf Standard zurückgesetzt</string>
     <string name="settings_streamingcommunity_domain_blocked">Gesperrte Domain erkannt, auf Standard zurückgesetzt</string>
-    <string name="settings_category_serienstream">SerienStream-Einstellungen</string>
-    <string name="settings_category_serienstream_domain">SerienStream-Domainname</string>
-    <string name="settings_serienstream_domain_reset">Domain zurücksetzen</string>
-    <string name="settings_serienstream_domain_reset_summary">Standard-Domainnamen wiederherstellen</string>
-    <string name="settings_serienstream_domain_reset_done">Domain auf Standard zurückgesetzt</string>
-    <string name="settings_category_moflix">Moflix-Einstellungen</string>
-    <string name="settings_category_moflix_domain">Moflix-Domainname</string>
-    <string name="settings_moflix_domain_reset">Domain zurücksetzen</string>
-    <string name="settings_moflix_domain_reset_summary">Standard-Domainnamen wiederherstellen</string>
-    <string name="settings_moflix_domain_reset_done">Domain auf Standard zurückgesetzt</string>
-    <string name="settings_category_cuevana">Cuevana 3 - Einstellungen</string>
-    <string name="settings_category_cuevana_domain">Cuevana 3 - Domain-Name</string>
-    <string name="settings_category_poseidon">Poseidonhd2-Einstellungen</string>
-    <string name="settings_category_poseidon_domain">Poseidonhd2-Domainname</string>
     <string name="settings_close_app">App schließen</string>
     <string name="settings_category_streamingcommunity_dnsOverHttps">Sichere DNS-Auflösung verwenden</string>
-    <string name="settings_section_content_title">Inhalt und Sicherheit</string>
-    <string name="settings_screen_content_summary">TMDb-Zugriff, Kindersicherung und Inhaltsbeschränkungen</string>
     <string name="settings_category_network_title">Verbindung und Dienste</string>
-    <string name="settings_screen_network_summary">DNS und Schluessel fuer Untertitel-Dienste</string>
 
-    <string name="settings_category_provider_title">Anbietereinstellungen</string>
-    <string name="settings_provider_connection_title">Einstellungen fuer aktuellen Anbieter</string>
-    <string name="settings_screen_provider_summary">Hauptdomain, Portal und anbieterspezifische Wiederherstellungsoptionen</string>
-    <string name="settings_screen_provider_summary_with_name">Domain, Portal und anbieterspezifische Wiederherstellungsoptionen für %1$s</string>
-    <string name="settings_provider_connection_category_title">%1$s-Verbindung</string>
-    <string name="settings_provider_no_options_title">Keine Anbieteroptionen verfügbar</string>
-    <string name="settings_provider_no_options_summary">Dieser Anbieter bietet derzeit keine zusätzlichen Einstellungen an.</string>
-    <string name="settings_category_provider_url">Haupt-URL</string>
-    <string name="settings_category_provider_domain">Anbieter-Domain</string>
-    <string name="settings_provider_domain">Domain</string>
-    <string name="settings_provider_domain_summary">Domain des Anbieters ändern, wenn die Webseite auf eine neue Adresse wechselt.</string>
-    <string name="settings_provider_domain_reset">Domain zurücksetzen</string>
-    <string name="settings_provider_domain_reset_summary">Die Standard-Domain des Anbieters wiederherstellen.</string>
-    <string name="settings_provider_domain_reset_done">Anbieter-Domain wurde auf den Standard zurückgesetzt.</string>
     <string name="settings_category_provider_url_manual">Manuell eingeben</string>
-    <string name="settings_category_provider_update_url">Portal-URL</string>
-    <string name="settings_autoupdate">Haupt-URL beim Start aktualisieren</string>
     <string name="settings_autoupdate_on">An</string>
     <string name="settings_autoupdate_off">Aus</string>
-    <string name="settings_autoupdate_now">Haupt-URL jetzt aktualisieren</string>
-    <string name="settings_autoplay">Nächste Folge automatisch abspielen</string>
     <string name="settings_autoplay_on">An</string>
     <string name="settings_autoplay_off">Aus</string>
     <string name="settings_autoplay_buffer_title">Autoplay-Puffer</string>
     <string name="settings_autoplay_buffer_dialog_message">Legen Sie fest, wie viele Sekunden vor Ende der Folge zur nächsten gewechselt werden soll.</string>
-    <string name="autoplay_settings">Automatische Wiedergabe</string>
-    <string name="player_settings">Player-Einstellungen</string>
-    <string name="settings_screen_playback_summary">Autoplay, Pufferung, Trailer-Wiedergabe und Player-Verhalten</string>
     <string name="settings_player_gestures">Player-Gesten</string>
     <string name="settings_player_gestures_on">An</string>
     <string name="settings_player_gestures_off">Aus</string>
     <string name="settings_keep_screen_on_when_paused">Bildschirm bei Pause anlassen</string>
     <string name="settings_keep_screen_on_when_paused_summary">Verhindert das Ausschalten des Bildschirms bei Wiedergabestopp</string>
-    <string name="miscelaneous_title">Sonstiges</string>
     <string name="settings_screen_misc_summary">Versionsinfo, Hilfe-Links und Community-Verknüpfungen</string>
     <string name="clear_cache_done">Cache geleert</string>
     <string name="clear_cache_done_409">Cache wegen HTTP 409 automatisch geleert</string>
@@ -391,7 +351,6 @@
 
     <string name="backup_category_title">Backup und Wiederherstellung</string>
     <string name="settings_screen_backup_summary">Favoriten, Verlauf und gespeicherte App-Daten exportieren oder wiederherstellen</string>
-    <string name="cloud_sync_title">Konto &amp; Synchronisierung</string>
     <string name="cloud_sync_screen_summary">Favoriten und Wiedergabeverlauf zwischen Geräten synchronisieren</string>
     <string name="cloud_sync_account_category">Supabase-Konto</string>
     <string name="cloud_sync_account_status">Kontostatus</string>
@@ -485,25 +444,10 @@
 
     <string name="doh_provider_updated">DNS-over-HTTPS-Einstellungen aktualisiert! Neustart erforderlich.</string>
 
-    <string name="settings_category_frenchstream">FrenchStream-Einstellungen</string>
-    <string name="settings_frenchstream_use_new_interface">Neue FrenchStream-Oberfläche verwenden</string>
-    <string name="settings_frenchstream_use_new_interface_on">Ein</string>
-    <string name="settings_frenchstream_use_new_interface_off">Aus</string>
 
-    <string name="settings_server_voe_category">VOE-Server-Einstellungen</string>
-    <string name="settings_server_voe_title">Auto-Untertitel deaktivieren</string>
-    <string name="settings_server_voe_summary">Verhindert das automatische Laden von VOE, Vidnest und Vidzy-Untertiteln</string>
-    <string name="settings_category_animeonlineninja">Anime Online Ninja-Einstellungen</string>
-    <string name="settings_provider_animeonlineninja_preferred_server">Bevorzugter Server</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_summary">Einen bevorzugten Server wählen, wenn Anime Online Ninja diesen anbietet, sonst Standardreihenfolge nutzen.</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_default">Standard</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_es">ES</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_lat">LAT</string>
-    <string name="settings_provider_animeonlineninja_preferred_server_sub">SUB</string>
 
     <string name="settings_category_interface_title">Oberflächeneinstellungen</string>
     <string name="settings_immersive_mode">Immersiver Modus</string>
-    <string name="settings_immersive_mode_summary">Status- und Navigationsleisten ausblenden</string>
     <string name="settings_immersive_mode_on">An (Leisten ausgeblendet)</string>
     <string name="settings_immersive_mode_off">Aus (Leisten sichtbar)</string>
 
@@ -560,10 +504,8 @@
     <string name="error_dialog_no_cause">Keine Ursache</string>
 
     <string name="settings_category_appearance">Darstellung</string>
-    <string name="settings_screen_appearance_summary">Theme, immersiver Modus und Anpassungen des Bildschirm-Layouts</string>
     <string name="settings_theme_title">App-Design</string>
     <string name="settings_app_language_title">App-Sprache</string>
-    <string name="settings_app_language_summary">Waehle, welche mitgelieferte Uebersetzung die App verwenden soll</string>
     <string name="settings_app_language_system">Systemstandard</string>
     <string name="settings_app_language_english">Englisch</string>
     <string name="settings_app_language_arabic">Arabisch</string>
@@ -651,17 +593,6 @@
     <string name="settings_parental_locked_hard">Die Kindersicherung ist gesperrt. Verwende die Admin-PIN zum Entsperren.</string>
     <string name="settings_parental_unlocked">Kindersicherung entsperrt.</string>
     <string name="settings_parental_tmdb_disable_blocked">Du musst die Kindersicherung entsperren, bevor du TMDb deaktivierst.</string>
-    <string name="settings_force_extra_buffer_title">Globaler Extra-Puffer</string>
-    <string name="settings_force_extra_buffer_summary">Pufferung standardmäßig für alle Server aktivieren</string>
 
-    <string name="settings_provider_domain_check">Domain prüfen / aktualisieren</string>
-    <string name="settings_provider_domain_check_summary">Weiterleitungen prüfen und eine neue Domain automatisch übernehmen</string>
-    <string name="settings_provider_domain_check_current">Domain ist bereits aktuell</string>
-    <string name="settings_provider_domain_check_updated">Neue Domain übernommen: %1$s</string>
-    <string name="settings_provider_domain_check_failed">Domain-Prüfung fehlgeschlagen: %1$s</string>
 
-    <!-- VAVOO_DOMAIN_ROTATION_V1 -->
-    <string name="settings_vavoo_domain_next">Weiter</string>
-    <string name="settings_vavoo_domain_next_summary">Nächste bekannte Vavoo-Domain prüfen und die erste erreichbare übernehmen</string>
-    <string name="settings_vavoo_domain_next_updated">Vavoo-Domain übernommen: %1$s</string>
 </resources>
