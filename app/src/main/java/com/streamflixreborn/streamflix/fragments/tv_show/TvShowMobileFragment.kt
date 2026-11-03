@@ -17,6 +17,7 @@ import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentTvShowMobileBinding
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
+import com.streamflixreborn.streamflix.ui.details.DetailsUi
 import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.LoggingUtils
 import com.streamflixreborn.streamflix.utils.dp
@@ -120,6 +121,7 @@ class TvShowMobileFragment : Fragment() {
                 SpacingItemDecoration(20.dp(requireContext()))
             )
         }
+        DetailsUi.attachBackdropParallax(binding.rvTvShow, binding.ivTvShowBanner)
     }
 
     private fun displayTvShow(tvShow: TvShow) {

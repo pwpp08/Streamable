@@ -4,13 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
     tools:context=".fragments.tv_show.TvShowTvFragment">
 
     <ImageView
         android:id="@+id/iv_tv_show_banner"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:foreground="?attr/tv_show_banner_gradient_drawable"
+        android:foreground="@drawable/ud_details_scrim_tv"
         android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

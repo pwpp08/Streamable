@@ -1,6 +1,5 @@
 package com.streamflixreborn.streamflix.adapters.viewholders
 
-import android.view.animation.AnimationUtils
 import androidx.core.view.isVisible
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
@@ -13,6 +12,7 @@ import com.streamflixreborn.streamflix.databinding.ItemSeasonTvBinding
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowMobileFragmentDirections
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowTvFragmentDirections
 import com.streamflixreborn.streamflix.models.Season
+import com.streamflixreborn.streamflix.ui.motion.FocusScaleAnimator
 
 class SeasonViewHolder(
     private val _binding: ViewBinding
@@ -50,19 +50,15 @@ class SeasonViewHolder(
             }
         }
 
-        binding.ivSeasonPoster.apply {
-            clipToOutline = true
-            Glide.with(context)
-                .load(season.poster)
-                .error(R.drawable.glide_fallback_cover)
-                .fallback(R.drawable.glide_fallback_cover)
-                .centerCrop()
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .into(this)
+        binding.btnSeason.apply {
+            text = season.displayTitle()
+            // Fully watched seasons carry a check, like the poster ribbon did.
+            icon = if (season.isFullyWatched()) {
+                androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_ud_check)
+            } else {
+                null
+            }
         }
-        binding.ivSeasonWatchedRibbon.isVisible = season.isFullyWatched()
-
-        binding.tvSeasonTitle.text = season.displayTitle()
     }
 
     private fun displayTvItem(binding: ItemSeasonTvBinding) {
@@ -80,18 +76,11 @@ class SeasonViewHolder(
                     )
                 )
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                val animation = when {
-                    hasFocus -> AnimationUtils.loadAnimation(context, R.anim.zoom_in)
-                    else -> AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                }
-                binding.ivSeasonPoster.startAnimation(animation)
-                animation.fillAfter = true
-            }
+            // Spring scale; the ring is the poster's focus foreground (fg_item_season_image_tv).
+            FocusScaleAnimator.attach(this, liftPx = 0f, ringWidthPx = 0)
         }
 
         binding.ivSeasonPoster.apply {
-            clipToOutline = true
             Glide.with(context)
                 .load(season.poster)
                 .error(R.drawable.glide_fallback_cover)

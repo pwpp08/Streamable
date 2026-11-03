@@ -4,6 +4,9 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
+import android.widget.TextView
+import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.streamflixreborn.streamflix.ui.motion.FocusScaleAnimator
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
@@ -118,40 +121,13 @@ class EpisodeViewHolder(
                 .transition(DrawableTransitionOptions.withCrossFade())
                 .into(this)
         }
-        binding.ivEpisodeWatchedRibbon.visibility = if (episode.isWatched) View.VISIBLE else View.GONE
-
-        binding.pbEpisodeProgress.apply {
-            val watchHistory = episode.watchHistory
-
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                episode.isWatched -> 100
-                else -> 0
-            }
-            visibility = when {
-                watchHistory != null -> View.VISIBLE
-                episode.isWatched -> View.VISIBLE
-                else -> View.GONE
-            }
-        }
-
-        binding.tvEpisodeInfo.text = context.getString(
-            R.string.episode_number,
-            episode.number
+        bindEpisodeCard(
+            binding.ivEpisodeWatchedRibbon,
+            binding.pbEpisodeProgress,
+            binding.tvEpisodeTitle,
+            binding.tvEpisodeReleased,
+            episode.released?.format("yyyy-MM-dd"),
         )
-
-        binding.tvEpisodeTitle.text = episode.title ?: context.getString(
-            R.string.episode_number,
-            episode.number
-        )
-
-        binding.tvEpisodeReleased.apply {
-            text = episode.released?.let { " • ${it.format("yyyy-MM-dd")}" }
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
         binding.tvEpisodeOverview.text = episode.overview ?: ""
 
         // Offline download (phone only; the button hides itself on TV).
@@ -185,6 +161,41 @@ class EpisodeViewHolder(
             }
         )
         binding.btnEpisodeDownload.beforeStart = { SyncProviders.switchTo(episode.tvShow?.providerName) }
+    }
+
+    /**
+     * Episode card body (season screen): "E5 · Title", the release date plus the time left when
+     * partly watched, a wavy progress bar only while in progress, and the watched check.
+     */
+    private fun bindEpisodeCard(
+        watchedBadge: View,
+        progressBar: LinearProgressIndicator,
+        title: TextView,
+        meta: TextView,
+        released: String?,
+    ) {
+        watchedBadge.visibility = if (episode.isWatched) View.VISIBLE else View.GONE
+
+        val watchHistory = episode.watchHistory
+        val inProgress = watchHistory != null && !episode.isWatched
+        progressBar.visibility = if (inProgress) View.VISIBLE else View.GONE
+        progressBar.progress = watchHistory?.let {
+            if (it.durationMillis > 0) (it.lastPlaybackPositionMillis * 100 / it.durationMillis.toDouble()).toInt() else 0
+        } ?: 0
+
+        title.text = context.getString(
+            R.string.episode_card_title,
+            episode.number,
+            episode.title ?: context.getString(R.string.episode_number, episode.number)
+        )
+
+        val timeLeft = watchHistory
+            ?.takeIf { inProgress && it.durationMillis > 0 }
+            ?.let { ((it.durationMillis - it.lastPlaybackPositionMillis) / 60_000L).coerceAtLeast(1L) }
+            ?.let { context.getString(R.string.episode_time_left, it.toInt()) }
+        val text = listOfNotNull(released, timeLeft).joinToString("  \u00B7  ")
+        meta.text = text
+        meta.visibility = if (text.isEmpty()) View.GONE else View.VISIBLE
     }
 
     /** Player header line for this episode ("S1 E2 • Title"). */
@@ -254,18 +265,11 @@ class EpisodeViewHolder(
                     .show()
                 true
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                val animation = when {
-                    hasFocus -> AnimationUtils.loadAnimation(context, R.anim.zoom_in)
-                    else -> AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                }
-                binding.root.startAnimation(animation)
-                animation.fillAfter = true
-            }
+            // Spring scale; the ring is the thumbnail's focus foreground (fg_item_episode_image_tv).
+            FocusScaleAnimator.attach(this, focusedScale = 1.05f, liftPx = 0f, ringWidthPx = 0)
         }
 
         binding.ivEpisodePoster.apply {
-            clipToOutline = true
             Glide.with(context)
                 .load(episode.poster)
                 .error(R.drawable.glide_fallback_cover)
@@ -274,40 +278,13 @@ class EpisodeViewHolder(
                 .transition(DrawableTransitionOptions.withCrossFade())
                 .into(this)
         }
-        binding.ivEpisodeWatchedRibbon.visibility = if (episode.isWatched) View.VISIBLE else View.GONE
-
-        binding.pbEpisodeProgress.apply {
-            val watchHistory = episode.watchHistory
-
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                episode.isWatched -> 100
-                else -> 0
-            }
-            visibility = when {
-                watchHistory != null -> View.VISIBLE
-                episode.isWatched -> View.VISIBLE
-                else -> View.GONE
-            }
-        }
-
-        binding.tvEpisodeInfo.text = context.getString(
-            R.string.episode_number,
-            episode.number
+        bindEpisodeCard(
+            binding.ivEpisodeWatchedRibbon,
+            binding.pbEpisodeProgress,
+            binding.tvEpisodeTitle,
+            binding.tvEpisodeReleased,
+            episode.released?.format("EEEE - MMMM dd, yyyy"),
         )
-
-        binding.tvEpisodeTitle.text = episode.title ?: context.getString(
-            R.string.episode_number,
-            episode.number
-        )
-
-        binding.tvEpisodeReleased.apply {
-            text = episode.released?.format("EEEE - MMMM dd, yyyy")
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
         binding.tvEpisodeOverview.text = episode.overview ?: ""
     }
 
