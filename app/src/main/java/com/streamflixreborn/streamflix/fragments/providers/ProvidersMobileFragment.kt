@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.graphics.drawable.GradientDrawable
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -16,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.ui.ProfileAvatarDrawable
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.databinding.FragmentProvidersMobileBinding
 import com.streamflixreborn.streamflix.models.Provider as ModelProvider
@@ -172,7 +172,7 @@ class ProvidersMobileFragment : Fragment() {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             }
             addItemDecoration(
-                SpacingItemDecoration(32.dp(requireContext()))
+                SpacingItemDecoration(12.dp(requireContext()))
             )
         }
     }
@@ -181,12 +181,10 @@ class ProvidersMobileFragment : Fragment() {
         binding.llProfile.apply {
             val profile = ProfileManager.activeProfile
             if (profile != null) {
-                val drawable = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    cornerRadius = 8f * binding.ivProfileAvatar.resources.displayMetrics.density
-                    setColor(profile.avatarColor)
-                }
-                binding.ivProfileAvatar.setImageDrawable(drawable)
+                binding.ivProfileAvatar.setImageDrawable(ProfileAvatarDrawable.create(requireContext(), profile))
+                binding.tvProfileInitial.setTextColor(
+                    ProfileAvatarDrawable.colorsFor(requireContext(), profile.avatarColor).onContainer
+                )
                 binding.tvProfileInitial.text = profile.name.firstOrNull()?.uppercase() ?: "?"
                 binding.tvProfileName.text = profile.name
             } else {

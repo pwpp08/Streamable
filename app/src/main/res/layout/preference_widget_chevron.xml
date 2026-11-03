@@ -13,5 +13,5 @@
         android:layout_gravity="center"
         android:importantForAccessibility="no"
         android:src="@drawable/ic_player_setting_arrow_right"
-        app:tint="?attr/colorOnSurfaceVariant" />
+        android:tint="?attr/colorOnSurfaceVariant" />
 </FrameLayout>

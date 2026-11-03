@@ -119,4 +119,17 @@
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
+    <!-- ============================================================ shared TV controls -->
+    <!-- Tonal pill button for D-pad screens: primary fill with onPrimary content while focused
+         (see docs: selected TV buttons), secondaryContainer otherwise. -->
+    <style name="Widget.StreamFlix.Button.Tv" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="backgroundTint">@color/sf_tv_button_container</item>
+        <item name="android:textColor">@color/sf_tv_button_content</item>
+        <item name="iconTint">@color/sf_tv_button_content</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmallEmphasized</item>
+        <item name="android:paddingStart">28dp</item>
+        <item name="android:paddingEnd">28dp</item>
+        <item name="android:minHeight">56dp</item>
+    </style>
+
 </resources>

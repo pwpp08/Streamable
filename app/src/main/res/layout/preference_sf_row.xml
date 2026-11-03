@@ -29,7 +29,7 @@
             android:layout_height="22dp"
             android:layout_gravity="center"
             android:importantForAccessibility="no"
-            app:tint="?attr/colorOnSecondaryContainer" />
+            android:tint="?attr/colorOnSecondaryContainer" />
     </FrameLayout>
 
     <LinearLayout

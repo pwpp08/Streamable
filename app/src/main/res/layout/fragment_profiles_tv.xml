@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- TV profile picker: display headline, big focusable avatars, tonal D-pad buttons. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/app_background_color"
+    android:background="?attr/colorSurface"
+    android:clipChildren="false"
     android:padding="48dp">
 
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         android:text="@string/app_name"
+        android:textAppearance="?attr/textAppearanceDisplaySmallEmphasized"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="36sp"
-        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -24,9 +25,10 @@
         android:id="@+id/tv_subtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="@string/profile_who_is_watching"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_title" />
@@ -34,11 +36,11 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_profiles"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="64dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:clipChildren="false"
         android:clipToPadding="false"
-        android:padding="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/ll_profile_buttons"
+        android:padding="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
@@ -50,49 +52,42 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/profile_no_profiles"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="20sp"
         android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rv_profiles"
         app:layout_constraintEnd_toEndOf="@id/rv_profiles"
         app:layout_constraintStart_toStartOf="@id/rv_profiles"
         app:layout_constraintTop_toTopOf="@id/rv_profiles"
-        app:layout_constraintBottom_toBottomOf="@id/rv_profiles"
         tools:visibility="visible" />
 
     <LinearLayout
         android:id="@+id/ll_profile_buttons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
+        android:clipChildren="false"
         android:gravity="center"
         android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/rv_profiles">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_add_profile"
+            style="@style/Widget.StreamFlix.Button.Tv"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_button_profile_tv"
-            android:paddingHorizontal="24dp"
+            android:layout_height="56dp"
             android:text="@string/profile_add_btn"
-            android:textAllCaps="false"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="18sp" />
+            app:icon="@drawable/ic_sf_profiles" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_manage_profiles"
+            style="@style/Widget.StreamFlix.Button.Tv"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:layout_marginStart="16dp"
-            android:background="@drawable/bg_button_profile_tv"
-            android:paddingHorizontal="24dp"
-            android:text="@string/profile_manage_btn"
-            android:textAllCaps="false"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="18sp" />
+            android:text="@string/profile_manage_btn" />
 
     </LinearLayout>
 

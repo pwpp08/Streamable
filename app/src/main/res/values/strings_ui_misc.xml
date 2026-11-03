@@ -2,4 +2,6 @@
 <!-- Strings for the settings, search and utility screens redesign. -->
 <resources>
     <string name="ui_misc_navigate_up">Back</string>
+    <string name="ui_misc_provider_health_ok">Working at the last health check</string>
+    <string name="ui_misc_provider_health_failed">Failed the last health check</string>
 </resources>
