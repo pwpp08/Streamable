@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
 import com.bumptech.glide.Glide
@@ -19,6 +20,7 @@ import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.sync.PlayOnTv
+import com.streamflixreborn.streamflix.sync.SyncProviders
 import com.streamflixreborn.streamflix.utils.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,11 +52,16 @@ class ShowOptionsMobileDialog(
         action()
     }
 
+    /** Opened from the Home "Continue Watching" row. */
+    private val isContinueWatching = WatchStateActions.isContinueWatchingItem(show)
+
     init {
         setContentView(binding.root)
 
         findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
             ?.setBackgroundColor(Color.TRANSPARENT)
+
+        binding.btnOptionEpisodeMarkSeasonWatched.visibility = View.GONE
 
         when (show) {
             is Episode -> displayEpisode(show)
@@ -72,6 +79,7 @@ class ShowOptionsMobileDialog(
         if (isRecentlyWatched) {
             binding.btnOptionEpisodeOpenTvShow.visibility = View.GONE
             binding.btnOptionEpisodeMarkAllPreviousWatched.visibility = View.GONE
+            binding.btnOptionEpisodeMarkSeasonWatched.visibility = View.GONE
             binding.btnOptionProgramClear.visibility = View.GONE
 
             binding.btnOptionShowWatched.apply {
@@ -101,6 +109,14 @@ class ShowOptionsMobileDialog(
             setOnClickListener {
                 hide()
                 activity?.let { PlayOnTv.play(it, show) }
+            }
+        }
+
+        if (isContinueWatching && binding.btnOptionProgramClear.visibility == View.VISIBLE) {
+            // The row's own action first.
+            (binding.btnOptionProgramClear.parent as? ViewGroup)?.let { parent ->
+                parent.removeView(binding.btnOptionProgramClear)
+                parent.addView(binding.btnOptionProgramClear, 0)
             }
         }
 
@@ -144,6 +160,7 @@ class ShowOptionsMobileDialog(
             setOnClickListener {
                 when (val fragment = context.toActivity()?.getCurrentFragment()) {
                     is HomeMobileFragment -> episode.tvShow?.let { tvShow ->
+                        SyncProviders.switchTo(tvShow.providerName)
                         NavHostFragment.findNavController(fragment).navigate(
                             HomeMobileFragmentDirections.actionHomeToTvShow(
                                 id = tvShow.id,
@@ -164,142 +181,65 @@ class ShowOptionsMobileDialog(
 
         binding.btnOptionShowFavorite.visibility = View.GONE
 
+        // Room allows main-thread reads; another provider's item carries its own state.
+        val freshEpisode = if (WatchStateActions.isOtherProvider(episode)) {
+            episode
+        } else {
+            database.episodeDao().getById(episode.id)?.let { stored ->
+                episode.copy().apply { merge(stored) }
+            } ?: episode
+        }
+
         binding.btnOptionShowWatched.apply {
             setOnClickListener {
-                checkProviderAndRun(episode) {
-                    val currentProvider = UserPreferences.currentProvider ?: return@checkProviderAndRun
-                    val updatedEpisode = episode.copy().apply {
-                        merge(episode)
-                        isWatched = !isWatched
-                        if (isWatched) {
-                            watchedDate = Calendar.getInstance()
-                            watchHistory = null
-                        } else {
-                            watchedDate = null
-                        }
-                    }
-                    AppDatabase.getInstance(context).episodeDao().save(updatedEpisode)
-                    UserDataCache.syncEpisodeToCache(context, currentProvider, updatedEpisode)
-
-                    // NUOVA LOGICA: Aggiorna lo stato isWatching della serie TV madre
-                    episode.tvShow?.let { tvShow ->
-                        val episodeDao = AppDatabase.getInstance(context).episodeDao()
-                        val isStillWatching = episodeDao.hasAnyWatchHistoryForTvShow(tvShow.id)
-
-                        // Se l'episodio è stato marcato come VISTO E non ci sono altri
-                        // episodi con cronologia, impostiamo isWatching a false.
-                        if (updatedEpisode.isWatched && !isStillWatching) {
-                            AppDatabase.getInstance(context).tvShowDao().save(tvShow.copy().apply {
-                                merge(tvShow)
-                                isWatching = false
-                            })
-                            UserDataCache.removeEpisodeFromContinueWatching(context, currentProvider, episode.id)
-                        }
-                    }
-                    if (updatedEpisode.isWatched) {
-                        UserDataCache.removeEpisodeFromContinueWatching(context, currentProvider, episode.id)
-                    }
+                WatchStateActions.launch(context) {
+                    WatchStateActions.setWatched(context, episode, !freshEpisode.isWatched)
                 }
-
                 hide()
             }
 
             text = when {
-                episode.isWatched -> context.getString(R.string.option_show_unwatched)
+                freshEpisode.isWatched -> context.getString(R.string.option_show_unwatched)
                 else -> context.getString(R.string.option_show_watched)
             }
             visibility = View.VISIBLE
         }
         binding.btnOptionEpisodeMarkAllPreviousWatched.apply {
             setOnClickListener {
-                checkProviderAndRun(episode) {
-                    val episodeDao = AppDatabase.getInstance(context).episodeDao()
-                    val episodeNumber = episode.number
-                    val tvShowId = episode.tvShow?.id ?: return@checkProviderAndRun
-                    val allEpisodes = episodeDao.getEpisodesByTvShowIdAndSeason(tvShowId, episode.season?.id).filter { it.number <= episodeNumber }
-                    val targetState = !episode.isWatched // If current is watched, we unwatch; else, we mark watched
-                    val now = Calendar.getInstance()
-                    val currentProvider = UserPreferences.currentProvider ?: return@checkProviderAndRun
-
-                    for (ep in allEpisodes) {
-                        if (ep.isWatched != targetState) {
-                            val updatedEp = ep.copy().apply {
-                                merge(ep)
-                                isWatched = targetState
-                                watchedDate = if (targetState) now else null
-                                watchHistory = if (targetState) null else watchHistory
-                            }
-                            episodeDao.save(updatedEp)
-                            UserDataCache.syncEpisodeToCache(context, currentProvider, updatedEp)
-                        }
-                    }
-
-                    // Logica aggiuntiva per isWatching:
-                    // Se l'obiettivo era marcare come VISTO, e non ci sono cronologie, si imposta isWatching a false.
-                    if (targetState) {
-                        episode.tvShow?.let { tvShow ->
-                            if (!episodeDao.hasAnyWatchHistoryForTvShow(tvShow.id)) {
-                                AppDatabase.getInstance(context).tvShowDao().save(tvShow.copy().apply {
-                                    merge(tvShow)
-                                    isWatching = false
-                                })
-                                UserDataCache.removeEpisodeFromContinueWatching(context, currentProvider, episode.id)
-                            }
-                        }
-                        UserDataCache.removeEpisodeFromContinueWatching(context, currentProvider, episode.id)
-                    }
-                    // Se l'obiettivo era marcare come NON VISTO, impostiamo isWatching a true per farlo riapparire.
-                    if (!targetState) {
-                        episode.tvShow?.let { tvShow ->
-                            AppDatabase.getInstance(context).tvShowDao().save(tvShow.copy().apply {
-                                merge(tvShow)
-                                isWatching = true
-                            })
-                        }
-                    }
+                WatchStateActions.launch(context) {
+                    WatchStateActions.setWatchedUntil(context, episode, !freshEpisode.isWatched)
                 }
-
                 hide()
             }
 
             text = when {
-                episode.isWatched -> context.getString(R.string.option_show_mark_all_previous_unwatched)
+                freshEpisode.isWatched -> context.getString(R.string.option_show_mark_all_previous_unwatched)
                 else -> context.getString(R.string.option_show_mark_all_previous_watched)
             }
             visibility = View.VISIBLE
         }
 
+        binding.btnOptionEpisodeMarkSeasonWatched.apply {
+            setOnClickListener {
+                WatchStateActions.launch(context) {
+                    WatchStateActions.markSeasonWatched(context, episode)
+                }
+                hide()
+            }
+            visibility = if (episode.season?.id != null) View.VISIBLE else View.GONE
+        }
 
         binding.btnOptionProgramClear.apply {
             setOnClickListener {
-                checkProviderAndRun(episode) {
-                    val provider = UserPreferences.currentProvider ?: return@checkProviderAndRun
-                    val updatedEpisode = episode.copy().apply {
-                        merge(episode)
-                        watchHistory = null
-                    }
-                    AppDatabase.getInstance(context).episodeDao().save(updatedEpisode)
-                    UserDataCache.syncEpisodeToCache(context, provider, updatedEpisode)
-                    
-                    episode.tvShow?.let { tvShow ->
-                        // Rimuoviamo isWatching solo se NON ci sono altri episodi in corso
-                        val episodeDao = AppDatabase.getInstance(context).episodeDao()
-                        if (!episodeDao.hasAnyWatchHistoryForTvShow(tvShow.id)) {
-                            AppDatabase.getInstance(context).tvShowDao().save(tvShow.copy().apply {
-                                merge(tvShow)
-                                isWatching = false
-                            })
-                            UserDataCache.removeEpisodeFromContinueWatching(context, provider, episode.id)
-                        }
-                    }
-                    UserDataCache.removeEpisodeFromContinueWatching(context, provider, episode.id)
+                WatchStateActions.launch(context) {
+                    WatchStateActions.removeFromContinueWatching(context, episode)
                 }
-
                 hide()
             }
 
             visibility = when {
-                episode.watchHistory != null -> View.VISIBLE
+                isContinueWatching -> View.VISIBLE
+                freshEpisode.watchHistory != null -> View.VISIBLE
                 episode.tvShow?.isWatching ?: false -> View.VISIBLE
                 else -> View.GONE
             }
@@ -318,7 +258,11 @@ class ShowOptionsMobileDialog(
 
         binding.btnOptionEpisodeOpenTvShow.visibility = View.GONE
 
-        val freshMovie = database.movieDao().getById(movie.id) ?: movie
+        val freshMovie = if (WatchStateActions.isOtherProvider(movie)) {
+            movie
+        } else {
+            database.movieDao().getById(movie.id) ?: movie
+        }
 
         binding.btnOptionShowFavorite.apply {
             setOnClickListener {
@@ -350,26 +294,9 @@ class ShowOptionsMobileDialog(
 
         binding.btnOptionShowWatched.apply {
             setOnClickListener {
-                checkProviderAndRun(freshMovie) {
-                    val provider = UserPreferences.currentProvider ?: return@checkProviderAndRun
-                    val updatedMovie = freshMovie.copy().apply {
-                        merge(freshMovie)
-                        isWatched = !isWatched
-                        if (isWatched) {
-                            watchedDate = Calendar.getInstance()
-                            watchHistory = null
-                        } else {
-                            watchedDate = null
-                        }
-                    }
-                    AppDatabase.getInstance(context).movieDao().save(updatedMovie)
-                    UserDataCache.syncMovieToCache(context, provider, updatedMovie)
-                    
-                    if (updatedMovie.isWatched) {
-                        UserDataCache.removeMovieFromContinueWatching(context, provider, freshMovie.id)
-                    }
+                WatchStateActions.launch(context) {
+                    WatchStateActions.setWatched(context, movie, !freshMovie.isWatched)
                 }
-
                 hide()
             }
 
@@ -382,21 +309,14 @@ class ShowOptionsMobileDialog(
 
         binding.btnOptionProgramClear.apply {
             setOnClickListener {
-                checkProviderAndRun(freshMovie) {
-                    val provider = UserPreferences.currentProvider ?: return@checkProviderAndRun
-                    val updatedMovie = freshMovie.copy().apply {
-                        merge(freshMovie)
-                        watchHistory = null
-                    }
-                    AppDatabase.getInstance(context).movieDao().save(updatedMovie)
-                    UserDataCache.syncMovieToCache(context, provider, updatedMovie)
-                    UserDataCache.removeMovieFromContinueWatching(context, provider, freshMovie.id)
+                WatchStateActions.launch(context) {
+                    WatchStateActions.removeFromContinueWatching(context, movie)
                 }
-
                 hide()
             }
 
             visibility = when {
+                isContinueWatching -> View.VISIBLE
                 freshMovie.watchHistory != null -> View.VISIBLE
                 else -> View.GONE
             }

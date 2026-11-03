@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Continue Watching options -->
+    <string name="option_mark_season_watched">Mark season as watched</string>
+
+    <!-- Settings > Home screen -->
+    <string name="settings_home_summary">Reorder and hide home screen rows</string>
+    <string name="home_rows_title">Home screen rows</string>
+    <string name="home_rows_hint_mobile">Drag the handle to reorder. Tap a row to show or hide it.</string>
+    <string name="home_rows_hint_tv">Press OK on a row to show or hide it. Use Move up and Move down to reorder.</string>
+    <string name="home_rows_no_provider_rows">The source\'s own rows appear here after the home screen has loaded once.</string>
+    <string name="home_rows_reset">Reset to default</string>
+    <string name="home_rows_reset_done">Home screen rows reset</string>
+    <string name="home_rows_move_up">Move up</string>
+    <string name="home_rows_move_down">Move down</string>
+    <string name="home_rows_shown">Shown</string>
+    <string name="home_rows_hidden">Hidden</string>
+    <string name="home_rows_library_row">Your library</string>
+    <string name="home_rows_provider_row">From %1$s</string>
+    <string name="home_rows_drag_handle">Drag to reorder</string>
+
+    <!-- Search history and suggestions -->
+    <string name="search_recent">Recent searches</string>
+    <string name="search_clear_history">Clear history</string>
+    <string name="search_suggestions">Suggestions</string>
+    <string name="search_suggestion_movie">Movie</string>
+    <string name="search_suggestion_tv">TV show</string>
+    <string name="search_suggestion_meta" translatable="false">%1$s · %2$s</string>
+
+</resources>

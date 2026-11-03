@@ -475,6 +475,12 @@ class MovieViewHolder(
                 ShowOptionsTvDialog(context, movie).show()
                 true
             }
+            setOnKeyListener { _, keyCode, event ->
+                // Menu opens the same options as a long press on OK.
+                if (keyCode != KeyEvent.KEYCODE_MENU) return@setOnKeyListener false
+                if (event.action == KeyEvent.ACTION_UP) performLongClick()
+                true
+            }
             setOnFocusChangeListener { _, hasFocus ->
                 val animation = when {
                     hasFocus -> AnimationUtils.loadAnimation(context, R.anim.zoom_in)

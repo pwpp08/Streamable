@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Continue Watching options -->
+    <string name="option_mark_season_watched">Évad megjelölése megnézettként</string>
+
+    <!-- Settings > Home screen -->
+    <string name="settings_home_summary">A kezdőképernyő sorainak sorrendje és elrejtése</string>
+    <string name="home_rows_title">Kezdőképernyő sorai</string>
+    <string name="home_rows_hint_mobile">Az átrendezéshez húzd a fogantyút. Egy sorra koppintva megjelenítheted vagy elrejtheted.</string>
+    <string name="home_rows_hint_tv">Az OK gombbal megjelenítheted vagy elrejtheted a sort. Az átrendezéshez használd a Feljebb és Lejjebb gombot.</string>
+    <string name="home_rows_no_provider_rows">A forrás saját sorai a kezdőképernyő első betöltése után jelennek meg itt.</string>
+    <string name="home_rows_reset">Alapértelmezés visszaállítása</string>
+    <string name="home_rows_reset_done">A kezdőképernyő sorai visszaállítva</string>
+    <string name="home_rows_move_up">Feljebb</string>
+    <string name="home_rows_move_down">Lejjebb</string>
+    <string name="home_rows_shown">Látható</string>
+    <string name="home_rows_hidden">Rejtett</string>
+    <string name="home_rows_library_row">Saját könyvtár</string>
+    <string name="home_rows_provider_row">Forrás: %1$s</string>
+    <string name="home_rows_drag_handle">Húzd az átrendezéshez</string>
+
+    <!-- Search history and suggestions -->
+    <string name="search_recent">Legutóbbi keresések</string>
+    <string name="search_clear_history">Előzmények törlése</string>
+    <string name="search_suggestions">Javaslatok</string>
+    <string name="search_suggestion_movie">Film</string>
+    <string name="search_suggestion_tv">Sorozat</string>
+
+</resources>

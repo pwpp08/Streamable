@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.adapters.viewholders
 
+import android.view.KeyEvent
 import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
@@ -424,6 +425,12 @@ class EpisodeViewHolder(
             setOnLongClickListener {
                 ShowOptionsTvDialog(context, episode)
                     .show()
+                true
+            }
+            setOnKeyListener { _, keyCode, event ->
+                // Menu opens the same options as a long press on OK.
+                if (keyCode != KeyEvent.KEYCODE_MENU) return@setOnKeyListener false
+                if (event.action == KeyEvent.ACTION_UP) performLongClick()
                 true
             }
             setOnFocusChangeListener { _, hasFocus ->

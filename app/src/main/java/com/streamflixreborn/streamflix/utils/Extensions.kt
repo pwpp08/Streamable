@@ -3,6 +3,7 @@ package com.streamflixreborn.streamflix.utils
 import android.app.Activity
 import android.content.ContentResolver
 import android.content.Context
+import android.content.ContextWrapper
 import android.database.Cursor
 import android.graphics.Color
 import android.net.Uri
@@ -84,7 +85,15 @@ fun Context.hideKeyboard(view: View) {
     inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
-fun Context.toActivity(): FragmentActivity? = this as? FragmentActivity
+/** The hosting activity, also through wrappers such as a Dialog's ContextThemeWrapper. */
+fun Context.toActivity(): FragmentActivity? {
+    var current: Context? = this
+    while (current is ContextWrapper) {
+        if (current is FragmentActivity) return current
+        current = current.baseContext
+    }
+    return null
+}
 
 fun FragmentActivity.getCurrentFragment(): Fragment? = when (this) {
     is MainMobileActivity -> {
