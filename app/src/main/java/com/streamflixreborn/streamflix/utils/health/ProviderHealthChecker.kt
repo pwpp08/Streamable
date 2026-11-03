@@ -136,6 +136,54 @@ class ProviderHealthChecker(
         }
     }
 
+    /**
+     * Best quality class of [video]: the master playlist's RESOLUTION, or, for a plain media
+     * playlist (no resolutions listed), an estimate from the first segment's bitrate. Null when
+     * neither can be read.
+     */
+    suspend fun probeHeight(video: Video): Int? = try {
+        inspectStream(video).maxHeight ?: estimateFromBitrate(video)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
+
+    private suspend fun estimateFromBitrate(video: Video): Int? {
+        if (!video.source.startsWith("http", ignoreCase = true)) return null
+        return runInterruptible(Dispatchers.IO) {
+            val client = httpClient()
+            fun request(url: String, range: String? = null): Request {
+                val b = Request.Builder().url(url)
+                video.headers?.forEach { (n, v) -> runCatching { b.header(n, v) } }
+                if (range != null) b.header("Range", range)
+                return b.build()
+            }
+            val text = client.newCall(request(video.source)).execute().use { r ->
+                if (!r.isSuccessful) return@runInterruptible null
+                r.body?.source()?.let { it.request(MAX_PLAYLIST_BYTES); it.buffer.clone().readUtf8() }.orEmpty()
+            }
+            if (!HlsPlaylistParser.isPlaylist(text) || HlsPlaylistParser.isMasterPlaylist(text)) return@runInterruptible null
+            val lines = text.lines().map { it.trim() }
+            val index = lines.indexOfFirst { it.startsWith("#EXTINF:") }
+            if (index < 0) return@runInterruptible null
+            val seconds = lines[index].removePrefix("#EXTINF:").substringBefore(',').toDoubleOrNull() ?: return@runInterruptible null
+            val segment = lines.drop(index + 1).firstOrNull { it.isNotEmpty() && !it.startsWith("#") } ?: return@runInterruptible null
+            val url = client.newCall(request(video.source)).request().url.resolve(segment)?.toString() ?: return@runInterruptible null
+            // Last segment of a film is short; use a middle one if there are enough.
+            val total = client.newCall(request(url, "bytes=0-0")).execute().use { r ->
+                r.header("Content-Range")?.substringAfter('/')?.toLongOrNull() ?: r.header("Content-Length")?.toLongOrNull()
+            } ?: return@runInterruptible null
+            if (seconds <= 1.0) return@runInterruptible null
+            val bitsPerSecond = total * 8 / seconds
+            when {
+                bitsPerSecond >= FULL_HD_MIN_BPS -> 1080
+                bitsPerSecond >= HD_MIN_BPS -> 720
+                else -> 480
+            }
+        }
+    }
+
     private class StreamCheck(val ok: Boolean, val maxHeight: Int?, val error: String?)
 
     private suspend fun inspectStream(video: Video): StreamCheck {
@@ -264,6 +312,9 @@ class ProviderHealthChecker(
         const val SHOW_TITLE = "Breaking Bad"
         const val SHOW_TMDB_ID = "1396"
         private const val MAX_PLAYLIST_BYTES = 512L * 1024
+        /** A film at or above this bitrate is treated as 1080p, at or above the lower one as 720p. */
+        private const val FULL_HD_MIN_BPS = 3_500_000L
+        private const val HD_MIN_BPS = 1_500_000L
 
         /** Providers not in `Provider.providers` that can be probed on request. */
         val candidateProviders: List<Provider>

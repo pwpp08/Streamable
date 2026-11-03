@@ -19,7 +19,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:resize_mode="fit"
         app:show_buffering="never"
-        app:surface_type="surface_view"
+        app:surface_type="texture_view"
         app:use_controller="false" />
 
     <!-- NextPlayer's controls with D-pad navigation. -->

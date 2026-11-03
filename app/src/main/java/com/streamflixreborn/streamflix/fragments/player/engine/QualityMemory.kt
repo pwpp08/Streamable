@@ -44,6 +44,11 @@ object QualityMemory {
     }
 
     /** Best recently observed height for [serverName], or null when never played / stale. */
+    /** Best height a server's playlist declares (null when unknown); learned without playing it. */
+    fun hint(serverName: String, height: Int?) {
+        if (height != null) record(serverName, height)
+    }
+
     fun height(serverName: String, now: Long = System.currentTimeMillis()): Int? =
         decode(prefs().getString(key(serverName), null), now)
 

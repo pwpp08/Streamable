@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import com.streamflixreborn.streamflix.utils.health.ProviderHealthChecker
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeout
@@ -65,6 +66,7 @@ class PlayerViewModel(
 
     @Volatile
     private var currentServerId: String? = null
+    private var upgradeJob: Job? = null
     private var resolutionJob: Job? = null
     private var playbackJob: Job? = null
     private var prefetchJob: Job? = null
@@ -353,6 +355,41 @@ class PlayerViewModel(
         QualityMemory.currentServer = server.name
         Log.d(TAG, "playing ${server.name} (failover=$failover)")
         _state.emit(State.SuccessLoadingVideo(prepareVideo(video), server, failover))
+        startQualityUpgrade(video, server)
+    }
+
+    /**
+     * Picks the best picture automatically: if the server that started is below full HD, look at
+     * the other servers' playlists and move to one that offers 1080p, keeping the position.
+     */
+    private fun startQualityUpgrade(playing: Video, server: Video.Server) {
+        upgradeJob?.cancel()
+        if (server.id == offlineServer?.id) return
+        upgradeJob = viewModelScope.launch(Dispatchers.IO) {
+            // Let playback settle first; the projector has one weak CPU cluster.
+            kotlinx.coroutines.delay(UPGRADE_DELAY_MS)
+            val prober = ProviderHealthChecker(providers = emptyList())
+            val current = prober.probeHeight(playing)
+            QualityMemory.hint(server.name, current)
+            if (current != null && current >= FULL_HD) return@launch
+            val deadline = SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
+            var probes = 0
+            for (candidate in ranked) {
+                if (SystemClock.elapsedRealtime() > deadline || probes >= UPGRADE_MAX_PROBES) break
+                if (candidate.id == server.id || candidate.id in failedIds) continue
+                if (QualityMemory.height(candidate.name)?.let { it in 1 until FULL_HD } == true) continue
+                val video = cachedVideo(candidate) ?: resolve(candidate) ?: continue
+                probes++
+                val height = prober.probeHeight(video)
+                QualityMemory.hint(candidate.name, height)
+                Log.d(TAG, "upgrade probe: ${candidate.name} -> ${height ?: "?"}p (playing ${current ?: "?"}p)")
+                if (height != null && height >= FULL_HD && height > (current ?: 0)) {
+                    if (currentServerId != server.id) return@launch
+                    playbackMutex.withLock { emitSuccess(video, candidate, failover = true) }
+                    return@launch
+                }
+            }
+        }
     }
 
     private suspend fun resolve(server: Video.Server): Video? {
@@ -536,5 +573,10 @@ class PlayerViewModel(
         private const val MAX_PRERESOLVED = 3
         private const val RESOLVED_MAX_AGE_MS = 10 * 60_000L
         private const val PREFETCH_ATTEMPTS = 3
+        private const val FULL_HD = 1080
+        private const val UPGRADE_DELAY_MS = 8_000L
+        private const val UPGRADE_MAX_PROBES = 4
+        /** How long after start the other servers are checked for a sharper picture. */
+        private const val UPGRADE_WINDOW_MS = 40_000L
     }
 }
