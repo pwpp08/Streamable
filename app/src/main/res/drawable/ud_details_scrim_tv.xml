@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TV details backdrop: the text column side and the bottom fade into the surface. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="0"
+                android:centerColor="#B3000000"
+                android:centerX="0.38"
+                android:endColor="@android:color/transparent"
+                android:startColor="?attr/colorSurface" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="90"
+                android:centerColor="@android:color/transparent"
+                android:centerY="0.4"
+                android:endColor="@android:color/transparent"
+                android:startColor="?attr/colorSurface" />
+        </shape>
+    </item>
+</layer-list>
