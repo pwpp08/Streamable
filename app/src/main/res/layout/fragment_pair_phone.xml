@@ -1,57 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phone side of pairing: account card, explanation, scan (filled) or type the code (tonal). -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/app_background_color"
+    android:background="?attr/colorSurface"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:paddingStart="16dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="24dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
             android:text="@string/pair_phone_title"
-            android:textAppearance="?attr/textAppearanceHeadline5"
-            android:textColor="?android:attr/textColorPrimary" />
+            android:textAppearance="?attr/textAppearanceHeadlineMediumEmphasized"
+            android:textColor="?attr/colorOnSurface" />
 
-        <TextView
-            android:id="@+id/tv_pair_phone_account"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textColor="?android:attr/textColorPrimary"
-            tools:text="Signed in as me@example.com" />
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_sf_card_large"
+            android:orientation="vertical"
+            android:padding="20dp">
 
-        <TextView
-            android:id="@+id/tv_pair_phone_explain"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/pair_phone_explain"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary" />
+            <TextView
+                android:id="@+id/tv_pair_phone_account"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_sf_devices"
+                android:drawablePadding="12dp"
+                android:drawableTint="?attr/colorPrimary"
+                android:gravity="center_vertical"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Signed in as me@example.com" />
+
+            <TextView
+                android:id="@+id/tv_pair_phone_explain"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/pair_phone_explain"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_pair_phone_scan"
+            style="@style/Widget.StreamFlix.Button"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:layout_marginTop="24dp"
-            android:text="@string/pair_phone_scan" />
+            android:text="@string/pair_phone_scan"
+            app:icon="@drawable/ic_sf_qr_scan"
+            app:iconGravity="textStart" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_pair_phone_code"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/Widget.StreamFlix.Button.Tonal"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:layout_marginTop="8dp"
             android:text="@string/pair_phone_enter_code"
-            android:textColor="?android:attr/textColorPrimary" />
+            app:icon="@drawable/ic_sf_keyboard"
+            app:iconGravity="textStart" />
 
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/pi_pair_phone"
@@ -66,8 +88,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:textAppearance="?attr/textAppearanceBody1"
-            android:textColor="?android:attr/textColorPrimary"
+            android:gravity="center_horizontal"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface"
             tools:text="Paired with Wanbo X2 Pro" />
     </LinearLayout>
 </ScrollView>

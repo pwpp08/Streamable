@@ -1,10 +1,13 @@
 package com.streamflixreborn.streamflix.fragments.settings
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.databinding.FragmentSettingsMobileBinding
 import com.streamflixreborn.streamflix.fragments.settings.controllers.BackupController
 import com.streamflixreborn.streamflix.fragments.settings.controllers.SettingsScreenDelegate
 
@@ -13,6 +16,8 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
 
     private val backup = BackupController(this, isTv = false)
     private val screens = SettingsScreenDelegate(this, isTv = false, xmlRes = R.xml.settings_mobile, backup = backup)
+
+    private var chrome: FragmentSettingsMobileBinding? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,9 +28,42 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
         screens.onCreatePreferences(rootKey)
     }
 
+    /** Wraps the preference list in the large collapsing top app bar. */
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        val list = super.onCreateView(inflater, container, savedInstanceState)
+        val binding = FragmentSettingsMobileBinding.inflate(inflater, container, false)
+        binding.flSettingsList.addView(list, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        binding.tbSettings.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
+        chrome = binding
+        return binding.root
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        SettingsListStyler.attach(view, isTv = false)
+        SettingsListStyler.attach(this, isTv = false)
+        // The list sits inside a FrameLayout, so point the app bar's lift-on-scroll at it directly.
+        chrome?.ablSettings?.setLiftOnScrollTargetView(listView)
+        screens.onScreenChanged = { title, isNested ->
+            chrome?.apply {
+                val changed = ctlSettings.title?.toString() != title
+                ctlSettings.title = title
+                tbSettings.navigationIcon = if (isNested) {
+                    androidx.appcompat.content.res.AppCompatResources.getDrawable(requireContext(), R.drawable.ic_sf_arrow_back)
+                } else {
+                    null
+                }
+                tbSettings.navigationContentDescription = if (isNested) getString(R.string.ui_misc_navigate_up) else null
+                if (changed) ablSettings.setExpanded(true, false)
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        screens.onScreenChanged = null
+        chrome = null
+        super.onDestroyView()
     }
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean =
@@ -33,6 +71,7 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
 
     override fun onDisplayPreferenceDialog(preference: Preference) {
         if (screens.shouldSuppressDialog(preference)) return
+        if (MaterialPreferenceDialogs.show(this, preference)) return
         super.onDisplayPreferenceDialog(preference)
     }
 

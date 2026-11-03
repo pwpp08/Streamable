@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_misc_navigate_up">Vissza</string>
+    <string name="ui_misc_provider_health_ok">A legutóbbi állapotellenőrzéskor működött</string>
+    <string name="ui_misc_provider_health_failed">A legutóbbi állapotellenőrzés sikertelen volt</string>
+    <string name="ui_misc_search_clear">Keresés törlése</string>
+    <string name="ui_misc_search_voice">Hangalapú keresés</string>
+    <string name="ui_misc_search_type_on_phone">A telefonon kényelmesebb gépelni: nyisd meg a StreamFlix Távirányítóját a telefonodon, és gépelj ott.</string>
+    <string name="ui_misc_remote_seek_hint">10 mp</string>
+</resources>

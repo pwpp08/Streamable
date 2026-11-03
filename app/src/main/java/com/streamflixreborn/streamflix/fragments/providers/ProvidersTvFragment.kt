@@ -1,6 +1,5 @@
 package com.streamflixreborn.streamflix.fragments.providers
 
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.ui.ProfileAvatarDrawable
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.databinding.FragmentProvidersTvBinding
 import com.streamflixreborn.streamflix.models.Provider as ModelProvider
@@ -184,12 +184,10 @@ class ProvidersTvFragment : Fragment() {
         binding.llProfile.apply {
             val profile = ProfileManager.activeProfile
             if (profile != null) {
-                val drawable = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    cornerRadius = 8f * binding.ivProfileAvatar.resources.displayMetrics.density
-                    setColor(profile.avatarColor)
-                }
-                binding.ivProfileAvatar.setImageDrawable(drawable)
+                binding.ivProfileAvatar.setImageDrawable(ProfileAvatarDrawable.create(requireContext(), profile))
+                binding.tvProfileInitial.setTextColor(
+                    ProfileAvatarDrawable.colorsFor(requireContext(), profile.avatarColor).onContainer
+                )
                 binding.tvProfileInitial.text = profile.name.firstOrNull()?.uppercase() ?: "?"
                 binding.tvProfileName.text = profile.name
             } else {

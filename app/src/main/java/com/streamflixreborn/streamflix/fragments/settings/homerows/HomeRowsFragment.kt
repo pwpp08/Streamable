@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.ui.tvFocusSpring
 import com.streamflixreborn.streamflix.activities.main.MainTvActivity
 import com.streamflixreborn.streamflix.databinding.FragmentHomeRowsBinding
 import com.streamflixreborn.streamflix.fragments.home.HomeRowsConfig
@@ -87,6 +88,7 @@ class HomeRowsFragment : Fragment() {
         (binding.rvHomeRows.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
         if (!isTv) touchHelper.attachToRecyclerView(binding.rvHomeRows)
 
+        if (isTv) binding.btnHomeRowsReset.tvFocusSpring()
         binding.btnHomeRowsReset.setOnClickListener {
             HomeRowsStore.reset()
             adapter.submit(HomeRowsConfig.default(providerCategories))

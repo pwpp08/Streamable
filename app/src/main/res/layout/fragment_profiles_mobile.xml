@@ -1,21 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Who is watching: headline, a grid of expressive avatars, then add/manage actions. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/app_background_color"
-    android:padding="24dp">
+    android:background="?attr/colorSurface"
+    android:paddingStart="16dp"
+    android:paddingTop="24dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="24dp">
 
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="40dp"
         android:text="@string/app_name"
+        android:textAppearance="?attr/textAppearanceHeadlineMediumEmphasized"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="28sp"
-        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -24,9 +27,10 @@
         android:id="@+id/tv_subtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
         android:text="@string/profile_who_is_watching"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_title" />
@@ -35,14 +39,17 @@
         android:id="@+id/rv_profiles"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="40dp"
         android:layout_marginBottom="8dp"
+        android:clipChildren="false"
         android:clipToPadding="false"
-        android:padding="8dp"
+        android:padding="4dp"
+        app:layout_constrainedHeight="true"
         app:layout_constraintBottom_toTopOf="@id/ll_profile_buttons"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
+        app:layout_constraintVertical_bias="0"
         tools:itemCount="4"
         tools:listitem="@layout/item_profile_mobile" />
 
@@ -51,51 +58,42 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/profile_no_profiles"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="16sp"
         android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rv_profiles"
         app:layout_constraintEnd_toEndOf="@id/rv_profiles"
         app:layout_constraintStart_toStartOf="@id/rv_profiles"
         app:layout_constraintTop_toTopOf="@id/rv_profiles"
-        app:layout_constraintBottom_toBottomOf="@id/rv_profiles"
         tools:visibility="visible" />
 
     <LinearLayout
         android:id="@+id/ll_profile_buttons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         android:gravity="center"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/rv_profiles">
+        app:layout_constraintStart_toStartOf="parent">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_add_profile"
-            style="@style/Widget.AppCompat.Button.Borderless"
+            style="@style/Widget.StreamFlix.Button.Tonal"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="@drawable/btn_profile_outline"
-            android:paddingHorizontal="16dp"
+            android:layout_height="56dp"
             android:text="@string/profile_add_btn"
-            android:textAllCaps="false"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="14sp" />
+            app:icon="@drawable/ic_sf_profiles"
+            app:iconGravity="textStart" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_manage_profiles"
-            style="@style/Widget.AppCompat.Button.Borderless"
+            style="@style/Widget.StreamFlix.Button.Text"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="@drawable/btn_profile_outline"
-            android:layout_marginTop="10dp"
-            android:paddingHorizontal="16dp"
-            android:text="@string/profile_manage_btn"
-            android:textAllCaps="false"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="14sp" />
+            android:layout_height="56dp"
+            android:layout_marginTop="4dp"
+            android:text="@string/profile_manage_btn" />
 
     </LinearLayout>
 

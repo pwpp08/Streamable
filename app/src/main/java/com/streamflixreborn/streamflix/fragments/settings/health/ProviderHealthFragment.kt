@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.ui.tvFocusSpring
 import com.streamflixreborn.streamflix.activities.main.MainTvActivity
 import com.streamflixreborn.streamflix.databinding.FragmentProviderHealthBinding
 import kotlinx.coroutines.launch
@@ -40,6 +41,7 @@ class ProviderHealthFragment : Fragment() {
             val h = resources.getDimensionPixelSize(R.dimen.health_padding_horizontal_tv)
             val v = resources.getDimensionPixelSize(R.dimen.health_padding_vertical_tv)
             binding.healthRoot.setPadding(h, v, h, v)
+            binding.btnHealthTest.tvFocusSpring()
         }
 
         adapter = ProviderHealthAdapter(focusableRows = isTv)

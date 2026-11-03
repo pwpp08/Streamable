@@ -23,12 +23,15 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="28dp"
-        android:background="@drawable/bg_profile_card"
+        android:background="@drawable/bg_sf_chip"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="8dp"
+        android:paddingStart="6dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="6dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -49,8 +52,7 @@
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="14sp"
-                android:textStyle="bold"
+                android:textAppearance="?attr/textAppearanceTitleSmallEmphasized"
                 tools:text="D" />
         </FrameLayout>
 
@@ -65,7 +67,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="15sp"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
                 tools:text="Default" />
 
         </LinearLayout>
@@ -84,13 +86,13 @@
         android:id="@+id/tv_providers_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="64dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="32dp"
-        android:layout_marginEnd="64dp"
+        android:layout_marginEnd="16dp"
         android:gravity="center"
         android:text="@string/providers_choose_title"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="22sp"
+        android:textAppearance="?attr/textAppearanceHeadlineSmallEmphasized"
         app:layout_constraintBottom_toTopOf="@id/rv_providers"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -101,9 +103,9 @@
         android:id="@+id/rv_providers"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="64dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="64dp"
+        android:layout_marginEnd="16dp"
         android:clipToPadding="false"
         android:orientation="vertical"
         android:paddingTop="16dp"

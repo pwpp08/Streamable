@@ -4,6 +4,8 @@ import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import com.google.android.material.color.MaterialColors
+import com.streamflixreborn.streamflix.utils.ThemeManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -101,12 +103,12 @@ class ProviderHealthAdapter(private val focusableRows: Boolean) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(result: ServerHealth) {
             val context = binding.root.context
-            val colorRes = when {
-                result.ok -> R.color.health_status_ok
-                result.isUnknown -> R.color.health_status_unknown
-                else -> R.color.health_status_fail
+            val dotColor = when {
+                result.ok -> MaterialColors.harmonizeWithPrimary(context, ContextCompat.getColor(context, R.color.health_status_ok))
+                result.isUnknown -> ThemeManager.color(context, com.google.android.material.R.attr.colorOutline)
+                else -> ThemeManager.color(context, androidx.appcompat.R.attr.colorError)
             }
-            binding.vHealthDot.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, colorRes))
+            binding.vHealthDot.backgroundTintList = ColorStateList.valueOf(dotColor)
 
             val probe = context.getString(
                 if (result.probe == ServerHealth.PROBE_EPISODE) R.string.settings_health_probe_episode

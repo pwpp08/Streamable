@@ -1,45 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phone remote: the chosen TV, a pill search field that types on the TV, a round D-pad-like pad
+    (big play/pause in the middle, seek on both sides) and a connected button group for the
+    other player controls.
+-->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/app_background_color"
+    android:background="?attr/colorSurface"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:paddingStart="16dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="24dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
             android:text="@string/remote_title"
-            android:textAppearance="?attr/textAppearanceHeadline5"
-            android:textColor="?android:attr/textColorPrimary" />
+            android:textAppearance="?attr/textAppearanceHeadlineMediumEmphasized"
+            android:textColor="?attr/colorOnSurface" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_sf_card_large"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:minHeight="72dp"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp">
+
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_sf_pref_icon">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_sf_tv"
+                    android:tint="?attr/colorOnSecondaryContainer" />
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/tv_remote_device"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
                 android:layout_weight="1"
                 android:text="@string/remote_no_tv"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
-                android:textColor="?android:attr/textColorPrimary"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
                 tools:text="TV: Wanbo X2 Pro" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_remote_change"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
+                style="@style/Widget.StreamFlix.Button.Text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/remote_change_tv" />
@@ -47,12 +75,16 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_remote_search"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="@string/remote_search_hint"
-            app:startIconDrawable="@drawable/ic_search_white">
+            app:boxCornerRadiusBottomEnd="28dp"
+            app:boxCornerRadiusBottomStart="28dp"
+            app:boxCornerRadiusTopEnd="28dp"
+            app:boxCornerRadiusTopStart="28dp"
+            app:startIconDrawable="@drawable/ic_sf_keyboard">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_remote_search"
@@ -60,62 +92,96 @@
                 android:layout_height="wrap_content"
                 android:imeOptions="actionSearch"
                 android:inputType="text"
-                android:maxLines="1" />
+                android:maxLines="1"
+                android:paddingStart="16dp" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_remote_play_pause"
-            android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginTop="24dp"
-            android:text="@string/remote_play_pause" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal">
+        <FrameLayout
+            android:layout_width="288dp"
+            android:layout_height="288dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="28dp"
+            android:background="@drawable/bg_sf_remote_dpad">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_remote_back"
-                style="@style/Widget.StreamFlix.Sync.RemoteButton"
-                android:text="@string/remote_back_10" />
+                style="@style/Widget.Material3Expressive.Button.IconButton.Standard"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginStart="12dp"
+                android:contentDescription="@string/remote_back_10"
+                app:icon="@drawable/ic_sf_rewind"
+                app:iconSize="32dp"
+                app:iconTint="?attr/colorOnSurface" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_remote_play_pause"
+                style="@style/Widget.StreamFlix.Button.Icon"
+                android:layout_width="128dp"
+                android:layout_height="128dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/remote_play_pause"
+                app:icon="@drawable/ic_sf_play_pause"
+                app:iconSize="52dp"
+                app:shapeAppearance="@style/ShapeAppearance.StreamFlix.Pill" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_remote_forward"
-                style="@style/Widget.StreamFlix.Sync.RemoteButton"
-                android:text="@string/remote_forward_10" />
-        </LinearLayout>
+                style="@style/Widget.Material3Expressive.Button.IconButton.Standard"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="@string/remote_forward_10"
+                app:icon="@drawable/ic_sf_forward"
+                app:iconSize="32dp"
+                app:iconTint="?attr/colorOnSurface" />
 
-        <LinearLayout
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal|bottom"
+                android:layout_marginBottom="28dp"
+                android:importantForAccessibility="no"
+                android:text="@string/ui_misc_remote_seek_hint"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </FrameLayout>
+
+        <com.google.android.material.button.MaterialButtonGroup
+            style="@style/Widget.Material3Expressive.MaterialButtonGroup.Connected"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal">
+            android:layout_marginTop="28dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_remote_next"
                 style="@style/Widget.StreamFlix.Sync.RemoteButton"
-                android:text="@string/remote_next_episode" />
+                android:text="@string/remote_next_episode"
+                app:icon="@drawable/ic_sf_skip_next" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_remote_subtitles"
                 style="@style/Widget.StreamFlix.Sync.RemoteButton"
-                android:text="@string/remote_subtitles" />
+                android:text="@string/remote_subtitles"
+                app:icon="@drawable/ic_sf_subtitles" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_remote_stop"
                 style="@style/Widget.StreamFlix.Sync.RemoteButton"
-                android:text="@string/remote_stop" />
-        </LinearLayout>
+                android:text="@string/remote_stop"
+                app:icon="@drawable/ic_sf_stop" />
+        </com.google.android.material.button.MaterialButtonGroup>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_remote_pair"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.StreamFlix.Button.Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="24dp"
-            android:text="@string/remote_pair_tv" />
+            android:layout_marginTop="20dp"
+            android:text="@string/remote_pair_tv"
+            app:icon="@drawable/ic_sf_link" />
     </LinearLayout>
 </ScrollView>

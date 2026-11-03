@@ -5,9 +5,11 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.ItemHomeRowBinding
+import com.streamflixreborn.streamflix.ui.tvFocusSpring
 import com.streamflixreborn.streamflix.fragments.home.HomeRowsConfig
 
 /**
@@ -50,8 +52,17 @@ class HomeRowsAdapter(
 
     override fun getItemCount() = rows.size
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-        Holder(ItemHomeRowBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+        val binding = ItemHomeRowBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        if (isTv) {
+            // D-pad: the row (visibility toggle) and its up/down chips show a primary ring when focused.
+            binding.root.background = ContextCompat.getDrawable(parent.context, R.drawable.bg_sf_tv_row)
+            binding.root.tvFocusSpring(1.02f)
+            binding.btnHomeRowUp.tvFocusSpring()
+            binding.btnHomeRowDown.tvFocusSpring()
+        }
+        return Holder(binding)
+    }
 
     override fun onBindViewHolder(holder: Holder, position: Int) = holder.bind(rows[position])
 
@@ -63,7 +74,7 @@ class HomeRowsAdapter(
             binding.tvHomeRowTitle.text = titleOf(row.key)
             binding.tvHomeRowSubtitle.text = subtitleOf(row.key)
             binding.tvHomeRowTitle.alpha = if (row.visible) 1f else 0.5f
-            binding.ivHomeRowVisible.setImageResource(if (row.visible) R.drawable.ic_switch_on else R.drawable.ic_switch_off)
+            binding.ivHomeRowVisible.isChecked = row.visible
             binding.ivHomeRowVisible.contentDescription =
                 context.getString(if (row.visible) R.string.home_rows_shown else R.string.home_rows_hidden)
 

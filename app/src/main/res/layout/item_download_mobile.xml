@@ -1,51 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    A download: poster, title, episode line, size and state, a wavy progress bar while it is
+    active (flat when paused) and pause/resume/retry plus delete.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?android:attr/selectableItemBackground"
-    android:paddingStart="16dp"
-    android:paddingTop="8dp"
-    android:paddingEnd="8dp"
-    android:paddingBottom="8dp">
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="4dp"
+    android:background="@drawable/bg_sf_row_card"
+    android:minHeight="108dp"
+    android:padding="12dp">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/iv_download_poster"
-        android:layout_width="64dp"
-        android:layout_height="96dp"
-        android:background="#808080"
+        android:layout_width="56dp"
+        android:layout_height="84dp"
+        android:background="?attr/colorSurfaceContainerHighest"
         android:importantForAccessibility="no"
         android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearance="?attr/shapeAppearanceCornerMedium" />
 
     <TextView
         android:id="@+id/tv_download_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="8dp"
         android:ellipsize="end"
         android:maxLines="2"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintEnd_toStartOf="@id/btn_download_pause"
         app:layout_constraintStart_toEndOf="@id/iv_download_poster"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@id/iv_download_poster"
         tools:text="Title" />
 
     <TextView
         android:id="@+id/tv_download_subtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textColor="#CCCCCC"
-        android:textSize="13sp"
-        app:layout_constraintEnd_toStartOf="@id/btn_download_pause"
-        app:layout_constraintStart_toEndOf="@id/iv_download_poster"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/tv_download_title"
+        app:layout_constraintStart_toStartOf="@id/tv_download_title"
         app:layout_constraintTop_toBottomOf="@id/tv_download_title"
         tools:text="S1·E2 Pilot" />
 
@@ -53,29 +60,23 @@
         android:id="@+id/tv_download_status"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
         android:layout_marginTop="4dp"
         android:maxLines="2"
-        android:textColor="#B3FFFFFF"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toStartOf="@id/btn_download_pause"
-        app:layout_constraintStart_toEndOf="@id/iv_download_poster"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/tv_download_title"
+        app:layout_constraintStart_toStartOf="@id/tv_download_title"
         app:layout_constraintTop_toBottomOf="@id/tv_download_subtitle"
         tools:text="350 MB · Downloading 42%" />
 
-    <ProgressBar
+    <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/pb_download_progress"
-        style="@android:style/Widget.ProgressBar.Horizontal"
         android:layout_width="0dp"
-        android:layout_height="4dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="8dp"
-        android:backgroundTint="#CC646464"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:max="100"
-        android:progressTint="#FFFFFF"
-        app:layout_constraintEnd_toStartOf="@id/btn_download_pause"
-        app:layout_constraintStart_toEndOf="@id/iv_download_poster"
+        app:layout_constraintEnd_toEndOf="@id/btn_download_delete"
+        app:layout_constraintStart_toStartOf="@id/tv_download_title"
         app:layout_constraintTop_toBottomOf="@id/tv_download_status"
         tools:progress="42" />
 
@@ -83,13 +84,15 @@
         android:id="@+id/btn_download_pause"
         android:layout_width="44dp"
         android:layout_height="44dp"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:padding="10dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/bg_sf_tonal_circle"
+        android:padding="11dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_download_pause"
-        app:layout_constraintBottom_toBottomOf="@id/iv_download_poster"
+        android:tint="?attr/colorOnSecondaryContainer"
         app:layout_constraintEnd_toStartOf="@id/btn_download_delete"
-        app:layout_constraintTop_toTopOf="@id/iv_download_poster" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="UseAppTint" />
 
     <ImageButton
         android:id="@+id/btn_download_delete"
@@ -97,10 +100,11 @@
         android:layout_height="44dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/download_menu_delete"
-        android:padding="10dp"
+        android:padding="11dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_download_delete"
-        app:layout_constraintBottom_toBottomOf="@id/iv_download_poster"
+        android:tint="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/iv_download_poster" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="UseAppTint" />
 </androidx.constraintlayout.widget.ConstraintLayout>

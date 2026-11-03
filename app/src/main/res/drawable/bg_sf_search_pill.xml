@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone search field: a full pill on surfaceContainerHigh (M3 search bar). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="28dp" />
+    <solid android:color="?attr/colorSurfaceContainerHigh" />
+</shape>

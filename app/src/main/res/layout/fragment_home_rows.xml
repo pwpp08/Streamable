@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Home screen rows: order and visibility. Tonal rows; on TV each row has up/down chips. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/home_rows_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/app_background_color"
+    android:background="?attr/colorSurface"
+    android:clipChildren="false"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -11,52 +14,50 @@
         android:id="@+id/tv_home_rows_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
         android:text="@string/home_rows_title"
-        android:textColor="#FFFFFF"
-        android:textSize="22sp"
-        android:textStyle="bold" />
+        android:textAppearance="?attr/textAppearanceHeadlineSmallEmphasized"
+        android:textColor="?attr/colorOnSurface" />
 
     <TextView
         android:id="@+id/tv_home_rows_hint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
         android:layout_marginTop="4dp"
-        android:textColor="#B3FFFFFF"
-        android:textSize="14sp" />
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
     <TextView
         android:id="@+id/tv_home_rows_note"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
         android:layout_marginTop="4dp"
         android:text="@string/home_rows_no_provider_rows"
-        android:textColor="#B3FFFFFF"
-        android:textSize="14sp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_home_rows"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="12dp"
         android:layout_weight="1"
+        android:clipChildren="false"
         android:clipToPadding="false"
         android:descendantFocusability="afterDescendants"
         android:paddingBottom="8dp" />
 
-    <TextView
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_home_rows_reset"
+        style="@style/Widget.StreamFlix.Button.Tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_item_option"
         android:focusable="true"
-        android:gravity="center"
-        android:paddingStart="16dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="12dp"
         android:text="@string/home_rows_reset"
-        android:textColor="@color/option_text" />
+        app:icon="@drawable/ic_refresh" />
 
 </LinearLayout>

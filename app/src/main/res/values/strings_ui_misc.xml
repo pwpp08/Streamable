@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the settings, search and utility screens redesign. -->
+<resources>
+    <string name="ui_misc_navigate_up">Back</string>
+    <string name="ui_misc_provider_health_ok">Working at the last health check</string>
+    <string name="ui_misc_provider_health_failed">Failed the last health check</string>
+    <string name="ui_misc_search_clear">Clear search</string>
+    <string name="ui_misc_search_voice">Search by voice</string>
+    <string name="ui_misc_search_type_on_phone">Typing is easier on your phone: open Remote in StreamFlix on your phone and type there.</string>
+    <string name="ui_misc_remote_seek_hint">10 s</string>
+</resources>

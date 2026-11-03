@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
+<!-- Health server row: tonal 16dp container; on TV a 3dp primary ring on surfaceContainerHighest when focused. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:enterFadeDuration="90"
+    android:exitFadeDuration="90">
     <item android:state_focused="true">
         <shape android:shape="rectangle">
-            <solid android:color="#33FFFFFF" />
-            <corners android:radius="6dp" />
-            <stroke
-                android:width="2dp"
-                android:color="#FFFFFF" />
+            <solid android:color="?attr/colorSurfaceContainerHighest" />
+            <corners android:radius="16dp" />
+            <stroke android:width="3dp" android:color="?attr/colorPrimary" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@android:color/transparent" />
+            <solid android:color="?attr/colorSurfaceContainer" />
+            <corners android:radius="16dp" />
         </shape>
     </item>
 </selector>

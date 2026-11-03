@@ -14,6 +14,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.ProfileAdapter
 import com.streamflixreborn.streamflix.databinding.FragmentProfilesMobileBinding
@@ -163,7 +164,7 @@ class ProfilesMobileFragment : Fragment() {
             }
         }
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(profile.name)
             .setItems(items.toTypedArray()) { _, which ->
                 when (items[which]) {
@@ -182,7 +183,7 @@ class ProfilesMobileFragment : Fragment() {
             hint = getString(R.string.profile_name_hint)
         }
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.profile_create_title)
             .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -205,7 +206,7 @@ class ProfilesMobileFragment : Fragment() {
             hint = getString(R.string.profile_name_hint)
         }
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.profile_rename_title)
             .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -234,7 +235,7 @@ class ProfilesMobileFragment : Fragment() {
     }
 
     private fun showDeleteConfirmDialog(profile: Profile) {
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.profile_delete_title)
             .setMessage(getString(R.string.profile_delete_message, profile.name))
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -255,7 +256,7 @@ class ProfilesMobileFragment : Fragment() {
             val profiles = ProfileManager.getAllProfiles()
             val names = profiles.map { it.name }.toTypedArray()
 
-            AlertDialog.Builder(requireContext())
+            MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.profile_manage_title)
                 .setItems(names) { _, which ->
                     if (which < profiles.size) {

@@ -28,6 +28,9 @@ class UpdateAppTvDialog(
 
     init {
         setContentView(binding.root)
+        window?.setBackgroundDrawable(DialogSurface.create(context))
+        binding.btnUpdate.tvFocusSpring()
+        binding.btnUpdateCancel.tvFocusSpring()
 
         binding.tvUpdateCurrentVersion.text = BuildConfig.VERSION_NAME
 

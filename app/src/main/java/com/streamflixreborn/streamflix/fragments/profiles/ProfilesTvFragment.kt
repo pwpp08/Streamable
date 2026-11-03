@@ -13,10 +13,12 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.ProfileAdapter
 import com.streamflixreborn.streamflix.databinding.FragmentProfilesTvBinding
 import com.streamflixreborn.streamflix.models.Profile
+import com.streamflixreborn.streamflix.ui.tvFocusSpring
 import com.streamflixreborn.streamflix.utils.AppLanguageManager
 import com.streamflixreborn.streamflix.utils.ProfileColorPicker
 import com.streamflixreborn.streamflix.utils.ProfileManager
@@ -77,6 +79,9 @@ class ProfilesTvFragment : Fragment() {
             layoutManager = GridLayoutManager(requireContext(), 6)
             adapter = profileAdapter
         }
+
+        binding.btnAddProfile.tvFocusSpring()
+        binding.btnManageProfiles.tvFocusSpring()
 
         binding.btnAddProfile.setOnClickListener {
             showCreateProfileDialogTv()
@@ -154,7 +159,7 @@ class ProfilesTvFragment : Fragment() {
             hint = getString(R.string.profile_name_hint)
         }
 
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.profile_create_title)
             .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -179,7 +184,7 @@ class ProfilesTvFragment : Fragment() {
                 return@launch
             }
 
-            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.profile_delete_title)
                 .setMessage(getString(R.string.profile_delete_message, profile.name))
                 .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -199,7 +204,7 @@ class ProfilesTvFragment : Fragment() {
             val profiles = ProfileManager.getAllProfiles()
             val names = profiles.map { it.name }.toTypedArray()
 
-            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.profile_manage_title)
                 .setItems(names) { _, which ->
                     if (which < profiles.size) {
@@ -224,7 +229,7 @@ class ProfilesTvFragment : Fragment() {
             }
         }
 
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(profile.name)
             .setItems(items.toTypedArray()) { _, which ->
                 when (items[which]) {
@@ -244,7 +249,7 @@ class ProfilesTvFragment : Fragment() {
             hint = getString(R.string.profile_name_hint)
         }
 
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.profile_rename_title)
             .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->

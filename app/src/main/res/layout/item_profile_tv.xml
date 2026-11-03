@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    TV profile tile: a big expressive avatar; on focus the whole tile springs up and a
+    primary ring follows the avatar's polygon (ProfileAvatarDrawable).
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_profile_header_tv"
     android:clickable="true"
     android:focusable="true"
-    android:padding="8dp">
+    android:padding="12dp">
 
     <FrameLayout
         android:id="@+id/fl_avatar_container"
@@ -23,17 +26,18 @@
             android:id="@+id/iv_profile_avatar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:duplicateParentState="true"
             android:importantForAccessibility="no"
-            android:scaleType="fitCenter" />
+            android:scaleType="fitXY" />
 
         <TextView
             android:id="@+id/tv_profile_initial"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
+            android:importantForAccessibility="no"
+            android:textAppearance="?attr/textAppearanceHeadlineLargeEmphasized"
             android:textColor="?attr/colorOnSurface"
-            android:textSize="24sp"
-            android:textStyle="bold"
             tools:text="A" />
 
     </FrameLayout>
@@ -42,12 +46,13 @@
         android:id="@+id/tv_profile_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="10dp"
+        android:duplicateParentState="true"
         android:ellipsize="end"
         android:gravity="center"
         android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceTitleMediumEmphasized"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/fl_avatar_container"
@@ -57,11 +62,15 @@
         android:id="@+id/tv_profile_current"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_sf_pill_primary_container"
+        android:paddingStart="10dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="3dp"
         android:text="@string/profile_current"
-        android:textColor="?attr/colorPrimary"
-        android:textSize="10sp"
-        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

@@ -1,48 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Update dialog (phone): tonal icon, headline, current to new version on a tonal strip,
+    release notes in a scrollable well, an indeterminate progress bar and M3 buttons. The rounded
+    dialog surface is set on the window by the dialog class.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:paddingStart="24dp"
+    android:paddingTop="24dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="20dp">
+
+    <FrameLayout
+        android:id="@+id/fl_update_icon"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:background="@drawable/bg_sf_pref_icon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_download"
+            android:tint="?attr/colorOnSecondaryContainer"
+            tools:ignore="UseAppTint" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tv_update_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:gravity="center"
         android:text="@string/update_title"
+        android:textAppearance="?attr/textAppearanceHeadlineSmallEmphasized"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="24sp"
-        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/fl_update_icon" />
 
     <TextView
         android:id="@+id/tv_update_message"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
         android:gravity="center"
         android:text="@string/update_message"
-        android:textColor="?attr/colorOnSurface"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_update_title" />
+
+    <View
+        android:id="@+id/v_update_versions"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_sf_update_versions"
+        app:layout_constraintBottom_toBottomOf="@id/tv_update_new_version"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_update_message" />
 
     <TextView
         android:id="@+id/tv_update_current_version_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="26dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginTop="32dp"
         android:gravity="center"
         android:text="@string/update_current_version_label"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toStartOf="@id/iv_update_arrow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_update_message" />
@@ -51,10 +88,10 @@
         android:id="@+id/tv_update_current_version"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
         android:gravity="center"
-        android:textSize="24sp"
+        android:paddingBottom="12dp"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toStartOf="@id/iv_update_arrow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_update_current_version_label"
@@ -62,27 +99,25 @@
 
     <ImageView
         android:id="@+id/iv_update_arrow"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginTop="26dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
         android:src="@drawable/ic_update_arrow_right"
-        android:tint="?attr/colorOnSurface"
-        app:layout_constraintBottom_toBottomOf="@id/tv_update_new_version"
+        android:tint="?attr/colorPrimary"
+        app:layout_constraintBottom_toBottomOf="@id/v_update_versions"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_update_message"
+        app:layout_constraintTop_toTopOf="@id/v_update_versions"
         tools:ignore="ContentDescription,UseAppTint" />
 
     <TextView
         android:id="@+id/tv_update_new_version_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="26dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginTop="32dp"
         android:gravity="center"
         android:text="@string/update_new_version_label"
-        android:textColor="?attr/colorOnSurface"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorPrimary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_update_arrow"
         app:layout_constraintTop_toBottomOf="@id/tv_update_message" />
@@ -91,12 +126,10 @@
         android:id="@+id/tv_update_new_version"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
         android:gravity="center"
+        android:paddingBottom="12dp"
+        android:textAppearance="?attr/textAppearanceTitleLargeEmphasized"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="24sp"
-        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_update_arrow"
         app:layout_constraintTop_toBottomOf="@id/tv_update_new_version_label"
@@ -106,24 +139,24 @@
         android:id="@+id/tv_update_release_notes_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
         android:layout_marginTop="20dp"
-        android:layout_marginEnd="16dp"
         android:text="@string/update_release_notes"
-        android:textColor="?attr/colorOnSurface"
-        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorPrimary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_update_new_version" />
+        app:layout_constraintTop_toBottomOf="@id/v_update_versions" />
 
     <ScrollView
         android:id="@+id/sv_release_notes"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintHeight_max="300dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_sf_update_notes"
+        android:padding="12dp"
+        app:layout_constrainedHeight="true"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_max="280dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_update_release_notes_label">
 
@@ -131,54 +164,41 @@
             android:id="@+id/tv_update_release_notes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="- Bug fixes" />
     </ScrollView>
 
-    <androidx.constraintlayout.widget.Barrier
-        android:id="@+id/barrier1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:barrierDirection="bottom"
-        app:constraint_referenced_ids="tv_update_current_version,tv_update_new_version,sv_release_notes" />
-
-    <ProgressBar
+    <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/pb_update_is_loading"
-        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:indeterminate="true"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/barrier1"
+        app:layout_constraintTop_toBottomOf="@id/sv_release_notes"
         tools:visibility="visible" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_update_cancel"
-        style="?android:attr/buttonBarButtonStyle"
+        style="@style/Widget.StreamFlix.Button.Text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="2dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="8dp"
         android:text="@string/update_later"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/btn_update"
         app:layout_constraintTop_toBottomOf="@id/pb_update_is_loading" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_update"
-        style="?android:attr/buttonBarButtonStyle"
+        style="@style/Widget.StreamFlix.Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginTop="20dp"
         android:text="@string/update"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

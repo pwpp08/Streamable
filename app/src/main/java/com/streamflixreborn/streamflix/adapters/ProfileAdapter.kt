@@ -1,6 +1,5 @@
 package com.streamflixreborn.streamflix.adapters
 
-import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +10,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.models.Profile
+import com.streamflixreborn.streamflix.ui.ProfileAvatarDrawable
+import com.streamflixreborn.streamflix.ui.motion.FocusScaleAnimator
+import com.streamflixreborn.streamflix.ui.motion.PressScale
 import com.streamflixreborn.streamflix.utils.ProfileManager
 
 class ProfileAdapter(
@@ -19,8 +21,16 @@ class ProfileAdapter(
     private val layoutResId: Int = R.layout.item_profile_mobile,
 ) : ListAdapter<Profile, ProfileAdapter.ProfileViewHolder>(DiffCallback) {
 
+    private val isTv = layoutResId == R.layout.item_profile_tv
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProfileViewHolder {
         val root = LayoutInflater.from(parent.context).inflate(layoutResId, parent, false)
+        if (isTv) {
+            // Big avatars spring up on focus; the ring is drawn by ProfileAvatarDrawable.
+            FocusScaleAnimator.attach(root, focusedScale = 1.1f, liftPx = 0f, ringWidthPx = 0)
+        } else {
+            PressScale.attach(root)
+        }
         return ProfileViewHolder(root)
     }
 
@@ -36,12 +46,9 @@ class ProfileAdapter(
 
         fun bind(profile: Profile) {
             itemView.isSelected = profile.id == ProfileManager.activeProfileId
-            val drawable = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = 8f * itemView.resources.displayMetrics.density
-                setColor(profile.avatarColor)
-            }
-            ivProfileAvatar.setImageDrawable(drawable)
+            val context = itemView.context
+            ivProfileAvatar.setImageDrawable(ProfileAvatarDrawable.create(context, profile, focusRing = isTv))
+            tvProfileInitial.setTextColor(ProfileAvatarDrawable.colorsFor(context, profile.avatarColor).onContainer)
 
             val initial = profile.name.firstOrNull()?.toString()?.uppercase() ?: "?"
             tvProfileInitial.text = initial

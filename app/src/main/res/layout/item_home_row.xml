@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    One home row: drag handle (phone), title and source, a visibility switch, and on TV up/down
+    chips. HomeRowsAdapter swaps the background for the focus-ring variant on TV.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/home_row_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="6dp"
-    android:background="@drawable/bg_item_option"
+    android:layout_marginTop="2dp"
+    android:background="@drawable/bg_sf_row_card"
     android:focusable="true"
     android:gravity="center_vertical"
-    android:minHeight="56dp"
+    android:minHeight="64dp"
     android:orientation="horizontal"
-    android:paddingStart="4dp"
-    android:paddingEnd="12dp">
+    android:paddingStart="8dp"
+    android:paddingEnd="16dp">
 
     <ImageView
         android:id="@+id/iv_home_row_drag"
@@ -19,7 +23,9 @@
         android:layout_height="48dp"
         android:contentDescription="@string/home_rows_drag_handle"
         android:padding="8dp"
-        android:src="@drawable/ic_library_drag_handle" />
+        android:src="@drawable/ic_library_drag_handle"
+        android:tint="?attr/colorOnSurfaceVariant"
+        tools:ignore="UseAppTint" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -28,46 +34,52 @@
         android:layout_weight="1"
         android:duplicateParentState="true"
         android:orientation="vertical"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
 
         <TextView
             android:id="@+id/tv_home_row_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:duplicateParentState="true"
-            android:textColor="@color/option_text"
-            android:textSize="16sp"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface"
             tools:text="Continue Watching" />
 
         <TextView
             android:id="@+id/tv_home_row_subtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:alpha="0.7"
             android:duplicateParentState="true"
-            android:textColor="@color/option_text"
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="Your library" />
     </LinearLayout>
 
-    <ImageView
+    <com.google.android.material.materialswitch.MaterialSwitch
         android:id="@+id/iv_home_row_visible"
-        android:layout_width="48dp"
-        android:layout_height="24dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:src="@drawable/ic_switch_on" />
+        android:background="@null"
+        android:clickable="false"
+        android:focusable="false"
+        android:minHeight="0dp" />
 
     <TextView
         android:id="@+id/btn_home_row_up"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
-        android:background="@drawable/bg_item_option"
+        android:background="@drawable/bg_sf_tv_chip"
         android:focusable="true"
-        android:padding="10dp"
+        android:minHeight="44dp"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:text="@string/home_rows_move_up"
-        android:textColor="@color/option_text"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnSurface"
         android:visibility="gone" />
 
     <TextView
@@ -75,11 +87,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:background="@drawable/bg_item_option"
+        android:background="@drawable/bg_sf_tv_chip"
         android:focusable="true"
-        android:padding="10dp"
+        android:minHeight="44dp"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:text="@string/home_rows_move_down"
-        android:textColor="@color/option_text"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorOnSurface"
         android:visibility="gone" />
 
 </LinearLayout>
