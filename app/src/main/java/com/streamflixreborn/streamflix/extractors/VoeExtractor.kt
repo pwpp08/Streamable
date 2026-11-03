@@ -1,11 +1,10 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.DecryptHelper
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.UserPreferences
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -69,10 +68,7 @@ class VoeExtractor : Extractor() {
 
         companion object {
             suspend fun build(baseUrl: String, originalLink: String): VoeExtractorService {
-                val client = OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
-                    .followRedirects(true)
-                    .followSslRedirects(true)
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("Referer", originalLink)
@@ -109,6 +105,7 @@ class VoeExtractor : Extractor() {
                 }
 
                 val retrofitRedirected = Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl(redirectBaseUrl)
                     .addConverterFactory(JsoupConverterFactory.create())
                     .build()

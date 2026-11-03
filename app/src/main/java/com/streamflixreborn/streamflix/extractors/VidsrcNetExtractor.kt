@@ -1,13 +1,12 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.text.Html
 import android.util.Base64
 import androidx.core.net.toUri
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.UserPreferences
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -271,11 +270,7 @@ class VidsrcNetExtractor : Extractor() {
     private interface Service {
 
         companion object {
-            private val client = OkHttpClient.Builder()
-                .readTimeout(30, TimeUnit.SECONDS)
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .dns(DnsResolver.doh)
-                .build()
+            private val client = NetworkClient.noCookies
 
             fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()

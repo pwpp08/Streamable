@@ -1,9 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import androidx.media3.common.MimeTypes
 import com.google.gson.JsonParser
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -74,7 +74,7 @@ class GoogleDriveExtractor : Extractor() {
 
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val original = chain.request()
                         val request = original.newBuilder()

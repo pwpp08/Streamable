@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Log
 import com.streamflixreborn.streamflix.models.Video
 
@@ -129,10 +130,7 @@ abstract class Extractor {
             // non appartiene a nessun estrattore specifico, ma il link risolto sì (es. filemoon).
             if (link.contains("mysync.mov/stream/")) {
                 try {
-                    val client = okhttp3.OkHttpClient.Builder()
-                        .followRedirects(true)
-                        .followSslRedirects(true)
-                        .build()
+                    val client = NetworkClient.noCookies
                     
                     val responseBody = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         val request = okhttp3.Request.Builder()

@@ -1,11 +1,10 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.JsUnpacker
 import com.streamflixreborn.streamflix.utils.UserPreferences
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.Field
@@ -98,9 +97,8 @@ class UqloadExtractor : Extractor() {
         ): Document
 
         companion object {
-            fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
+            private val client by lazy {
+                NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("User-Agent", USER_AGENT)
@@ -108,6 +106,9 @@ class UqloadExtractor : Extractor() {
                         chain.proceed(request)
                     }
                     .build()
+            }
+
+            fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()
                     .baseUrl(baseUrl)
                     .client(client)

@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
@@ -214,6 +215,7 @@ class UpzoneExtractor : Extractor() {
         companion object {
             fun build(baseUrl: String): Service {
                 return Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl(baseUrl)
                     .addConverterFactory(JsoupConverterFactory.create())
                     .build()

@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import org.jsoup.nodes.Document
@@ -65,6 +66,7 @@ class SaveFilesExtractor: Extractor() {
         companion object {
             fun build(baseUrl: String): SaveFilesExtractorService {
                 val retrofitRedirected = Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl("$baseUrl/")
                     .addConverterFactory(JsoupConverterFactory.create())
                     .build()

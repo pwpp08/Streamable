@@ -1,9 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Base64
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.JsUnpacker
-import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.GET
@@ -16,7 +16,7 @@ class VidGuardExtractor : Extractor() {
         "vembed.net", "bembed.cc", "vgfplay.com", "listeamed.net", "vidguard.to"
     )
 
-    private val client = OkHttpClient()
+    private val client = NetworkClient.noCookies
     private val service = Retrofit.Builder()
         .baseUrl(mainUrl)
         .addConverterFactory(ScalarsConverterFactory.create())

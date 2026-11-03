@@ -1,10 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.JsUnpacker
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -106,9 +105,7 @@ abstract class GenericPackedSourceExtractor : Extractor() {
 
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
-                    .build()
+                val client = NetworkClient.noCookies
                 return Retrofit.Builder()
                     .baseUrl(if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/")
                     .client(client)

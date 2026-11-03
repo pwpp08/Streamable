@@ -1,8 +1,8 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -48,19 +48,20 @@ class GoodstreamExtractor : Extractor() {
     private interface Service {
 
         companion object {
-            fun build(baseUrl: String): Service {
-                val userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                
-                val client = OkHttpClient.Builder()
+            private const val UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            private val client by lazy {
+                NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
-                            .addHeader("User-Agent", userAgent)
+                            .addHeader("User-Agent", UA)
                             .addHeader("Accept-Language", "en-US,en;q=0.9")
                             .build()
                         chain.proceed(request)
                     }
                     .build()
+            }
 
+            fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()
                     .baseUrl(baseUrl)
                     .addConverterFactory(JsoupConverterFactory.create())

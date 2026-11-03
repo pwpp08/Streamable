@@ -2,7 +2,6 @@ package com.streamflixreborn.streamflix.utils
 
 import android.util.Base64
 import android.util.Log
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -43,8 +42,7 @@ object UprotResolver {
     private var cachedConfig: Config? = null
 
     private val httpClient by lazy {
-        OkHttpClient.Builder()
-            .dns(DnsResolver.doh)
+        NetworkClient.noCookies.newBuilder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .build()

@@ -3,11 +3,9 @@ package com.streamflixreborn.streamflix.extractors
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.StringConverterFactory
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.webkit.CookieManager
 import java.util.concurrent.TimeUnit
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -123,16 +121,14 @@ open class DoodLaExtractor : Extractor() {
     private interface Service {
 
         companion object {
-            fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
-                    .cookieJar(NetworkClient.cookieJar)
-                    .dns(DnsResolver.doh)
-                    .followRedirects(true)
-                    .followSslRedirects(true)
+            private val client by lazy {
+                NetworkClient.default.newBuilder()
                     .connectTimeout(20, TimeUnit.SECONDS)
                     .readTimeout(20, TimeUnit.SECONDS)
                     .build()
+            }
 
+            fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()
                     .baseUrl(baseUrl)
                     .addConverterFactory(JsoupConverterFactory.create())

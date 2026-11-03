@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.providers
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.net.Uri
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.extractors.Extractor
@@ -12,9 +13,7 @@ import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.Show
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
-import okhttp3.OkHttpClient
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -437,8 +436,7 @@ object AnikotoProvider : Provider {
     private interface Service {
         companion object {
             fun build(): Service {
-                val client = OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
+                val client = NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("User-Agent", USER_AGENT)
@@ -447,8 +445,6 @@ object AnikotoProvider : Provider {
                             .build()
                         chain.proceed(request)
                     }
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .connectTimeout(30, TimeUnit.SECONDS)
                     .build()
 
                 return Retrofit.Builder()

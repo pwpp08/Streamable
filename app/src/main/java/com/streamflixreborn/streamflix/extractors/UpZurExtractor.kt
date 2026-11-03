@@ -1,13 +1,12 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Url
-import com.streamflixreborn.streamflix.utils.DnsResolver
-import okhttp3.OkHttpClient
 
 class UpZurExtractor : Extractor() {
 
@@ -56,9 +55,7 @@ class UpZurExtractor : Extractor() {
 
     private interface Service {
         companion object {
-            val client = OkHttpClient.Builder()
-                .dns(DnsResolver.doh)
-                .build()
+            val client = NetworkClient.noCookies
 
             fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()

@@ -1,8 +1,8 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Base64
 import com.streamflixreborn.streamflix.models.Video
-import okhttp3.OkHttpClient
 import org.json.JSONObject
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
@@ -19,7 +19,7 @@ class GuploadExtractor : Extractor() {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     }
 
-    private val client = OkHttpClient.Builder()
+    private val client = NetworkClient.noCookies.newBuilder()
         .addInterceptor { chain ->
             val request = chain.request().newBuilder()
                 .header("User-Agent", DEFAULT_USER_AGENT)

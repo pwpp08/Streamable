@@ -1,12 +1,11 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.net.Uri
 import android.util.Base64
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.JsUnpacker
 import com.streamflixreborn.streamflix.utils.UserPreferences
-import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.GET
@@ -21,7 +20,7 @@ class FsvidExtractor : Extractor() {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     }
 
-    private val client = OkHttpClient.Builder()
+    private val client = NetworkClient.noCookies.newBuilder()
         .addInterceptor { chain ->
             val referer = UserPreferences.currentProvider?.baseUrl?.takeIf { it.isNotBlank() } ?: "$mainUrl/"
             val newRequest = chain.request()
@@ -31,7 +30,6 @@ class FsvidExtractor : Extractor() {
                 .build()
             chain.proceed(newRequest)
         }
-        .dns(DnsResolver.doh)
         .build()
 
     private val service = Retrofit.Builder()

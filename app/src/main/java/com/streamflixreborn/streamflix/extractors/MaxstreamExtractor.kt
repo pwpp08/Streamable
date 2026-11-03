@@ -1,9 +1,9 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Log
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.UprotResolver
 import org.jsoup.nodes.Document
 import retrofit2.HttpException
@@ -83,10 +83,7 @@ class MaxstreamExtractor : Extractor() {
 
         companion object {
             fun build(baseUrl: String): Service {
-                val client = okhttp3.OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
-                    .followRedirects(true)
-                    .build()
+                val client = NetworkClient.noCookies
 
                 return Retrofit.Builder()
                     .baseUrl(baseUrl)

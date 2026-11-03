@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.providers
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import com.streamflixreborn.streamflix.BuildConfig
 import com.streamflixreborn.streamflix.adapters.AppAdapter
@@ -12,8 +13,6 @@ import com.streamflixreborn.streamflix.models.People
 import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
@@ -732,11 +731,7 @@ object SflixProvider : Provider {
 
         companion object {
             fun build(): SflixService {
-                val client = OkHttpClient.Builder()
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .dns(DnsResolver.doh)
-                    .build()
+                val client = NetworkClient.noCookies
 
                 val retrofit = Retrofit.Builder()
                     .baseUrl(URL)

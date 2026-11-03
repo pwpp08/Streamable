@@ -1,12 +1,10 @@
 package com.streamflixreborn.streamflix.extractors
 
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.JsUnpacker
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import kotlinx.coroutines.delay
 import okhttp3.FormBody
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
@@ -21,13 +19,9 @@ class TurbovidExtractor : Extractor() {
     }
 
     private val httpClient by lazy {
-        OkHttpClient.Builder()
-            .dns(DnsResolver.doh)
-            .cookieJar(NetworkClient.cookieJar)
+        NetworkClient.default.newBuilder()
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
-            .followRedirects(true)
-            .followSslRedirects(true)
             .build()
     }
 

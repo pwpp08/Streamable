@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Log
 import javax.crypto.spec.SecretKeySpec
 import javax.crypto.spec.GCMParameterSpec
@@ -11,7 +12,6 @@ import androidx.media3.common.MimeTypes
 import com.streamflixreborn.streamflix.models.Video
 import java.io.ByteArrayOutputStream
 import java.net.URI
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 
@@ -32,10 +32,7 @@ object VidnestTmdbResolver {
         resolveInternal(link)
 
     private val modernVidnestClient by lazy {
-        OkHttpClient.Builder()
-            .followRedirects(true)
-            .followSslRedirects(true)
-            .build()
+        NetworkClient.noCookies
     }
 
     private fun resolveInternal(

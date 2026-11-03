@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.providers
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Base64
 import com.google.gson.annotations.SerializedName
 import com.streamflixreborn.streamflix.adapters.AppAdapter
@@ -11,8 +12,6 @@ import com.streamflixreborn.streamflix.models.People
 import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
-import okhttp3.OkHttpClient
 import org.json.JSONObject
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -652,7 +651,7 @@ object SuperStreamProvider : Provider {
 
         companion object {
             fun build(): SuperStreamApiService {
-                val client = OkHttpClient.Builder().dns(DnsResolver.doh).addInterceptor { chain ->
+                val client = NetworkClient.noCookies.newBuilder().addInterceptor { chain ->
                     val requestBuilder = chain.request().newBuilder()
                         .addHeader("Accept", "charset=utf-8")
                         .addHeader("Platform", "android")

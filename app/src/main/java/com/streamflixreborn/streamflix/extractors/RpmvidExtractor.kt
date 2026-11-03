@@ -1,12 +1,12 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.models.Video
 import androidx.media3.common.MimeTypes
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import com.google.gson.JsonParser
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.GET
@@ -32,8 +32,7 @@ class RpmvidExtractor : Extractor() {
         private val IV = "1234567890oiuytr".toByteArray()
     }
 
-    private val client = OkHttpClient.Builder()
-        .dns(DnsResolver.doh)
+    private val client = NetworkClient.noCookies.newBuilder()
         .addInterceptor(object : Interceptor {
             override fun intercept(chain: Interceptor.Chain): Response {
                 val request = chain.request().newBuilder()

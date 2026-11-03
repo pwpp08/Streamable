@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
@@ -261,6 +262,7 @@ open class StreamWishExtractor : Extractor() {
         companion object {
             fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()
+                    .client(NetworkClient.noCookies)
                     .baseUrl(baseUrl)
                     .addConverterFactory(JsoupConverterFactory.create())
                     .build()

@@ -1,8 +1,8 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.models.Video
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
-import okhttp3.OkHttpClient
 import org.jsoup.nodes.Document
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -38,8 +38,8 @@ class RidooExtractor : Extractor() {
 
     interface Service {
         companion object {
-            fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
+            private val client by lazy {
+                NetworkClient.noCookies.newBuilder()
                     .addInterceptor { chain ->
                         val original = chain.request()
                         val request = original.newBuilder()
@@ -51,7 +51,9 @@ class RidooExtractor : Extractor() {
                         chain.proceed(request)
                     }
                     .build()
+            }
 
+            fun build(baseUrl: String): Service {
                 val retrofit = Retrofit.Builder()
                     .baseUrl(baseUrl)
                     .client(client)

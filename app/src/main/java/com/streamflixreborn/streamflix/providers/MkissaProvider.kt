@@ -13,12 +13,10 @@ import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.ArtworkRequestHeaders
-import com.streamflixreborn.streamflix.utils.DnsResolver
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import okhttp3.Cache
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
@@ -32,9 +30,7 @@ import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Query
-import java.io.File
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -225,22 +221,11 @@ object MkissaProvider : Provider {
     private val service = Retrofit.Builder()
         .baseUrl(API_URL)
         .addConverterFactory(ScalarsConverterFactory.create())
-        .client(
-            OkHttpClient.Builder()
-                .cache(Cache(File("cacheDir", "mkissa_okhttpcache"), 10 * 1024 * 1024))
-                .readTimeout(30, TimeUnit.SECONDS)
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .dns(DnsResolver.doh)
-                .build()
-        )
+        .client(NetworkClient.noCookies)
         .build()
         .create(MkissaService::class.java)
 
-    private val sourceResolverClient = OkHttpClient.Builder()
-        .dns(DnsResolver.doh)
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .build()
+    private val sourceResolverClient = NetworkClient.noCookies
 
     private interface MkissaService {
         @Headers(

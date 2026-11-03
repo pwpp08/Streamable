@@ -1,13 +1,12 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.util.Base64
 import androidx.media3.common.MimeTypes
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.JsUnpacker
 import com.tanasi.retrofit_jsoup.converter.JsoupConverterFactory
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -192,13 +191,7 @@ class NuuploadExtractor : Extractor() {
             return sourceUrl
         }
 
-        val client = OkHttpClient.Builder()
-            .dns(DnsResolver.doh)
-            .followRedirects(true)
-            .followSslRedirects(true)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
+        val client = NetworkClient.noCookies
 
         val originUrl = URL(pageUrl)
         val referer = "${originUrl.protocol}://${originUrl.host}/"
@@ -301,13 +294,7 @@ class NuuploadExtractor : Extractor() {
     }
 
     private fun fetchPage(url: String): FetchedPage {
-        val client = OkHttpClient.Builder()
-            .dns(DnsResolver.doh)
-            .followRedirects(true)
-            .followSslRedirects(true)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
+        val client = NetworkClient.noCookies
 
         val response = client.newCall(
             Request.Builder()
@@ -342,13 +329,7 @@ class NuuploadExtractor : Extractor() {
     private interface Service {
         companion object {
             fun build(baseUrl: String): Service {
-                val client = OkHttpClient.Builder()
-                    .dns(DnsResolver.doh)
-                    .followRedirects(true)
-                    .followSslRedirects(true)
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .build()
+                val client = NetworkClient.noCookies
                 return Retrofit.Builder()
                     .baseUrl(baseUrl)
                     .client(client)

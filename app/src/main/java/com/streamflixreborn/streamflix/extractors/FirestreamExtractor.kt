@@ -1,11 +1,10 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.utils.DnsResolver
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.jsoup.Jsoup
@@ -43,11 +42,7 @@ class FirestreamExtractor : Extractor() {
             throw Exception("Firestream slug not found")
         }
 
-        val client = OkHttpClient.Builder()
-            .dns(DnsResolver.doh)
-            .followRedirects(true)
-            .followSslRedirects(true)
-            .build()
+        val client = NetworkClient.noCookies
 
         // Always fetch a fresh embed page because token-blob is one-time.
         val pageRequest = Request.Builder()
