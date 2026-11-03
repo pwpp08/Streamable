@@ -48,8 +48,11 @@
         <item name="android:minHeight">56dp</item>
         <item name="iconSize">24dp</item>
         <item name="android:textAppearance">?attr/textAppearanceTitleMediumEmphasized</item>
-        <item name="android:paddingStart">20dp</item>
-        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:ellipsize">end</item>
     </style>
     <style name="Widget.StreamFlix.SplitButton.Trailing" parent="Widget.Material3.SplitButton.IconButton.Filled">
         <item name="backgroundTint">@color/ud_hero_bg</item>

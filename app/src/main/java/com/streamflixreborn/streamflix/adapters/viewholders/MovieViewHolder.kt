@@ -995,7 +995,7 @@ class MovieViewHolder(
 
         // Offline download (phone only; the button hides itself on TV).
         binding.btnMovieDownload.apply {
-            showLabel = true
+            showLabel = false
             beforeStart = { SyncProviders.switchTo(movie.providerName) }
             bind((movie.providerName ?: UserPreferences.currentProvider?.name)?.let { providerName ->
                 DownloadStarter.Target(

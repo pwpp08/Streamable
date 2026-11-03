@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.teardownOnMain
 import android.os.Handler
 import android.os.Looper
 import android.webkit.ConsoleMessage
@@ -53,8 +54,7 @@ class VidLinkExtractor : Extractor() {
                 timeoutHandler.postDelayed(timeoutRunnable, 30000) // 30 seconds timeout
 
                 continuation.invokeOnCancellation {
-                    webView.stopLoading()
-                    webView.destroy()
+                    webView.teardownOnMain()
                 }
 
                 webView.webViewClient = object : WebViewClient() {

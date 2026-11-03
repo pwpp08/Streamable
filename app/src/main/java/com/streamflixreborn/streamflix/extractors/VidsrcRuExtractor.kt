@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.teardownOnMain
 import android.os.Handler
 import android.os.Looper
 import android.webkit.WebResourceRequest
@@ -76,8 +77,7 @@ class VidsrcRuExtractor : Extractor() {
                 webView.loadUrl(link)
 
                 continuation.invokeOnCancellation {
-                    webView.stopLoading()
-                    webView.destroy()
+                    webView.teardownOnMain()
                 }
             }
         }

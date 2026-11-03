@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.teardownOnMain
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.annotation.SuppressLint
 import android.content.Context
@@ -217,8 +218,7 @@ open class StreamWishExtractor : Extractor() {
                     webView.loadUrl(url)
 
                     cont.invokeOnCancellation {
-                        webView.stopLoading()
-                        webView.destroy()
+                        webView.teardownOnMain()
                     }
                 }
             }

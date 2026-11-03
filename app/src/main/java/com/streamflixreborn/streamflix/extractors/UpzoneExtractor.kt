@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.extractors
 
+import com.streamflixreborn.streamflix.utils.teardownOnMain
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import android.annotation.SuppressLint
 import android.content.Context
@@ -196,8 +197,7 @@ class UpzoneExtractor : Extractor() {
                     )
 
                     cont.invokeOnCancellation {
-                        webView.stopLoading()
-                        webView.destroy()
+                        webView.teardownOnMain()
                     }
                 }
             }
