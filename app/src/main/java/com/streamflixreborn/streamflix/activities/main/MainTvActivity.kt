@@ -28,6 +28,8 @@ import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.sync.HandoffResume
 import com.streamflixreborn.streamflix.sync.TvCommandHandler
 import com.streamflixreborn.streamflix.utils.AppLanguageManager
+import com.streamflixreborn.streamflix.utils.IdleDimHost
+import com.streamflixreborn.streamflix.utils.IdleDimmer
 import com.streamflixreborn.streamflix.utils.ProfileManager
 import com.streamflixreborn.streamflix.utils.ThemeManager
 import com.streamflixreborn.streamflix.utils.UserPreferences
@@ -36,7 +38,9 @@ import com.streamflixreborn.streamflix.ui.motion.Springs
 import android.graphics.drawable.GradientDrawable
 import kotlinx.coroutines.launch
 
-class MainTvActivity : FragmentActivity() {
+class MainTvActivity : FragmentActivity(), IdleDimHost {
+
+    override val idleDimmer by lazy { IdleDimmer(this) }
 
     private var _binding: ActivityMainTvBinding? = null
     private val binding get() = _binding!!
@@ -173,8 +177,24 @@ class MainTvActivity : FragmentActivity() {
         })
     }
 
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        idleDimmer.onUserInteraction()
+    }
+
+    override fun onDestroy() {
+        idleDimmer.release()
+        super.onDestroy()
+    }
+
+    override fun onPause() {
+        idleDimmer.onPause()
+        super.onPause()
+    }
+
     override fun onResume() {
         super.onResume()
+        idleDimmer.onResume()
         updateNavigationHeader()
         viewModel.checkUpdate()
     }

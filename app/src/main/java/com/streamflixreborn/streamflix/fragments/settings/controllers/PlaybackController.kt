@@ -4,6 +4,7 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.activities.main.MainMobileActivity
+import com.streamflixreborn.streamflix.utils.IdleDimSettings
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.UserPreferences.BufferProfile
 import com.streamflixreborn.streamflix.utils.UserPreferences.QualityMode
@@ -62,6 +63,14 @@ class PlaybackController(private val host: SettingsHost) : SettingsController {
             (host.fragment.activity as? MainMobileActivity)?.updateImmersiveMode()
         }
 
+        host.bindSwitch("IDLE_DIM_ENABLED", { UserPreferences.idleDimEnabled }) { UserPreferences.idleDimEnabled = it }
+        host.bindList("IDLE_DIM_DELAY_SECONDS", { UserPreferences.idleDimDelaySeconds.toString() }) {
+            UserPreferences.idleDimDelaySeconds = it.toIntOrNull() ?: IdleDimSettings.DEFAULT_DELAY_SECONDS
+        }
+        host.bindList("IDLE_DIM_LEVEL_PERCENT", { UserPreferences.idleDimLevelPercent.toString() }) {
+            UserPreferences.idleDimLevelPercent = it.toIntOrNull() ?: IdleDimSettings.DEFAULT_LEVEL_PERCENT
+        }
+
         host.onClick("preferred_player_reset") {
             UserPreferences.removeProfilePreference("preferred_smarttube_package")
             host.toast(R.string.settings_trailer_player_reset)
@@ -74,6 +83,9 @@ class PlaybackController(private val host: SettingsHost) : SettingsController {
         host.refreshList("BUFFER_PROFILE") { UserPreferences.bufferProfile.name }
         host.refreshList("UP_NEXT_SECONDS") { UserPreferences.upNextSeconds.toString() }
         host.refreshList("SKIP_SEGMENTS_MODE") { UserPreferences.skipSegmentsMode.name }
+        host.refreshList("IDLE_DIM_DELAY_SECONDS") { UserPreferences.idleDimDelaySeconds.toString() }
+        host.refreshList("IDLE_DIM_LEVEL_PERCENT") { UserPreferences.idleDimLevelPercent.toString() }
+        host.refreshSwitch("IDLE_DIM_ENABLED") { UserPreferences.idleDimEnabled }
         host.refreshSwitch("AUTOPLAY") { UserPreferences.autoplay }
         host.refreshSwitch("DATA_SAVER_ON_MOBILE") { UserPreferences.dataSaverOnMobile }
         host.refreshSwitch("PLAYER_GESTURES") { UserPreferences.playerGestures }

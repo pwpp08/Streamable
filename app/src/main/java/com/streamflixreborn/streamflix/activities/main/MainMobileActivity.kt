@@ -32,6 +32,8 @@ import com.streamflixreborn.streamflix.sync.CloudSyncManager
 import com.streamflixreborn.streamflix.sync.HandoffResume
 import com.streamflixreborn.streamflix.ui.UpdateAppMobileDialog
 import com.streamflixreborn.streamflix.utils.AppLanguageManager
+import com.streamflixreborn.streamflix.utils.IdleDimHost
+import com.streamflixreborn.streamflix.utils.IdleDimmer
 import com.streamflixreborn.streamflix.utils.ProfileManager
 import com.streamflixreborn.streamflix.utils.ProviderChangeNotifier
 import com.streamflixreborn.streamflix.utils.ThemeManager
@@ -39,7 +41,9 @@ import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import kotlinx.coroutines.launch
 
-class MainMobileActivity : FragmentActivity() {
+class MainMobileActivity : FragmentActivity(), IdleDimHost {
+
+    override val idleDimmer by lazy { IdleDimmer(this) }
 
     private var _binding: ActivityMainMobileBinding? = null
     private val binding get() = _binding!!
@@ -244,6 +248,7 @@ class MainMobileActivity : FragmentActivity() {
     }
 
     override fun onDestroy() {
+        idleDimmer.release()
         dismissUpdateDialog()
         _binding = null
         super.onDestroy()
@@ -286,8 +291,19 @@ class MainMobileActivity : FragmentActivity() {
         ) View.VISIBLE else View.GONE
     }
 
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        idleDimmer.onUserInteraction()
+    }
+
+    override fun onPause() {
+        idleDimmer.onPause()
+        super.onPause()
+    }
+
     override fun onResume() {
         super.onResume()
+        idleDimmer.onResume()
         val navHost =
             supportFragmentManager.findFragmentById(R.id.nav_main_fragment) as? NavHostFragment
         _binding?.let { updateBottomNavigationVisibility(navHost?.navController?.currentDestination?.id) }

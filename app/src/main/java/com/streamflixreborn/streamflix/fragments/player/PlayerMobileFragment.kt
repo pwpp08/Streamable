@@ -48,6 +48,7 @@ import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.models.WatchItem
 import com.streamflixreborn.streamflix.utils.MediaServer
+import com.streamflixreborn.streamflix.utils.IdleDimHost
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.UserDataCache
 import com.streamflixreborn.streamflix.utils.dp
@@ -451,6 +452,7 @@ class PlayerMobileFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        (activity as? IdleDimHost)?.idleDimmer?.setPlaying(false)
         nextEpisodePrefetchJob?.cancel()
         progressSaver.release()
         val window = requireActivity().window
@@ -997,9 +999,17 @@ class PlayerMobileFragment : Fragment() {
             ?.let { (it.lastPlaybackPositionMillis - 10.seconds.inWholeMilliseconds).coerceAtLeast(0) }
     }
 
+    /** Tells the activity's IdleDimmer whether video is really playing (buffering that will resume counts). */
+    private fun reportDimState() {
+        val playing = ::player.isInitialized && player.playWhenReady &&
+            (player.playbackState == Player.STATE_READY || player.playbackState == Player.STATE_BUFFERING)
+        (activity as? IdleDimHost)?.idleDimmer?.setPlaying(playing)
+    }
+
     /** One listener per player instance. */
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            reportDimState()
             if (_binding == null) return
             binding.pvPlayer.keepScreenOn = isPlaying || UserPreferences.keepScreenOnWhenPaused
 
@@ -1025,7 +1035,12 @@ class PlayerMobileFragment : Fragment() {
             }
         }
 
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            reportDimState()
+        }
+
         override fun onPlaybackStateChanged(playbackState: Int) {
+            reportDimState()
             if (_binding == null) return
             if (playbackState == Player.STATE_READY) {
                 val server = currentServer ?: return

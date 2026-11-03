@@ -142,6 +142,34 @@
                     android:title="@string/settings_trailer_player_reset"
                     android:summary="@string/settings_trailer_player_reset_summary" />
             </PreferenceCategory>
+
+            <PreferenceCategory
+                android:title="@string/settings_category_idle_dim">
+
+                <SwitchPreferenceCompat
+                    android:key="IDLE_DIM_ENABLED"
+                    android:title="@string/settings_idle_dim_title"
+                    android:summary="@string/settings_idle_dim_summary"
+                    android:defaultValue="true" />
+
+                <ListPreference
+                    android:key="IDLE_DIM_DELAY_SECONDS"
+                    android:title="@string/settings_idle_dim_delay_title"
+                    android:dialogTitle="@string/settings_idle_dim_delay_title"
+                    android:entries="@array/settings_idle_dim_delay_entries"
+                    android:entryValues="@array/settings_idle_dim_delay_values"
+                    android:defaultValue="20"
+                    android:dependency="IDLE_DIM_ENABLED" />
+
+                <ListPreference
+                    android:key="IDLE_DIM_LEVEL_PERCENT"
+                    android:title="@string/settings_idle_dim_level_title"
+                    android:dialogTitle="@string/settings_idle_dim_level_title"
+                    android:entries="@array/settings_idle_dim_level_entries"
+                    android:entryValues="@array/settings_idle_dim_level_values"
+                    android:defaultValue="15"
+                    android:dependency="IDLE_DIM_ENABLED" />
+            </PreferenceCategory>
         </PreferenceScreen>
 
         <!-- 3. Subtitles -->

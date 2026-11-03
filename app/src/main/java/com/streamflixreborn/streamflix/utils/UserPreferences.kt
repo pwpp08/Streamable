@@ -211,6 +211,21 @@ object UserPreferences {
             Key.KEEP_SCREEN_ON_WHEN_PAUSED.setBoolean(value)
         }
 
+    var idleDimEnabled: Boolean
+        get() = Key.IDLE_DIM_ENABLED.getBoolean() ?: IdleDimSettings.DEFAULT_ENABLED
+        set(value) = Key.IDLE_DIM_ENABLED.setBoolean(value)
+
+    var idleDimDelaySeconds: Int
+        get() = Key.IDLE_DIM_DELAY_SECONDS.getString()?.toIntOrNull() ?: IdleDimSettings.DEFAULT_DELAY_SECONDS
+        set(value) = Key.IDLE_DIM_DELAY_SECONDS.setString(value.toString())
+
+    var idleDimLevelPercent: Int
+        get() = Key.IDLE_DIM_LEVEL_PERCENT.getString()?.toIntOrNull() ?: IdleDimSettings.DEFAULT_LEVEL_PERCENT
+        set(value) = Key.IDLE_DIM_LEVEL_PERCENT.setString(value.toString())
+
+    val idleDimSettings: IdleDimSettings
+        get() = IdleDimSettings(idleDimEnabled, idleDimDelaySeconds, idleDimLevelPercent)
+
     var playerGestures: Boolean
         get() = Key.PLAYER_GESTURES.getBoolean() ?: true
         set(value) {
@@ -645,6 +660,9 @@ object UserPreferences {
         AUTOPLAY,
         PROVIDER_CACHE,
         KEEP_SCREEN_ON_WHEN_PAUSED,
+        IDLE_DIM_ENABLED,
+        IDLE_DIM_DELAY_SECONDS,
+        IDLE_DIM_LEVEL_PERCENT,
         PLAYER_GESTURES,
         IMMERSIVE_MODE,
         TMDB_API_KEY,

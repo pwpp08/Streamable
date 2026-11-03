@@ -158,4 +158,42 @@
     <string name="settings_health_status_failed">Failed</string>
     <string name="settings_health_status_no_match">Test title not available here</string>
 
+    <string name="settings_category_idle_dim">Screen</string>
+    <string name="settings_idle_dim_title">Dim screen when idle or paused</string>
+    <string name="settings_idle_dim_summary">Dims the screen when nothing is playing or a video stays paused, to prevent burn-in. Any key press or touch wakes it.</string>
+    <string name="settings_idle_dim_delay_title">Dim after</string>
+    <string-array name="settings_idle_dim_delay_entries">
+        <item>10 seconds</item>
+        <item>20 seconds</item>
+        <item>30 seconds</item>
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+    </string-array>
+    <string-array name="settings_idle_dim_delay_values" translatable="false">
+        <item>10</item>
+        <item>20</item>
+        <item>30</item>
+        <item>60</item>
+        <item>120</item>
+        <item>300</item>
+    </string-array>
+    <string name="settings_idle_dim_level_title">Dimmed brightness</string>
+    <string-array name="settings_idle_dim_level_entries">
+        <item>5%</item>
+        <item>10%</item>
+        <item>15%</item>
+        <item>25%</item>
+        <item>40%</item>
+        <item>60%</item>
+    </string-array>
+    <string-array name="settings_idle_dim_level_values" translatable="false">
+        <item>5</item>
+        <item>10</item>
+        <item>15</item>
+        <item>25</item>
+        <item>40</item>
+        <item>60</item>
+    </string-array>
+
 </resources>
