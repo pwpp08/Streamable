@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Browse screen widget styles (home, poster cards, grids). Built on styles_components.xml. -->
+<resources>
+
+    <!-- Poster / backdrop card: tonal placeholder surface, Poster (16dp) shape, no elevation.
+         The card copies its parent tile's state (duplicateParentState), so the TV variant's
+         stateful stroke shows the focus ring or the favourites selection without extra code. -->
+    <style name="Widget.StreamFlix.Browse.PosterCard" parent="Widget.StreamFlix.Card">
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainerHigh</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="android:duplicateParentState">true</item>
+    </style>
+
+    <style name="Widget.StreamFlix.Browse.PosterCard.Tv">
+        <item name="strokeColor">@color/sf_browse_card_stroke</item>
+        <item name="strokeWidth">3dp</item>
+    </style>
+
+    <!-- Large letter shown on the tonal card while artwork loads (or when there is none). -->
+    <style name="Widget.StreamFlix.Browse.PosterInitial" parent="">
+        <item name="android:layout_gravity">center</item>
+        <item name="android:textAppearance">?attr/textAppearanceHeadlineMediumEmphasized</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <!-- Small tonal chip over artwork (rating). -->
+    <style name="Widget.StreamFlix.Browse.ArtworkChip" parent="">
+        <item name="android:background">@drawable/bg_browse_artwork_chip</item>
+        <item name="android:paddingStart">6dp</item>
+        <item name="android:paddingEnd">6dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelMediumEmphasized</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <!-- Watch-progress strip at the bottom of a poster. -->
+    <style name="Widget.StreamFlix.Browse.PosterProgress" parent="Widget.StreamFlix.LinearProgressIndicator.Flat">
+        <item name="trackThickness">4dp</item>
+        <item name="trackCornerRadius">2dp</item>
+        <item name="indicatorColor">?attr/colorPrimary</item>
+        <item name="trackColor">?attr/colorSurfaceContainerHighest</item>
+        <item name="trackStopIndicatorSize">0dp</item>
+    </style>
+
+    <!-- Wavy progress for Continue Watching cards (static, determinate). -->
+    <style name="Widget.StreamFlix.Browse.ContinueProgress" parent="Widget.StreamFlix.LinearProgressIndicator">
+        <item name="trackThickness">4dp</item>
+        <item name="waveAmplitude">2dp</item>
+        <item name="wavelength">16dp</item>
+        <item name="indicatorColor">?attr/colorPrimary</item>
+        <item name="trackColor">?attr/colorSurfaceContainerHighest</item>
+    </style>
+
+    <!-- Section header above a home row. -->
+    <style name="Widget.StreamFlix.Browse.RowHeader" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceTitleLargeEmphasized</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <!-- Poster title below the artwork: subtle. -->
+    <style name="Widget.StreamFlix.Browse.CardTitle" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceBodyMedium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="Widget.StreamFlix.Browse.CardMeta" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceLabelMedium</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <!-- Top-bar icon buttons (search, remote, downloads, favourites actions). -->
+    <style name="Widget.StreamFlix.Browse.TopIconButton" parent="Widget.Material3Expressive.Button.IconButton.Standard">
+        <item name="iconTint">?attr/colorOnSurface</item>
+        <item name="iconSize">24dp</item>
+    </style>
+
+    <!-- Large flexible top app bar with a collapsing emphasized title. -->
+    <style name="Widget.StreamFlix.Browse.LargeAppBar" parent="Widget.Material3Expressive.AppBarLayout">
+        <item name="android:background">?attr/colorSurface</item>
+        <item name="liftOnScroll">true</item>
+    </style>
+
+    <style name="Widget.StreamFlix.Browse.CollapsingToolbar" parent="Widget.Material3Expressive.CollapsingToolbar.Large">
+        <item name="expandedTitleTextAppearance">?attr/textAppearanceHeadlineLargeEmphasized</item>
+        <item name="collapsedTitleTextAppearance">?attr/textAppearanceTitleLargeEmphasized</item>
+        <item name="expandedTitleMarginStart">@dimen/browse_gutter</item>
+        <item name="expandedTitleMarginBottom">16dp</item>
+        <item name="contentScrim">?attr/colorSurfaceContainer</item>
+        <item name="statusBarScrim">@android:color/transparent</item>
+    </style>
+
+    <!-- TV screen title above a grid. -->
+    <style name="Widget.StreamFlix.Browse.TvScreenTitle" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceHeadlineMediumEmphasized</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+</resources>

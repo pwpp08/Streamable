@@ -18,6 +18,7 @@ import com.streamflixreborn.streamflix.fragments.tv_show.TvShowMobileFragmentDir
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowTvFragment
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowTvFragmentDirections
 import com.streamflixreborn.streamflix.models.People
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.toActivity
 
@@ -41,6 +42,7 @@ class PeopleViewHolder(
 
 
     private fun displayMobileItem(binding: ItemPeopleMobileBinding) {
+        BrowseCards.attachPress(binding.root)
         binding.root.apply {
             setOnClickListener {
                 when (context.toActivity()?.getCurrentFragment()) {
@@ -95,16 +97,9 @@ class PeopleViewHolder(
                     )
                 }
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                // Applichiamo l'animazione solo all'immagine, non a tutto il root (che include il testo)
-                val animation = when {
-                    hasFocus -> AnimationUtils.loadAnimation(context, R.anim.zoom_in)
-                    else -> AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                }
-                binding.ivPeopleImage.startAnimation(animation)
-                animation.fillAfter = true
-            }
         }
+        // The portrait's stateful stroke draws the ring; the tile springs to 1.08.
+        BrowseCards.attachTvFocus(binding.root)
 
         binding.ivPeopleImage.apply {
             clipToOutline = true

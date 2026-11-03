@@ -55,6 +55,7 @@ import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 import com.streamflixreborn.streamflix.ui.ShowOptionsMobileDialog
 import com.streamflixreborn.streamflix.ui.ShowOptionsTvDialog
 import com.streamflixreborn.streamflix.utils.UserPreferences
@@ -221,12 +222,12 @@ class TvShowViewHolder(
     private fun setPoster(imageView: ImageView) {
         imageView.scaleType = if (isIptvProvider()) ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP
         imageView.loadTvShowPoster(tvShow) {
-            fallback(R.drawable.glide_fallback_cover)
             transition(DrawableTransitionOptions.withCrossFade())
         }
     }
 
     private fun displayMobileItem(binding: ItemTvShowMobileBinding) {
+        BrowseCards.attachPress(binding.root)
         binding.root.setOnClickListener {
             onTvShowClick?.let { listener ->
                 listener(tvShow)
@@ -248,19 +249,17 @@ class TvShowViewHolder(
             ShowOptionsMobileDialog(context, tvShow).show()
             true
         }
+        binding.tvTvShowInitial.text = BrowseCards.initial(tvShow.title)
         setPoster(binding.ivTvShowPoster)
         bindRibbons(binding.ivTvShowFavoriteRibbon, binding.ivTvShowWatchedRibbon)
+        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating)
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             isVisible = !text.isNullOrEmpty()
         }
         binding.pbTvShowProgress.apply {
             val watchHistory = tvShow.episodeToWatch?.watchHistory
-            progress = when {
-                watchHistory != null && watchHistory.durationMillis > 0 ->
-                    (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
+            progress = BrowseCards.progressPercent(watchHistory)
             isVisible = watchHistory != null
         }
         binding.tvTvShowLastEpisode.text = episodeBadgeText()
@@ -290,32 +289,28 @@ class TvShowViewHolder(
                 ShowOptionsTvDialog(context, tvShow).show()
                 true
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                val animation = if (hasFocus) AnimationUtils.loadAnimation(context, R.anim.zoom_in) else AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                startAnimation(animation)
-                animation.fillAfter = true
-                (context.toActivity()?.getCurrentFragment() as? HomeTvFragment)?.let { fragment ->
-                    if (hasFocus) {
-                        fragment.pinBackground(tvShow.banner)
-                    } else {
-                        fragment.releasePinnedBackground()
-                    }
-                }
+        }
+        BrowseCards.attachTvFocus(
+            binding.root,
+            binding.tvTvShowTitle,
+            binding.tvTvShowLastEpisode,
+            binding.tvTvShowQuality,
+        ) { hasFocus ->
+            (context.toActivity()?.getCurrentFragment() as? HomeTvFragment)?.let { fragment ->
+                if (hasFocus) fragment.focusHero(tvShow) else fragment.releasePinnedBackground()
             }
         }
+        binding.tvTvShowInitial.text = BrowseCards.initial(tvShow.title)
         setPoster(binding.ivTvShowPoster)
         bindRibbons(binding.ivTvShowFavoriteRibbon, binding.ivTvShowWatchedRibbon)
+        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating)
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             isVisible = !text.isNullOrEmpty()
         }
         binding.pbTvShowProgress.apply {
             val watchHistory = tvShow.episodeToWatch?.watchHistory
-            progress = when {
-                watchHistory != null && watchHistory.durationMillis > 0 ->
-                    (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
+            progress = BrowseCards.progressPercent(watchHistory)
             isVisible = watchHistory != null
         }
         binding.tvTvShowLastEpisode.text = episodeBadgeText()
@@ -323,6 +318,7 @@ class TvShowViewHolder(
     }
 
     private fun displayGridMobileItem(binding: ItemTvShowGridMobileBinding) {
+        BrowseCards.attachPress(binding.root)
         binding.root.alpha = 1f
         binding.root.isActivated = itemSelected
         applyMobileSelection(binding.root)
@@ -348,19 +344,17 @@ class TvShowViewHolder(
             ShowOptionsMobileDialog(context, tvShow).show()
             true
         }
+        binding.tvTvShowInitial.text = BrowseCards.initial(tvShow.title)
         setPoster(binding.ivTvShowPoster)
         bindRibbons(binding.ivTvShowFavoriteRibbon, binding.ivTvShowWatchedRibbon)
+        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating)
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             isVisible = !text.isNullOrEmpty()
         }
         binding.pbTvShowProgress.apply {
             val watchHistory = tvShow.episodeToWatch?.watchHistory
-            progress = when {
-                watchHistory != null && watchHistory.durationMillis > 0 ->
-                    (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
+            progress = BrowseCards.progressPercent(watchHistory)
             isVisible = watchHistory != null
         }
         binding.tvTvShowLastEpisode.text = episodeBadgeText()
@@ -393,25 +387,24 @@ class TvShowViewHolder(
                 ShowOptionsTvDialog(context, tvShow).show()
                 true
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                val animation = if (hasFocus) AnimationUtils.loadAnimation(context, R.anim.zoom_in) else AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                startAnimation(animation)
-                animation.fillAfter = true
-            }
         }
+        BrowseCards.attachTvFocus(
+            binding.root,
+            binding.tvTvShowTitle,
+            binding.tvTvShowLastEpisode,
+            binding.tvTvShowQuality,
+        )
+        binding.tvTvShowInitial.text = BrowseCards.initial(tvShow.title)
         setPoster(binding.ivTvShowPoster)
         bindRibbons(binding.ivTvShowFavoriteRibbon, binding.ivTvShowWatchedRibbon)
+        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating)
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             isVisible = !text.isNullOrEmpty()
         }
         binding.pbTvShowProgress.apply {
             val watchHistory = tvShow.episodeToWatch?.watchHistory
-            progress = when {
-                watchHistory != null && watchHistory.durationMillis > 0 ->
-                    (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
+            progress = BrowseCards.progressPercent(watchHistory)
             isVisible = watchHistory != null
         }
         binding.tvTvShowLastEpisode.text = episodeBadgeText()
@@ -573,12 +566,14 @@ class TvShowViewHolder(
     }
 
     private fun displaySwiperMobileItem(binding: ItemCategorySwiperMobileBinding) {
+        BrowseCards.bindHeroMask(binding.mflSwiper, binding.clSwiperContent)
         binding.ivSwiperBackground.loadTvShowBanner(tvShow) {
             centerCrop().transition(DrawableTransitionOptions.withCrossFade())
         }
         binding.tvSwiperTitle.text = tvShow.title
         binding.tvSwiperTvShowLastEpisode.text = if (isIptvProvider()) "" else tvShow.seasons.lastOrNull()?.episodes?.lastOrNull()?.let { "E${it.number}" } ?: context.getString(R.string.tv_show_item_type)
-        
+        binding.tvSwiperTvShowLastEpisode.isVisible = !binding.tvSwiperTvShowLastEpisode.text.isNullOrEmpty()
+
         binding.tvSwiperQuality.apply {
             text = tvShow.quality
             isVisible = !text.isNullOrEmpty()
@@ -590,19 +585,35 @@ class TvShowViewHolder(
         }
 
         binding.tvSwiperRating.apply {
-            text = tvShow.rating?.let { String.format(Locale.ROOT, "%.1f", it) }
+            text = BrowseCards.ratingValue(tvShow.rating)
             isVisible = !text.isNullOrEmpty()
         }
         binding.ivSwiperRatingIcon.isVisible = binding.tvSwiperRating.isVisible
 
         binding.tvSwiperOverview.text = tvShow.overview
-        binding.btnSwiperWatchNow.setOnClickListener {
-            if (isIptvProvider()) {
-                handleDirectPlay(binding.root.findNavController())
-            } else {
-                binding.root.findNavController().navigate(R.id.tv_show, tvShowArgs())
-            }
+
+        val openDetails = { binding.root.findNavController().navigate(R.id.tv_show, tvShowArgs()) }
+        binding.root.setOnClickListener {
+            if (isIptvProvider()) handleDirectPlay(binding.root.findNavController()) else openDetails()
         }
+        binding.root.setOnLongClickListener {
+            ShowOptionsMobileDialog(context, tvShow).show()
+            true
+        }
+        if (isIptvProvider()) {
+            // Live channel: Play starts it, More info opens the channel page.
+            binding.btnSwiperWatchNow.setText(R.string.browse_play)
+            binding.btnSwiperWatchNow.setOnClickListener { handleDirectPlay(binding.root.findNavController()) }
+            binding.btnSwiperMoreInfo.isVisible = true
+            binding.btnSwiperMoreInfo.setOnClickListener { openDetails() }
+        } else {
+            // Episodes are picked on the show page, so a single "Watch now" action leads there.
+            binding.btnSwiperWatchNow.setText(R.string.home_swiper_watch_now)
+            binding.btnSwiperWatchNow.setOnClickListener { openDetails() }
+            binding.btnSwiperMoreInfo.isVisible = false
+            binding.btnSwiperMoreInfo.setOnClickListener(null)
+        }
+        binding.pbSwiperProgress.isVisible = false
     }
 
     private fun bindRibbons(favoriteRibbon: View, watchedRibbon: View) {

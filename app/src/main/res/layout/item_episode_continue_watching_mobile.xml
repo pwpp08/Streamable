@@ -1,66 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Continue Watching (phone): backdrop thumbnail in a 16dp card, show title, S·E line, and a
+     wavy progress bar with the time left. The root is the click / long-press target. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
+    android:layout_width="@dimen/browse_continue_width"
     android:layout_height="wrap_content">
 
-    <ImageView
-        android:id="@+id/iv_episode_tv_show_poster"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_episode_continue"
+        style="@style/Widget.StreamFlix.Browse.PosterCard"
         android:layout_width="0dp"
-        android:layout_height="200dp"
-        android:scaleType="centerCrop"
-        app:layout_constraintDimensionRatio="2:3"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="16:9"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:ignore="ContentDescription" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <ProgressBar
-        android:id="@+id/pb_episode_progress"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="0dp"
-        android:layout_height="4dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="10dp"
-        android:backgroundTint="#CC646464"
-        android:progressTint="?attr/colorPrimary"
-        app:layout_constraintBottom_toBottomOf="@id/iv_episode_tv_show_poster"
-        app:layout_constraintEnd_toEndOf="@id/iv_episode_tv_show_poster"
-        app:layout_constraintStart_toStartOf="@id/iv_episode_tv_show_poster"
-        tools:progress="80" />
+        <TextView
+            android:id="@+id/tv_episode_initial"
+            style="@style/Widget.StreamFlix.Browse.PosterInitial"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="T" />
+
+        <ImageView
+            android:id="@+id/iv_episode_tv_show_poster"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:duplicateParentState="true"
+            android:foreground="?attr/selectableItemBackground"
+            android:scaleType="centerCrop"
+            tools:ignore="ContentDescription" />
+    </com.google.android.material.card.MaterialCardView>
 
     <TextView
         android:id="@+id/tv_episode_tv_show_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginTop="10dp"
         android:ellipsize="end"
-        android:lines="1"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceTitleSmallEmphasized"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_episode_tv_show_poster"
+        app:layout_constraintTop_toBottomOf="@id/card_episode_continue"
         tools:text="TV show title" />
 
     <TextView
         android:id="@+id/tv_episode_info"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
         android:layout_marginTop="2dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
         android:ellipsize="end"
-        android:lines="2"
-        android:textColor="?attr/colorOnSurface"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_episode_tv_show_title"
-        tools:text="S# E# • Title" />
+        tools:text="S1 E3 · Title" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/pb_episode_progress"
+        style="@style/Widget.StreamFlix.Browse.ContinueProgress"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        app:layout_constraintBottom_toBottomOf="@id/tv_episode_remaining"
+        app:layout_constraintEnd_toStartOf="@id/tv_episode_remaining"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tv_episode_remaining"
+        tools:progress="60" />
+
+    <TextView
+        android:id="@+id/tv_episode_remaining"
+        style="@style/Widget.StreamFlix.Browse.CardMeta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_episode_info"
+        tools:text="23 min left" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the browse screens (navigation chrome, home, poster cards, grids). -->
+<resources>
+    <string name="browse_play">Play</string>
+    <string name="browse_more_info">More info</string>
+    <string name="browse_navigate_up">Back</string>
+    <string name="browse_rating_star">★ %1$s</string>
+    <string name="browse_meta_separator">" · "</string>
+
+    <plurals name="browse_minutes_left">
+        <item quantity="one">%d min left</item>
+        <item quantity="other">%d min left</item>
+    </plurals>
+    <string name="browse_hours_minutes_left">%1$d h %2$d min left</string>
+    <string name="browse_almost_done">Almost done</string>
+
+    <string name="browse_empty_title">Nothing here yet</string>
+    <string name="browse_empty_message">This provider has no titles to show right now. Try again later or switch provider.</string>
+    <string name="browse_favorites_empty_title">No favorites yet</string>
+    <string name="browse_favorites_empty_message">Long-press a poster and add it to favorites to keep it here.</string>
+</resources>
