@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.ui.tvFocusSpring
 import com.streamflixreborn.streamflix.databinding.FragmentPairTvBinding
 import com.streamflixreborn.streamflix.sync.DeviceIdentity
 import com.streamflixreborn.streamflix.sync.SyncUi
@@ -61,6 +62,8 @@ class PairTvFragment : Fragment() {
         )
         server = pairingServer
 
+        binding.btnPairNewCode.tvFocusSpring()
+        binding.btnPairDone.tvFocusSpring()
         binding.btnPairNewCode.setOnClickListener { restart() }
         binding.btnPairDone.setOnClickListener { findNavController().navigateUp() }
         binding.btnPairDone.requestFocus()

@@ -1,71 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- TV pairing: a big QR in a rounded card on the left, the 6-digit code in display type on the right. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/app_background_color"
+    android:background="?attr/colorSurface"
+    android:clipChildren="false"
     android:gravity="center"
     android:orientation="horizontal"
     android:padding="48dp">
 
     <FrameLayout
-        android:layout_width="320dp"
-        android:layout_height="320dp"
-        android:background="#FFFFFF"
-        android:padding="8dp">
+        android:layout_width="344dp"
+        android:layout_height="344dp"
+        android:background="@drawable/bg_sf_qr_card"
+        android:padding="20dp">
 
-        <ImageView
-            android:id="@+id/iv_pair_qr"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:contentDescription="@string/pair_tv_title"
-            android:scaleType="fitCenter" />
+            android:background="@drawable/bg_sf_qr_plate"
+            android:padding="14dp">
+
+            <ImageView
+                android:id="@+id/iv_pair_qr"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/pair_tv_title"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
 
         <com.google.android.material.loadingindicator.LoadingIndicator
             android:id="@+id/pb_pair_qr"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            style="@style/Widget.StreamFlix.LoadingIndicator.Contained"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="center" />
     </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="48dp"
+        android:layout_marginStart="56dp"
         android:layout_weight="1"
+        android:clipChildren="false"
         android:orientation="vertical">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/pair_tv_title"
-            android:textAppearance="?attr/textAppearanceHeadline4"
-            android:textColor="?android:attr/textColorPrimary" />
+            android:textAppearance="?attr/textAppearanceHeadlineLargeEmphasized"
+            android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:text="@string/pair_tv_instructions"
-            android:textAppearance="?attr/textAppearanceBody1"
-            android:textColor="?android:attr/textColorSecondary" />
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="28dp"
             android:text="@string/pair_tv_code_hint"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary" />
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorPrimary" />
 
         <TextView
             android:id="@+id/tv_pair_code"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:letterSpacing="0.2"
-            android:textAppearance="?attr/textAppearanceHeadline3"
-            android:textColor="?android:attr/textColorPrimary"
+            android:layout_marginTop="4dp"
+            android:fontFeatureSettings="tnum"
+            android:letterSpacing="0.06"
+            android:textAppearance="?attr/textAppearanceDisplayLargeEmphasized"
+            android:textColor="?attr/colorOnSurface"
             tools:text="123 456" />
 
         <TextView
@@ -73,16 +86,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textAppearance="?attr/textAppearanceCaption"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="Address 192.168.1.20:41234" />
 
         <TextView
             android:id="@+id/tv_pair_profile"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceCaption"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="Signs in on profile Default" />
 
         <TextView
@@ -90,28 +103,30 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:textAppearance="?attr/textAppearanceSubtitle1"
-            android:textColor="?android:attr/textColorPrimary"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface"
             tools:text="Waiting for your phone" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
+            android:clipChildren="false"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_pair_new_code"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Widget.StreamFlix.Button.Tv"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:focusable="true"
                 android:nextFocusRight="@id/btn_pair_done"
                 android:text="@string/pair_tv_new_code"
-                android:textColor="?android:attr/textColorPrimary" />
+                app:icon="@drawable/ic_refresh" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_pair_done"
+                style="@style/Widget.StreamFlix.Button.Tv"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"

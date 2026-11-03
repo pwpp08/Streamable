@@ -2,7 +2,7 @@ package com.streamflixreborn.streamflix.downloads
 
 import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.PackageManager
@@ -87,7 +87,7 @@ object DownloadActions {
 
     fun confirmDelete(context: Context, item: DownloadTracker.Item) {
         val title = item.metadata?.title ?: ""
-        AlertDialog.Builder(context)
+        MaterialAlertDialogBuilder(context)
             .setMessage(context.getString(R.string.download_delete_confirm, title))
             .setPositiveButton(R.string.download_delete) { _, _ -> DownloadStarter.remove(context, item.id) }
             .setNegativeButton(R.string.download_cancel, null)

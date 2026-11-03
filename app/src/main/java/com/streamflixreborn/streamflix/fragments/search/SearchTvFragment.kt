@@ -37,7 +37,9 @@ import kotlinx.coroutines.launch
 import androidx.navigation.fragment.findNavController
 import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.providers.IptvProvider
+import com.streamflixreborn.streamflix.sync.CloudSyncManager
 import com.streamflixreborn.streamflix.sync.RemoteSearch
+import com.streamflixreborn.streamflix.ui.tvFocusSpring
 
 class SearchTvFragment : Fragment() {
 
@@ -78,6 +80,7 @@ class SearchTvFragment : Fragment() {
         onClearHistory = {
             viewModel.clearHistory()
         },
+        isTv = true,
     )
 
     /** Hidden after a search runs, until the text changes again. */
@@ -225,12 +228,15 @@ class SearchTvFragment : Fragment() {
 
         binding.llGlobalSearch.nextFocusUpId = binding.etSearch.id
         binding.vgvSearch.nextFocusUpId = binding.llGlobalSearch.id
+        binding.ivGlobalSearchSwitch.isChecked = isGlobalSearchChecked
+        listOf(binding.llGlobalSearch, binding.btnSearchClear, binding.btnSearchVoice).forEach { it.tvFocusSpring() }
+        // The phone remote can type here (RemoteSearch) once this TV is signed in to sync.
+        binding.tvSearchRemoteHint.visibility =
+            if (CloudSyncManager.currentUserId() != null) View.VISIBLE else View.GONE
 
         binding.llGlobalSearch.setOnClickListener {
             isGlobalSearchChecked = !isGlobalSearchChecked
-            binding.ivGlobalSearchSwitch.setImageResource(
-                if (isGlobalSearchChecked) R.drawable.ic_switch_on else R.drawable.ic_switch_off
-            )
+            binding.ivGlobalSearchSwitch.isChecked = isGlobalSearchChecked
         }
 
         binding.etSearch.apply {

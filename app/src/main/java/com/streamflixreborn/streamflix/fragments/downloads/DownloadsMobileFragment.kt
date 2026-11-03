@@ -19,6 +19,7 @@ import com.streamflixreborn.streamflix.NavMainGraphMobileDirections
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.FragmentDownloadsMobileBinding
 import com.streamflixreborn.streamflix.databinding.ItemDownloadMobileBinding
+import com.streamflixreborn.streamflix.utils.ThemeManager
 import com.streamflixreborn.streamflix.downloads.DownloadActions
 import com.streamflixreborn.streamflix.downloads.DownloadPreferences
 import com.streamflixreborn.streamflix.downloads.DownloadStarter
@@ -196,9 +197,8 @@ class DownloadsMobileFragment : Fragment() {
                 DownloadTracker.Status.WAITING,
                 DownloadTracker.Status.RESOLVING,
             )
-            binding.pbDownloadProgress.visibility = if (showProgress) View.VISIBLE else View.GONE
-            binding.pbDownloadProgress.isIndeterminate = item.status == DownloadTracker.Status.RESOLVING
-            binding.pbDownloadProgress.progress = item.percent.coerceAtLeast(0)
+            bindProgress(binding, item, showProgress)
+            bindStateColor(binding, item)
 
             val pauseIcon = when (item.status) {
                 DownloadTracker.Status.PAUSED -> R.drawable.ic_download_resume to R.string.download_menu_resume
@@ -219,6 +219,43 @@ class DownloadsMobileFragment : Fragment() {
             binding.root.setOnClickListener { onClick(it, item) }
             binding.btnDownloadPause.setOnClickListener { onPauseResume(item) }
             binding.btnDownloadDelete.setOnClickListener { onDelete(item) }
+        }
+
+        /**
+         * Wavy while bytes are flowing, flat and muted while paused or waiting; indeterminate
+         * while the stream is being resolved.
+         */
+        private fun bindProgress(binding: ItemDownloadMobileBinding, item: DownloadTracker.Item, show: Boolean) {
+            val bar = binding.pbDownloadProgress
+            if (!show) {
+                bar.visibility = View.GONE
+                return
+            }
+            val context = bar.context
+            val active = item.status == DownloadTracker.Status.DOWNLOADING ||
+                item.status == DownloadTracker.Status.RESOLVING
+            val density = context.resources.displayMetrics.density
+            bar.waveAmplitude = if (active) (3 * density).toInt() else 0
+            bar.setIndicatorColor(
+                ThemeManager.color(
+                    context,
+                    if (active) androidx.appcompat.R.attr.colorPrimary else com.google.android.material.R.attr.colorOutline,
+                )
+            )
+            val wasVisible = bar.visibility == View.VISIBLE
+            bar.visibility = View.VISIBLE
+            bar.isIndeterminate = item.status == DownloadTracker.Status.RESOLVING
+            bar.setProgressCompat(item.percent.coerceAtLeast(0), wasVisible)
+        }
+
+        private fun bindStateColor(binding: ItemDownloadMobileBinding, item: DownloadTracker.Item) {
+            val context = binding.root.context
+            val attr = when (item.status) {
+                DownloadTracker.Status.FAILED -> androidx.appcompat.R.attr.colorError
+                DownloadTracker.Status.COMPLETED -> androidx.appcompat.R.attr.colorPrimary
+                else -> com.google.android.material.R.attr.colorOnSurfaceVariant
+            }
+            binding.tvDownloadStatus.setTextColor(ThemeManager.color(context, attr))
         }
 
         private fun secondLine(context: android.content.Context, type: StoredVideoType, subtitle: String): String =
