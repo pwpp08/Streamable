@@ -1042,6 +1042,8 @@ class PlayerMobileFragment : Fragment() {
 
         override fun onPlayerError(error: PlaybackException) {
             Log.e("PlayerMobileFragment", "onPlayerError: ", error)
+            // The empty placeholder shown while a server is being resolved is not a server failure.
+            if (player.currentMediaItem?.localConfiguration?.uri?.toString().isNullOrEmpty()) return
             val position = player.currentPosition
             if (position > 0) pendingResumeMs = position
             Log.i("PlayerMobileFragment", "Playback failed on ${currentServer?.name}, switching server at $position ms")
