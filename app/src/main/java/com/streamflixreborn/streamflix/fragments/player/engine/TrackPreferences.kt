@@ -48,6 +48,19 @@ object TrackPreferences {
         setPreferredTextLanguages()
             .setIgnoredTextSelectionFlags(C.SELECTION_FLAG_DEFAULT)
 
+    /**
+     * A subtitle the user just loaded (local file, OpenSubtitles, SubDL) is added with the
+     * DEFAULT flag; make sure it is shown whatever the subtitle mode is.
+     */
+    fun preferSideloadedSubtitle(player: Player) {
+        player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+            .setPreferredTextLanguages()
+            .setIgnoredTextSelectionFlags(0)
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+            .build()
+    }
+
     fun applyQuality(context: Context, builder: TrackSelectionParameters.Builder) {
         val display = Util.getCurrentDisplayModeSize(context)
         val displayLong = max(display.x, display.y)

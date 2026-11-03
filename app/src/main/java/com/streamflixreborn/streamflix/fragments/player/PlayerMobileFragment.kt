@@ -190,6 +190,7 @@ class PlayerMobileFragment : Fragment() {
                 .setMediaMetadata(player.mediaMetadata)
                 .build()
         )
+        TrackPreferences.preferSideloadedSubtitle(player)
         player.seekTo(currentPosition)
         player.play()
     }
@@ -364,6 +365,7 @@ class PlayerMobileFragment : Fragment() {
                                 .build()
                         )
                         UserPreferences.subtitleName = (state.subtitle.languageName ?: fileName).substringBefore(" ")
+                        TrackPreferences.preferSideloadedSubtitle(player)
                         player.seekTo(currentPosition)
                         player.play()
                     }
@@ -404,6 +406,7 @@ class PlayerMobileFragment : Fragment() {
                                 .build()
                         )
                         UserPreferences.subtitleName = (state.subtitle.releaseName ?: state.subtitle.name ?: fileName).substringBefore(" ")
+                        TrackPreferences.preferSideloadedSubtitle(player)
                         player.seekTo(currentPosition)
                         player.play()
                     }
