@@ -29,6 +29,7 @@ import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.format
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 
 class PeopleMobileFragment : Fragment() {
 
@@ -116,8 +117,12 @@ class PeopleMobileFragment : Fragment() {
 
 
     private fun initializePeople() {
+        binding.ctlPeople.title = args.name
+        binding.tbPeople.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
         binding.rvPeople.apply {
-            layoutManager = GridLayoutManager(context, 3).also {
+            layoutManager = GridLayoutManager(context, BrowseCards.gridSpanCount(context)).also {
                 it.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                     override fun getSpanSize(position: Int): Int {
                         val viewType = appAdapter.getItemViewType(position)
@@ -132,12 +137,13 @@ class PeopleMobileFragment : Fragment() {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             }
             addItemDecoration(
-                SpacingItemDecoration(10.dp(requireContext()))
+                SpacingItemDecoration(resources.getDimensionPixelSize(R.dimen.browse_row_item_gap))
             )
         }
     }
 
     private fun displayPeople(people: People, hasMore: Boolean) {
+        binding.ctlPeople.title = people.name.takeIf { it.isNotEmpty() } ?: args.name
         appAdapter.setHeader(
             binding = { parent ->
                 HeaderPeopleMobileBinding.inflate(

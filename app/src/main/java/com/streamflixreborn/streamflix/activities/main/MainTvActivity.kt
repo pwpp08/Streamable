@@ -32,6 +32,8 @@ import com.streamflixreborn.streamflix.utils.ProfileManager
 import com.streamflixreborn.streamflix.utils.ThemeManager
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
+import com.streamflixreborn.streamflix.ui.motion.Springs
+import android.graphics.drawable.GradientDrawable
 import kotlinx.coroutines.launch
 
 class MainTvActivity : FragmentActivity() {
@@ -94,6 +96,7 @@ class MainTvActivity : FragmentActivity() {
 
         binding.navMain.setupWithNavController(navController)
         updateNavigationVisibility()
+        configureNavigationRail()
 
         // Phone -> TV commands (Play on TV, remote search/controls) and hand-off resume.
         TvCommandHandler(this) { navController }.attach()
@@ -109,9 +112,13 @@ class MainTvActivity : FragmentActivity() {
             when (destination.id) {
                 R.id.search, R.id.home, R.id.movies, R.id.tv_shows, R.id.favorites, R.id.settings -> {
                     binding.navMain.visibility = View.VISIBLE
+                    binding.vNavMainSpacer.visibility = View.VISIBLE
                     updateNavigationVisibility()
                 }
-                else -> binding.navMain.visibility = View.GONE
+                else -> {
+                    binding.navMain.visibility = View.GONE
+                    binding.vNavMainSpacer.visibility = View.GONE
+                }
             }
         }
 
@@ -227,12 +234,28 @@ class MainTvActivity : FragmentActivity() {
         val palette = ThemeManager.palette(this)
         window.statusBarColor = palette.systemBar
         window.navigationBarColor = palette.systemBar
-        binding.navMain.setBackgroundColor(palette.tvNavBackground)
-        binding.navMain.headerView?.let { headerView ->
-            headerView.setBackgroundColor(palette.tvNavBackground)
-            val header = ContentHeaderMenuMainTvBinding.bind(headerView)
-            header.tvNavigationHeaderTitle.setTextColor(palette.tvHeaderPrimary)
-            header.tvNavigationHeaderSubtitle.setTextColor(palette.tvHeaderSecondary)
+        // Tonal rail with rounded end corners; it reads as a panel when it expands over content.
+        val radius = 24f * resources.displayMetrics.density
+        binding.navMain.background = GradientDrawable().apply {
+            setColor(palette.tvNavBackground)
+            cornerRadii = if (binding.navMain.layoutDirection == View.LAYOUT_DIRECTION_RTL) {
+                floatArrayOf(radius, radius, 0f, 0f, 0f, 0f, radius, radius)
+            } else {
+                floatArrayOf(0f, 0f, radius, radius, radius, radius, 0f, 0f)
+            }
+        }
+        binding.navMain.headerView?.background = null
+    }
+
+    /** Rail motion: the SpatialDefault spring for the width, snapping under reduced motion. */
+    private fun configureNavigationRail() {
+        val spring = Springs.spatialDefault(this)
+        binding.navMain.setWidthSpring(spring.stiffness, spring.dampingRatio)
+        binding.navMain.animationsEnabled = !Springs.isReducedMotion(this)
+        // Start collapsed unless the rail already holds focus, so it never covers the content.
+        binding.navMain.post {
+            val rail = _binding?.navMain ?: return@post
+            if (!rail.hasFocus() && rail.isOpen) rail.close()
         }
     }
     

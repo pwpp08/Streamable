@@ -46,6 +46,8 @@ import com.streamflixreborn.streamflix.databinding.ItemFavoriteSectionHeaderBind
 import com.streamflixreborn.streamflix.databinding.ItemGenreGridMobileBinding
 import com.streamflixreborn.streamflix.databinding.ItemGenreGridTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemLoadingBinding
+import com.streamflixreborn.streamflix.databinding.ItemMovieContinueWatchingMobileBinding
+import com.streamflixreborn.streamflix.databinding.ItemMovieContinueWatchingTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieGridMobileBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieGridTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieMobileBinding
@@ -183,7 +185,19 @@ class AppAdapter(
     private var onLoadMoreListener: (() -> Unit)? = null
     private var footer: Footer<ViewBinding>? = null
 
+    /**
+     * Pool shared by the nested horizontal rows (home). Set by the screen before the first
+     * layout; null keeps one pool per row.
+     */
+    var childRecycledViewPool: RecyclerView.RecycledViewPool? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+        createAppViewHolder(parent, viewType).also { holder ->
+            val pool = childRecycledViewPool ?: return@also
+            if (holder is CategoryViewHolder) holder.useSharedRowPool(pool)
+        }
+
+    private fun createAppViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
         when (Type.entries[viewType]) {
             Type.CATEGORY_MOBILE_ITEM -> CategoryViewHolder(
                 ItemCategoryMobileBinding.inflate(
@@ -284,7 +298,13 @@ class AppAdapter(
                 )
             )
 
-            Type.MOVIE_CONTINUE_WATCHING_MOBILE_ITEM,
+            Type.MOVIE_CONTINUE_WATCHING_MOBILE_ITEM -> MovieViewHolder(
+                ItemMovieContinueWatchingMobileBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false,
+                )
+            )
             Type.MOVIE_RECENTLY_WATCHED_MOBILE_ITEM,
             Type.MOVIE_MOBILE_ITEM -> MovieViewHolder(
                 ItemMovieMobileBinding.inflate(
@@ -293,7 +313,13 @@ class AppAdapter(
                     false,
                 )
             )
-            Type.MOVIE_CONTINUE_WATCHING_TV_ITEM,
+            Type.MOVIE_CONTINUE_WATCHING_TV_ITEM -> MovieViewHolder(
+                ItemMovieContinueWatchingTvBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false,
+                )
+            )
             Type.MOVIE_RECENTLY_WATCHED_TV_ITEM,
             Type.MOVIE_TV_ITEM -> MovieViewHolder(
                 ItemMovieTvBinding.inflate(

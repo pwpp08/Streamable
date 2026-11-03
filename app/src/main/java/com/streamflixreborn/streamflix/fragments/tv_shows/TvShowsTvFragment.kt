@@ -16,10 +16,12 @@ import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentTvShowsTvBinding
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.providers.Provider
+import com.streamflixreborn.streamflix.providers.IptvProvider
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
+import androidx.core.view.isVisible
 
 class TvShowsTvFragment : Fragment() {
 
@@ -113,10 +115,15 @@ class TvShowsTvFragment : Fragment() {
             }
         }
 
+        if (UserPreferences.currentProvider is IptvProvider) {
+            binding.tvTvShowsTitle.setText(R.string.main_menu_all_channels)
+        }
+
         binding.root.requestFocus()
     }
 
     private fun displayTvShows(tvShows: List<TvShow>, hasMore: Boolean) {
+        binding.emptyTvShows.root.isVisible = tvShows.isEmpty() && !hasMore
         appAdapter.submitList(tvShows.onEach {
             it.itemType = AppAdapter.Type.TV_SHOW_GRID_TV_ITEM
         })

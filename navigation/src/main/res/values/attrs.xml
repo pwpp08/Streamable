@@ -6,6 +6,10 @@
         <attr name="menu" format="reference" />
         <attr name="menuGravity" />
         <attr name="menuSpacing" format="dimension" />
+        <!-- Rail mode: width while collapsed (icons) and expanded (icons + labels). When both
+             are set, the view springs between them on open/close. -->
+        <attr name="railCollapsedWidth" format="dimension" />
+        <attr name="railExpandedWidth" format="dimension" />
     </declare-styleable>
 
 </resources>

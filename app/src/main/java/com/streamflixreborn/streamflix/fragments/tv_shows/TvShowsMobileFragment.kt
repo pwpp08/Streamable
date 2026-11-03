@@ -16,12 +16,16 @@ import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentTvShowsMobileBinding
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.providers.Provider
+import com.streamflixreborn.streamflix.providers.IptvProvider
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import com.streamflixreborn.streamflix.utils.CacheUtils
 import kotlinx.coroutines.launch
+import androidx.core.view.isVisible
+import androidx.recyclerview.widget.GridLayoutManager
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 
 class TvShowsMobileFragment : Fragment() {
 
@@ -105,17 +109,22 @@ class TvShowsMobileFragment : Fragment() {
 
 
     private fun initializeTvShows() {
+        if (UserPreferences.currentProvider is IptvProvider) {
+            binding.ctlTvShows.title = getString(R.string.main_menu_all_channels)
+        }
         binding.rvTvShows.apply {
+            (layoutManager as? GridLayoutManager)?.spanCount = BrowseCards.gridSpanCount(context)
             adapter = appAdapter.apply {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             }
             addItemDecoration(
-                SpacingItemDecoration(10.dp(requireContext()))
+                SpacingItemDecoration(resources.getDimensionPixelSize(R.dimen.browse_row_item_gap))
             )
         }
     }
 
     private fun displayTvShows(tvShows: List<TvShow>, hasMore: Boolean) {
+        binding.emptyTvShows.root.isVisible = tvShows.isEmpty() && !hasMore
         appAdapter.submitList(tvShows.onEach {
             it.itemType = AppAdapter.Type.TV_SHOW_GRID_MOBILE_ITEM
         })

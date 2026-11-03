@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="browse_play">Lejátszás</string>
+    <string name="browse_more_info">Részletek</string>
+    <string name="browse_navigate_up">Vissza</string>
+    <string name="browse_rating_star">★ %1$s</string>
+    <string name="browse_meta_separator">" · "</string>
+
+    <plurals name="browse_minutes_left">
+        <item quantity="one">%d perc van hátra</item>
+        <item quantity="other">%d perc van hátra</item>
+    </plurals>
+    <string name="browse_hours_minutes_left">%1$d ó %2$d perc van hátra</string>
+    <string name="browse_almost_done">Mindjárt vége</string>
+
+    <string name="browse_empty_title">Még nincs itt semmi</string>
+    <string name="browse_empty_message">Ennél a szolgáltatónál most nincs megjeleníthető cím. Próbáld később, vagy válts szolgáltatót.</string>
+    <string name="browse_favorites_empty_title">Még nincsenek kedvencek</string>
+    <string name="browse_favorites_empty_message">Nyomd hosszan egy posztert, és add a kedvencekhez, hogy itt legyen.</string>
+</resources>

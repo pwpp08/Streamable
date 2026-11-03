@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Rail item: a 56dp-wide pill around the icon when collapsed; it widens with the rail to hold
+     the label. The icon stays at a fixed x so it does not move while the rail springs. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="48dp"
     android:background="@drawable/bg_menu_item"
     android:duplicateParentState="true"
-    android:padding="10dp">
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
 
     <ImageView
         android:id="@+id/iv_navigation_item_icon"
@@ -24,13 +27,12 @@
         android:id="@+id/tv_navigation_item_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
+        android:layout_marginStart="16dp"
         android:duplicateParentState="true"
+        android:ellipsize="end"
         android:maxLines="1"
-        android:paddingStart="0dp"
-        android:paddingEnd="10dp"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
         android:textColor="@color/navigation_item_tint"
-        android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_navigation_item_icon"
         app:layout_constraintTop_toTopOf="parent" />

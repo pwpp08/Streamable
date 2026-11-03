@@ -6,12 +6,16 @@
     android:layout_height="wrap_content"
     android:paddingBottom="24dp">
 
-    <ImageView
+    <!-- The name is the collapsing app bar title; tv_people_name stays for the binder. -->
+
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/iv_people_image"
-        android:layout_width="100dp"
+        android:layout_width="120dp"
         android:layout_height="0dp"
-        android:layout_marginTop="32dp"
-        android:background="@drawable/bg_item_people_image"
+        android:layout_marginTop="8dp"
+        android:background="?attr/colorSurfaceContainerHigh"
+        android:scaleType="centerCrop"
+        app:shapeAppearance="@style/ShapeAppearance.StreamFlix.Pill"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -24,11 +28,10 @@
         android:id="@+id/tv_people_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="8dp"
         android:gravity="center"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="24sp"
-        android:textStyle="bold"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/iv_people_image"
@@ -40,8 +43,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:text="@string/people_birthday"
-        android:textColor="?attr/colorOnSurface"
-        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_people_name" />
@@ -69,8 +72,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:text="@string/people_deathday"
-        android:textColor="?attr/colorOnSurface"
-        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_people_birthday" />
@@ -98,8 +101,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:text="@string/people_birthplace"
-        android:textColor="?attr/colorOnSurface"
-        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_people_deathday" />
@@ -127,9 +130,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="@string/people_biography"
+        android:textAppearance="?attr/textAppearanceTitleLargeEmphasized"
         android:textColor="?attr/colorOnSurface"
-        android:textSize="18sp"
-        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_people_birthplace" />

@@ -49,6 +49,16 @@ class HomeMobileFragment : Fragment() {
     }
 
     private val appAdapter = AppAdapter()
+    private val rowViewPool = RecyclerView.RecycledViewPool().apply {
+        for (type in listOf(
+            AppAdapter.Type.MOVIE_MOBILE_ITEM,
+            AppAdapter.Type.TV_SHOW_MOBILE_ITEM,
+            AppAdapter.Type.EPISODE_MOBILE_ITEM,
+            AppAdapter.Type.MOVIE_RECENTLY_WATCHED_MOBILE_ITEM,
+            AppAdapter.Type.TV_SHOW_RECENTLY_WATCHED_MOBILE_ITEM,
+            AppAdapter.Type.EPISODE_RECENTLY_WATCHED_MOBILE_ITEM,
+        )) setMaxRecycledViews(type.ordinal, 20)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -126,6 +136,7 @@ class HomeMobileFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         appAdapter.onSaveInstanceState(binding.rvHome)
+        rowViewPool.clear()
         _binding = null
     }
 
@@ -134,9 +145,10 @@ class HomeMobileFragment : Fragment() {
         binding.rvHome.apply {
             adapter = appAdapter.apply {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+                childRecycledViewPool = rowViewPool
             }
             addItemDecoration(
-                SpacingItemDecoration(20.dp(requireContext()))
+                SpacingItemDecoration(resources.getDimensionPixelSize(R.dimen.browse_row_gap))
             )
         }
 
@@ -228,7 +240,7 @@ class HomeMobileFragment : Fragment() {
                             }
                         }
                     }
-                    category.itemSpacing = 10.dp(requireContext())
+                    category.itemSpacing = resources.getDimensionPixelSize(R.dimen.browse_row_item_gap)
                     category.itemType = when (category.name) {
                         Category.FEATURED -> AppAdapter.Type.CATEGORY_MOBILE_SWIPER
                         else -> AppAdapter.Type.CATEGORY_MOBILE_ITEM

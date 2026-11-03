@@ -36,7 +36,12 @@ import com.streamflixreborn.streamflix.databinding.ContentMovieRecommendationsMo
 import com.streamflixreborn.streamflix.databinding.ContentMovieRecommendationsTvBinding
 import com.streamflixreborn.streamflix.databinding.ContentMovieTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemCategorySwiperMobileBinding
+import com.streamflixreborn.streamflix.databinding.ItemMovieContinueWatchingMobileBinding
+import com.streamflixreborn.streamflix.databinding.ItemMovieContinueWatchingTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieGridMobileBinding
+import android.widget.ImageView
+import android.widget.TextView
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.streamflixreborn.streamflix.databinding.ItemMovieGridTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieMobileBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieTvBinding
@@ -83,6 +88,7 @@ import com.streamflixreborn.streamflix.sync.PlayOnTv
 import com.streamflixreborn.streamflix.sync.SyncProviders
 import com.streamflixreborn.streamflix.ui.ShowOptionsTvDialog
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 import com.streamflixreborn.streamflix.utils.dp
 import androidx.preference.Preference
 import com.streamflixreborn.streamflix.utils.format
@@ -162,6 +168,8 @@ class MovieViewHolder(
         when (_binding) {
             is ItemMovieMobileBinding -> displayMobileItem(_binding)
             is ItemMovieTvBinding -> displayTvItem(_binding)
+            is ItemMovieContinueWatchingMobileBinding -> displayContinueWatchingMobileItem(_binding)
+            is ItemMovieContinueWatchingTvBinding -> displayContinueWatchingTvItem(_binding)
             is ItemMovieGridMobileBinding -> displayGridMobileItem(_binding)
             is ItemMovieGridTvBinding -> displayGridTvItem(_binding)
             is ItemCategorySwiperMobileBinding -> displaySwiperMobileItem(_binding)
@@ -361,7 +369,82 @@ class MovieViewHolder(
     }
 
     private fun displayMobileItem(binding: ItemMovieMobileBinding) {
-        binding.root.apply {
+        bindMobileClicks(binding.root)
+
+        BrowseCards.attachPress(binding.root)
+        binding.tvMovieInitial.text = BrowseCards.initial(movie.title)
+        binding.ivMoviePoster.loadMoviePoster(movie) {
+            centerCrop()
+            transition(DrawableTransitionOptions.withCrossFade())
+        }
+        bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
+        BrowseCards.bindRating(binding.tvMovieRating, movie.rating)
+
+        binding.tvMovieQuality.apply {
+            text = movie.quality ?: ""
+            visibility = when {
+                text.isNullOrEmpty() -> View.GONE
+                else -> View.VISIBLE
+            }
+        }
+
+        binding.tvMovieReleasedYear.text = movie.released?.format("yyyy")
+            ?: context.getString(R.string.movie_item_type)
+
+        binding.pbMovieProgress.apply {
+            val watchHistory = movie.watchHistory
+            progress = BrowseCards.progressPercent(watchHistory)
+            visibility = when {
+                watchHistory != null -> View.VISIBLE
+                else -> View.GONE
+            }
+        }
+
+        binding.tvMovieTitle.text = movie.title
+    }
+
+    private fun displayTvItem(binding: ItemMovieTvBinding) {
+        bindTvClicks(binding.root)
+        BrowseCards.attachTvFocus(
+            binding.root,
+            binding.tvMovieTitle,
+            binding.tvMovieReleasedYear,
+            binding.tvMovieQuality,
+        ) { hasFocus ->
+            (context.toActivity()?.getCurrentFragment() as? HomeTvFragment)?.let { fragment ->
+                if (hasFocus) fragment.focusHero(movie) else fragment.releasePinnedBackground()
+            }
+        }
+
+        binding.tvMovieInitial.text = BrowseCards.initial(movie.title)
+        binding.ivMoviePoster.loadMoviePoster(movie) {
+            centerCrop()
+            transition(DrawableTransitionOptions.withCrossFade())
+        }
+        bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
+        BrowseCards.bindRating(binding.tvMovieRating, movie.rating)
+        binding.pbMovieProgress.apply {
+            val watchHistory = movie.watchHistory
+            progress = BrowseCards.progressPercent(watchHistory)
+            visibility = when {
+                watchHistory != null -> View.VISIBLE
+                else -> View.GONE
+            }
+        }
+        binding.tvMovieQuality.apply {
+            text = movie.quality ?: ""
+            visibility = when {
+                text.isNullOrEmpty() -> View.GONE
+                else -> View.VISIBLE
+            }
+        }
+        binding.tvMovieReleasedYear.text = movie.released?.format("yyyy")
+            ?: context.getString(R.string.movie_item_type)
+        binding.tvMovieTitle.text = movie.title
+    }
+
+    private fun bindMobileClicks(root: View) {
+        root.apply {
             setOnClickListener {
                 onMovieClick?.let { listener ->
                     listener(movie)
@@ -395,42 +478,10 @@ class MovieViewHolder(
                 true
             }
         }
-
-        binding.ivMoviePoster.loadMoviePoster(movie) {
-            centerCrop()
-            transition(DrawableTransitionOptions.withCrossFade())
-        }
-        bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-
-        binding.tvMovieQuality.apply {
-            text = movie.quality ?: ""
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieReleasedYear.text = movie.released?.format("yyyy")
-            ?: context.getString(R.string.movie_item_type)
-
-        binding.pbMovieProgress.apply {
-            val watchHistory = movie.watchHistory
-
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
-            visibility = when {
-                watchHistory != null -> View.VISIBLE
-                else -> View.GONE
-            }
-        }
-
-        binding.tvMovieTitle.text = movie.title
     }
 
-    private fun displayTvItem(binding: ItemMovieTvBinding) {
-        binding.root.apply {
+    private fun bindTvClicks(root: View) {
+        root.apply {
             isFocusable = true
             setOnClickListener {
                 onMovieClick?.let { listener ->
@@ -489,53 +540,63 @@ class MovieViewHolder(
                 if (event.action == KeyEvent.ACTION_UP) performLongClick()
                 true
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                val animation = when {
-                    hasFocus -> AnimationUtils.loadAnimation(context, R.anim.zoom_in)
-                    else -> AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                }
-                binding.root.startAnimation(animation)
-                animation.fillAfter = true
+        }
+    }
 
-                when (val fragment = context.toActivity()?.getCurrentFragment()) {
-                    is HomeTvFragment -> {
-                        if (hasFocus) {
-                            fragment.pinBackground(movie.banner)
-                        } else {
-                            fragment.releasePinnedBackground()
-                        }
-                    }
-                }
-            }
-        }
+    private fun displayContinueWatchingMobileItem(binding: ItemMovieContinueWatchingMobileBinding) {
+        bindMobileClicks(binding.root)
+        BrowseCards.attachPress(binding.root)
+        bindContinueWatchingContent(
+            binding.tvMovieInitial, binding.ivMoviePoster, binding.tvMovieTitle,
+            binding.tvMovieInfo, binding.pbMovieProgress, binding.tvMovieRemaining,
+        )
+    }
 
-        binding.ivMoviePoster.loadMoviePoster(movie) {
-            fallback(R.drawable.glide_fallback_cover)
-            centerCrop()
-            transition(DrawableTransitionOptions.withCrossFade())
-        }
-        bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        binding.pbMovieProgress.apply {
-            val watchHistory = movie.watchHistory
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
-            visibility = when {
-                watchHistory != null -> View.VISIBLE
-                else -> View.GONE
+    private fun displayContinueWatchingTvItem(binding: ItemMovieContinueWatchingTvBinding) {
+        bindTvClicks(binding.root)
+        BrowseCards.attachTvFocus(binding.root) { hasFocus ->
+            (context.toActivity()?.getCurrentFragment() as? HomeTvFragment)?.let { fragment ->
+                if (hasFocus) fragment.focusHero(movie) else fragment.releasePinnedBackground()
             }
         }
-        binding.tvMovieQuality.apply {
-            text = movie.quality ?: ""
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
+        bindContinueWatchingContent(
+            binding.tvMovieInitial, binding.ivMoviePoster, binding.tvMovieTitle,
+            binding.tvMovieInfo, binding.pbMovieProgress, binding.tvMovieRemaining,
+        )
+    }
+
+    private fun bindContinueWatchingContent(
+        initial: TextView,
+        backdrop: ImageView,
+        title: TextView,
+        info: TextView,
+        progressView: LinearProgressIndicator,
+        remainingView: TextView,
+    ) {
+        initial.text = BrowseCards.initial(movie.title)
+        if (!movie.banner.isNullOrBlank()) {
+            backdrop.loadMovieBanner(movie) {
+                centerCrop()
+                transition(DrawableTransitionOptions.withCrossFade())
+            }
+        } else {
+            backdrop.loadMoviePoster(movie) {
+                centerCrop()
+                transition(DrawableTransitionOptions.withCrossFade())
             }
         }
-        binding.tvMovieReleasedYear.text = movie.released?.format("yyyy")
-            ?: context.getString(R.string.movie_item_type)
-        binding.tvMovieTitle.text = movie.title
+        title.text = movie.title
+        info.text = BrowseCards.joinMeta(
+            context,
+            movie.released?.format("yyyy") ?: context.getString(R.string.movie_item_type),
+            movie.quality,
+        )
+        val watchHistory = movie.watchHistory
+        progressView.visibility = if (watchHistory != null) View.VISIBLE else View.GONE
+        progressView.setProgressCompat(BrowseCards.progressPercent(watchHistory), false)
+        val remaining = BrowseCards.remainingText(context, watchHistory)
+        remainingView.text = remaining
+        remainingView.visibility = if (remaining != null) View.VISIBLE else View.GONE
     }
 
     private fun displayGridMobileItem(binding: ItemMovieGridMobileBinding) {
@@ -569,11 +630,14 @@ class MovieViewHolder(
             }
         }
 
+        BrowseCards.attachPress(binding.root)
+        binding.tvMovieInitial.text = BrowseCards.initial(movie.title)
         binding.ivMoviePoster.loadMoviePoster(movie) {
             centerCrop()
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
+        BrowseCards.bindRating(binding.tvMovieRating, movie.rating)
 
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
@@ -588,11 +652,7 @@ class MovieViewHolder(
 
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
-
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
+            progress = BrowseCards.progressPercent(watchHistory)
             visibility = when {
                 watchHistory != null -> View.VISIBLE
                 else -> View.GONE
@@ -633,27 +693,23 @@ class MovieViewHolder(
                 ShowOptionsTvDialog(context, movie).show()
                 true
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                val animation = when {
-                    hasFocus -> AnimationUtils.loadAnimation(context, R.anim.zoom_in)
-                    else -> AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                }
-                binding.root.startAnimation(animation)
-                animation.fillAfter = true
-            }
         }
+        BrowseCards.attachTvFocus(
+            binding.root,
+            binding.tvMovieTitle,
+            binding.tvMovieReleasedYear,
+            binding.tvMovieQuality,
+        )
+        binding.tvMovieInitial.text = BrowseCards.initial(movie.title)
         binding.ivMoviePoster.loadMoviePoster(movie) {
-            fallback(R.drawable.glide_fallback_cover)
             centerCrop()
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
+        BrowseCards.bindRating(binding.tvMovieRating, movie.rating)
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
+            progress = BrowseCards.progressPercent(watchHistory)
             visibility = when {
                 watchHistory != null -> View.VISIBLE
                 else -> View.GONE
@@ -704,6 +760,7 @@ class MovieViewHolder(
     }
 
     private fun displaySwiperMobileItem(binding: ItemCategorySwiperMobileBinding) {
+        BrowseCards.bindHeroMask(binding.mflSwiper, binding.clSwiperContent)
         binding.ivSwiperBackground.loadMovieBanner(movie) {
             centerCrop()
             transition(DrawableTransitionOptions.withCrossFade())
@@ -730,7 +787,7 @@ class MovieViewHolder(
         }
 
         binding.tvSwiperRating.apply {
-            text = movie.rating?.let { String.format(Locale.ROOT, "%.1f", it) } ?: "N/A"
+            text = BrowseCards.ratingValue(movie.rating)
             visibility = when {
                 text.isNullOrEmpty() -> View.GONE
                 else -> View.VISIBLE
@@ -739,22 +796,40 @@ class MovieViewHolder(
 
         binding.ivSwiperRatingIcon.visibility = binding.tvSwiperRating.visibility
 
-        binding.tvSwiperOverview.apply {
-            setOnClickListener {
-                maxLines = when (maxLines) {
-                    2 -> Int.MAX_VALUE
-                    else -> 2
-                }
-            }
+        binding.tvSwiperOverview.text = movie.overview
 
-            text = movie.overview
+        val openDetails = {
+            binding.root.findNavController().navigate(
+                HomeMobileFragmentDirections.actionHomeToMovie(
+                    id = movie.id,
+                )
+            )
         }
-
+        binding.root.setOnClickListener { openDetails() }
+        binding.root.setOnLongClickListener {
+            ShowOptionsMobileDialog(context, movie).show()
+            true
+        }
+        binding.btnSwiperMoreInfo.visibility = View.VISIBLE
+        binding.btnSwiperMoreInfo.setOnClickListener { openDetails() }
         binding.btnSwiperWatchNow.apply {
+            setText(R.string.browse_play)
             setOnClickListener {
-                findNavController().navigate(
-                    HomeMobileFragmentDirections.actionHomeToMovie(
+                // Same path as a Continue Watching movie card: details, then the player on top.
+                val navController = findNavController()
+                navController.navigate(HomeMobileFragmentDirections.actionHomeToMovie(id = movie.id))
+                navController.navigate(
+                    MovieMobileFragmentDirections.actionMovieToPlayer(
                         id = movie.id,
+                        title = movie.title,
+                        subtitle = movie.released?.format("yyyy") ?: "",
+                        videoType = Video.Type.Movie(
+                            id = movie.id,
+                            title = movie.title,
+                            releaseDate = movie.released?.format("yyyy-MM-dd") ?: "",
+                            poster = movie.poster ?: "",
+                            imdbId = movie.imdbId,
+                        ),
                     )
                 )
             }
@@ -762,11 +837,7 @@ class MovieViewHolder(
 
         binding.pbSwiperProgress.apply {
             val watchHistory = movie.watchHistory
-
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
+            progress = BrowseCards.progressPercent(watchHistory)
             visibility = when {
                 watchHistory != null -> View.VISIBLE
                 else -> View.GONE

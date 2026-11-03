@@ -22,6 +22,9 @@ import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import com.streamflixreborn.streamflix.utils.CacheUtils
 import kotlinx.coroutines.launch
+import androidx.core.view.isVisible
+import androidx.recyclerview.widget.GridLayoutManager
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 
 class MoviesMobileFragment : Fragment() {
 
@@ -106,16 +109,18 @@ class MoviesMobileFragment : Fragment() {
 
     private fun initializeMovies() {
         binding.rvMovies.apply {
+            (layoutManager as? GridLayoutManager)?.spanCount = BrowseCards.gridSpanCount(context)
             adapter = appAdapter.apply {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             }
             addItemDecoration(
-                SpacingItemDecoration(10.dp(requireContext()))
+                SpacingItemDecoration(resources.getDimensionPixelSize(R.dimen.browse_row_item_gap))
             )
         }
     }
 
     private fun displayMovies(movies: List<Movie>, hasMore: Boolean) {
+        binding.emptyMovies.root.isVisible = movies.isEmpty() && !hasMore
         appAdapter.submitList(movies.onEach {
             it.itemType = AppAdapter.Type.MOVIE_GRID_MOBILE_ITEM
         })

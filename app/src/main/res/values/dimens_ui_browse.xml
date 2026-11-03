@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Browse screen sizes. 16dp phone gutter, 24dp between home rows. -->
+<resources>
+    <dimen name="browse_gutter">16dp</dimen>
+    <dimen name="browse_row_gap">24dp</dimen>
+    <dimen name="browse_row_item_gap">12dp</dimen>
+    <dimen name="browse_poster_row_width">120dp</dimen>
+    <dimen name="browse_continue_width">240dp</dimen>
+    <dimen name="browse_hero_height">300dp</dimen>
+    <dimen name="browse_top_bar_height">64dp</dimen>
+    <dimen name="browse_large_app_bar_height">136dp</dimen>
+    <dimen name="browse_top_actions_inset">152dp</dimen>
+    <dimen name="browse_grid_min_item_width">112dp</dimen>
+
+    <!-- TV -->
+    <dimen name="browse_tv_gutter">48dp</dimen>
+    <dimen name="browse_tv_poster_width">120dp</dimen>
+    <dimen name="browse_tv_continue_width">240dp</dimen>
+    <dimen name="browse_tv_row_item_gap">16dp</dimen>
+    <dimen name="browse_tv_rail_collapsed">80dp</dimen>
+    <dimen name="browse_tv_rail_expanded">248dp</dimen>
+</resources>

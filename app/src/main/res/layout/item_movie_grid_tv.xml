@@ -1,113 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- TV poster tile for grids. The root takes focus (FocusScaleAnimator in MovieViewHolder);
+     the card draws the focus ring, and the title and meta fade in on focus. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_item_movie_tv"
     android:focusable="true"
     android:focusableInTouchMode="true">
 
-    <ImageView
-        android:id="@+id/iv_movie_poster"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_movie_poster"
+        style="@style/Widget.StreamFlix.Browse.PosterCard.Tv"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:scaleType="centerCrop"
         app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:ignore="ContentDescription" />
+        app:layout_constraintTop_toTopOf="parent">
 
-    <ImageView
-        android:id="@+id/iv_movie_favorite_ribbon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_margin="8dp"
-        android:elevation="2dp"
-        android:src="@drawable/ic_favorite_badge"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="@id/iv_movie_poster"
-        app:layout_constraintTop_toTopOf="@id/iv_movie_poster"
-        tools:ignore="ContentDescription"
-        tools:visibility="visible" />
+        <TextView
+            android:id="@+id/tv_movie_initial"
+            style="@style/Widget.StreamFlix.Browse.PosterInitial"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="T" />
 
-    <ImageView
-        android:id="@+id/iv_movie_watched_ribbon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="2dp"
-        android:elevation="2dp"
-        android:src="@drawable/ic_watched"
-        android:visibility="gone"
-        app:layout_constraintStart_toStartOf="@id/iv_movie_poster"
-        app:layout_constraintTop_toBottomOf="@id/iv_movie_favorite_ribbon"
-        tools:ignore="ContentDescription"
-        tools:visibility="visible" />
+        <ImageView
+            android:id="@+id/iv_movie_poster"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:duplicateParentState="true"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
 
-    <ProgressBar
-        android:id="@+id/pb_movie_progress"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="0dp"
-        android:layout_height="4dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="10dp"
-        android:backgroundTint="#CC646464"
-        android:progressTint="?attr/colorPrimary"
-        app:layout_constraintBottom_toBottomOf="@id/iv_movie_poster"
-        app:layout_constraintEnd_toEndOf="@id/iv_movie_poster"
-        app:layout_constraintStart_toStartOf="@id/iv_movie_poster"
-        tools:progress="80" />
+        <ImageView
+            android:id="@+id/iv_movie_favorite_ribbon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="top|start"
+            android:layout_margin="6dp"
+            android:src="@drawable/ic_favorite_badge"
+            android:visibility="gone"
+            tools:ignore="ContentDescription"
+            tools:visibility="visible" />
 
-    <TextView
-        android:id="@+id/tv_movie_quality"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:textAllCaps="true"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_movie_poster"
-        tools:text="HD"
-        tools:visibility="visible" />
+        <ImageView
+            android:id="@+id/iv_movie_watched_ribbon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="top|start"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="32dp"
+            android:src="@drawable/ic_watched"
+            android:visibility="gone"
+            tools:ignore="ContentDescription"
+            tools:visibility="visible" />
 
-    <TextView
-        android:id="@+id/tv_movie_released_year"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintStart_toEndOf="@id/tv_movie_quality"
-        app:layout_constraintTop_toBottomOf="@id/iv_movie_poster"
-        app:layout_goneMarginStart="8dp"
-        tools:text="2022" />
+        <TextView
+            android:id="@+id/tv_movie_rating"
+            style="@style/Widget.StreamFlix.Browse.ArtworkChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="6dp"
+            android:visibility="gone"
+            tools:text="★ 7.8"
+            tools:visibility="visible" />
 
-    <androidx.constraintlayout.widget.Barrier
-        android:id="@+id/barrier1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:barrierDirection="bottom"
-        app:constraint_referenced_ids="tv_movie_quality,tv_movie_released_year" />
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/pb_movie_progress"
+            style="@style/Widget.StreamFlix.Browse.PosterProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"
+            tools:progress="60"
+            tools:visibility="visible" />
+    </com.google.android.material.card.MaterialCardView>
 
     <TextView
         android:id="@+id/tv_movie_title"
+        style="@style/Widget.StreamFlix.Browse.CardTitle"
+        android:alpha="0"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:ellipsize="end"
-        android:lines="2"
-        android:textColor="?attr/colorOnSurface"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/barrier1"
+        app:layout_constraintTop_toBottomOf="@id/card_movie_poster"
         tools:text="Title" />
+
+    <TextView
+        android:id="@+id/tv_movie_released_year"
+        style="@style/Widget.StreamFlix.Browse.CardMeta"
+        android:alpha="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        app:layout_constraintStart_toStartOf="@id/tv_movie_title"
+        app:layout_constraintTop_toBottomOf="@id/tv_movie_title"
+        tools:text="2022" />
+
+    <TextView
+        android:id="@+id/tv_movie_quality"
+        style="@style/Widget.StreamFlix.Browse.CardMeta"
+        android:alpha="0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textAllCaps="true"
+        app:layout_constraintBaseline_toBaselineOf="@id/tv_movie_released_year"
+        app:layout_constraintStart_toEndOf="@id/tv_movie_released_year"
+        tools:text="HD" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

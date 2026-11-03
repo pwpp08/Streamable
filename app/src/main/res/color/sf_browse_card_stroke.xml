@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Poster card ring: the favourites selection wins, then the TV focus ring, else invisible. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/favorite_selected" android:state_activated="true" />
+    <item android:color="?attr/colorPrimary" android:state_focused="true" />
+    <item android:color="@android:color/transparent" />
+</selector>

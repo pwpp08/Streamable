@@ -35,6 +35,10 @@ import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.format
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.loadTvShowCardArtwork
+import com.streamflixreborn.streamflix.utils.loadTvShowBanner
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
+import com.google.android.material.progressindicator.LinearProgressIndicator
+import android.widget.TextView
 import com.streamflixreborn.streamflix.utils.toActivity
 
 class EpisodeViewHolder(
@@ -351,23 +355,11 @@ class EpisodeViewHolder(
             }
         }
 
-        binding.ivEpisodeTvShowPoster.apply {
-            clipToOutline = true
-            loadContinueWatchingArtwork()
-        }
+        BrowseCards.attachPress(binding.root)
+        binding.tvEpisodeInitial.text = BrowseCards.initial(episode.tvShow?.title ?: episode.title)
+        binding.ivEpisodeTvShowPoster.loadContinueWatchingBackdrop()
 
-        binding.pbEpisodeProgress.apply {
-            val watchHistory = episode.watchHistory
-
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
-            visibility = when {
-                watchHistory != null -> View.VISIBLE
-                else -> View.GONE
-            }
-        }
+        bindContinueProgress(binding.pbEpisodeProgress, binding.tvEpisodeRemaining, showWhenWatched = false)
 
         binding.tvEpisodeTvShowTitle.text = episode.tvShow?.title ?: ""
 
@@ -458,45 +450,17 @@ class EpisodeViewHolder(
                 if (event.action == KeyEvent.ACTION_UP) performLongClick()
                 true
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                val animation = when {
-                    hasFocus -> AnimationUtils.loadAnimation(context, R.anim.zoom_in)
-                    else -> AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                }
-                binding.root.startAnimation(animation)
-                animation.fillAfter = true
-
-                when (val fragment = context.toActivity()?.getCurrentFragment()) {
-                    is HomeTvFragment -> {
-                        if (hasFocus) {
-                            fragment.pinBackground(episode.tvShow?.banner)
-                        } else {
-                            fragment.releasePinnedBackground()
-                        }
-                    }
-                }
+        }
+        BrowseCards.attachTvFocus(binding.root) { hasFocus ->
+            (context.toActivity()?.getCurrentFragment() as? HomeTvFragment)?.let { fragment ->
+                if (hasFocus) fragment.focusHero(episode) else fragment.releasePinnedBackground()
             }
         }
 
-        binding.ivEpisodeTvShowPoster.apply {
-            clipToOutline = true
-            loadContinueWatchingArtwork(withFallback = true)
-        }
+        binding.tvEpisodeInitial.text = BrowseCards.initial(episode.tvShow?.title ?: episode.title)
+        binding.ivEpisodeTvShowPoster.loadContinueWatchingBackdrop()
 
-        binding.pbEpisodeProgress.apply {
-            val watchHistory = episode.watchHistory
-
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                episode.isWatched -> 100
-                else -> 0
-            }
-            visibility = when {
-                watchHistory != null -> View.VISIBLE
-                episode.isWatched -> View.VISIBLE
-                else -> View.GONE
-            }
-        }
+        bindContinueProgress(binding.pbEpisodeProgress, binding.tvEpisodeRemaining, showWhenWatched = true)
 
         binding.tvEpisodeTvShowTitle.text = episode.tvShow?.title ?: ""
 
@@ -518,6 +482,59 @@ class EpisodeViewHolder(
                 episode.number
             )
         )
+    }
+
+    /** Wavy progress plus "23 min left" for the Continue Watching cards. */
+    private fun bindContinueProgress(
+        progressView: LinearProgressIndicator,
+        remainingView: TextView,
+        showWhenWatched: Boolean,
+    ) {
+        val watchHistory = episode.watchHistory
+        val visible = watchHistory != null || (showWhenWatched && episode.isWatched)
+        progressView.visibility = if (visible) View.VISIBLE else View.GONE
+        progressView.setProgressCompat(
+            if (watchHistory != null) BrowseCards.progressPercent(watchHistory)
+            else if (episode.isWatched) 100 else 0,
+            false,
+        )
+        val remaining = BrowseCards.remainingText(context, watchHistory)
+        remainingView.text = remaining
+        remainingView.visibility = if (visible && remaining != null) View.VISIBLE else View.GONE
+    }
+
+    /**
+     * Landscape artwork for the Continue Watching card: the episode still, else the show
+     * backdrop, else the show poster. Empty while loading, so the tonal initial shows.
+     */
+    private fun ImageView.loadContinueWatchingBackdrop() {
+        val tvShow = episode.tvShow
+        val still = episode.poster?.takeIf { it.isNotBlank() }
+        if (tvShow == null || (still != null && tvShow.banner.isNullOrBlank())) {
+            Glide.with(context)
+                .load(still)
+                .centerCrop()
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .into(this)
+            return
+        }
+        if (still != null) {
+            Glide.with(context)
+                .load(still)
+                .error(Glide.with(context).load(tvShow.banner).centerCrop())
+                .centerCrop()
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .into(this)
+            return
+        }
+        if (!tvShow.banner.isNullOrBlank()) {
+            loadTvShowBanner(tvShow) {
+                centerCrop()
+                transition(DrawableTransitionOptions.withCrossFade())
+            }
+            return
+        }
+        loadContinueWatchingArtwork()
     }
 
     private fun ImageView.loadContinueWatchingArtwork(withFallback: Boolean = false) {

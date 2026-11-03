@@ -10,6 +10,7 @@ import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.ItemGenreGridMobileBinding
 import com.streamflixreborn.streamflix.databinding.ItemGenreGridTvBinding
 import com.streamflixreborn.streamflix.models.Genre
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 
 
 class GenreViewHolder(
@@ -32,9 +33,10 @@ class GenreViewHolder(
 
 
     private fun displayGridMobileItem(binding: ItemGenreGridMobileBinding) {
+        BrowseCards.attachPress(binding.root)
         binding.root.apply {
             val colors = context.resources.getIntArray(R.array.genres)
-            (background as? GradientDrawable)?.setColor(colors[bindingAdapterPosition % colors.size])
+            setCardBackgroundColor(colors[bindingAdapterPosition.coerceAtLeast(0) % colors.size])
 
             setOnClickListener {
                 val args = Bundle().apply {
@@ -51,7 +53,7 @@ class GenreViewHolder(
     private fun displayGridTvItem(binding: ItemGenreGridTvBinding) {
         binding.root.apply {
             val colors = context.resources.getIntArray(R.array.genres)
-            (background as? GradientDrawable)?.setColor(colors[bindingAdapterPosition % colors.size])
+            setCardBackgroundColor(colors[bindingAdapterPosition.coerceAtLeast(0) % colors.size])
 
             setOnClickListener {
                 val args = Bundle().apply {
@@ -60,15 +62,9 @@ class GenreViewHolder(
                 }
                 findNavController().navigate(R.id.genre, args)
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                val animation = when {
-                    hasFocus -> AnimationUtils.loadAnimation(context, R.anim.zoom_in)
-                    else -> AnimationUtils.loadAnimation(context, R.anim.zoom_out)
-                }
-                binding.root.startAnimation(animation)
-                animation.fillAfter = true
-            }
         }
+        // The card's stroke is the focus ring.
+        BrowseCards.attachTvFocus(binding.root, ring = true)
 
         binding.tvGenreName.text = genre.name
     }

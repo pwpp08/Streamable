@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tablet shell: an Expressive navigation rail (same menu as the phone bar) at the start,
+     content beside it. The top-bar icon buttons are the same as on the phone. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/app_background_color"
+    tools:context=".activities.main.MainMobileActivity">
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_main_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:defaultNavHost="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/nav_rail_main"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navGraph="@navigation/nav_main_graph_mobile" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_main_search"
+        style="@style/Widget.StreamFlix.Browse.TopIconButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="@string/main_menu_search"
+        android:elevation="8dp"
+        android:outlineProvider="none"
+        android:stateListAnimator="@null"
+        android:visibility="gone"
+        app:icon="@drawable/ic_search_white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_main_remote"
+        style="@style/Widget.StreamFlix.Browse.TopIconButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:contentDescription="@string/remote_title"
+        android:elevation="8dp"
+        android:outlineProvider="none"
+        android:stateListAnimator="@null"
+        android:visibility="gone"
+        app:icon="@drawable/ic_sync_remote"
+        app:layout_constraintEnd_toStartOf="@id/btn_main_search"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginEnd="8dp"
+        tools:visibility="visible" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_main_downloads"
+        style="@style/Widget.StreamFlix.Browse.TopIconButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:contentDescription="@string/downloads_title"
+        android:elevation="8dp"
+        android:outlineProvider="none"
+        android:stateListAnimator="@null"
+        android:visibility="gone"
+        app:icon="@drawable/ic_download"
+        app:layout_constraintEnd_toStartOf="@id/btn_main_remote"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginEnd="8dp"
+        tools:visibility="visible" />
+
+    <com.google.android.material.navigationrail.NavigationRailView
+        android:id="@+id/nav_rail_main"
+        style="@style/Widget.StreamFlix.NavigationRail"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:menu="@menu/menu_main_activity_mobile"
+        app:menuGravity="center"
+        app:paddingBottomSystemWindowInsets="false"
+        app:paddingTopSystemWindowInsets="false" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
