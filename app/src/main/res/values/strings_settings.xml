@@ -158,4 +158,7 @@
     <string name="settings_health_status_failed">Failed</string>
     <string name="settings_health_status_no_match">Test title not available here</string>
 
+    <string name="settings_category_torrent">Torrent</string>
+    <string name="settings_torrent_title">Torrent sources (P2P)</string>
+    <string name="settings_torrent_summary">Torrent playback shares your IP address with other peers. Consider a VPN.</string>
 </resources>

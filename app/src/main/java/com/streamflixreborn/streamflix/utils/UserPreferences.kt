@@ -326,6 +326,11 @@ object UserPreferences {
             Key.TMDB_API_KEY.setString(value)
             TMDb3.rebuildService()
         }
+    /** Torrent (P2P) sources; they share the user's IP with the swarm. */
+    var torrentEnabled: Boolean
+        get() = Key.TORRENT_ENABLED.getBoolean() ?: true
+        set(value) = Key.TORRENT_ENABLED.setBoolean(value)
+
     var enableTmdb: Boolean
         get() = Key.ENABLE_TMDB.getBoolean() ?: true
         set(value) {
@@ -653,6 +658,7 @@ object UserPreferences {
         AUTOPLAY_BUFFER,
         SERVER_AUTO_SUBTITLES_DISABLED,
         ENABLE_TMDB,
+        TORRENT_ENABLED,
         TMDB_CATEGORIES,
         ENABLE_RECENTLY_WATCHED,
         PARENTAL_CONTROL_PIN,

@@ -30,6 +30,11 @@ object ServerRanker {
     /** Taken off a server that is known to stop below full HD, so unknown ones get a try. */
     const val LOW_RES_PENALTY = 10
 
+    /** Taken off P2P servers: web servers start faster, so torrents only lead when known to be full HD. */
+    const val TORRENT_PENALTY = 15
+
+    fun isTorrentServer(name: String) = name.startsWith("Torrent ", ignoreCase = true)
+
     fun rank(
         servers: List<Video.Server>,
         preferredName: String? = null,
@@ -46,7 +51,7 @@ object ServerRanker {
                 played == null -> 0
                 played >= 1080 -> FULL_HD_BONUS
                 else -> -LOW_RES_PENALTY
-            }
+            } - (if (isTorrentServer(server.name) && (played == null || played < 1080)) TORRENT_PENALTY else 0)
         }
         // The sticky server only keeps its lead when it isn't known to be low-res while another
         // server is known to play in full HD.

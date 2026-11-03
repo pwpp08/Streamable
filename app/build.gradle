@@ -123,6 +123,11 @@ android {
 
 dependencies {
     implementation 'androidx.media3:media3-datasource-okhttp:1.11.1'
+    // P2P engine for the torrent sources (ABIs: armeabi-v7a, arm64-v8a, x86_64 for the emulator).
+    implementation 'org.libtorrent4j:libtorrent4j:2.1.0-39'
+    implementation 'org.libtorrent4j:libtorrent4j-android-arm:2.1.0-39'
+    implementation 'org.libtorrent4j:libtorrent4j-android-arm64:2.1.0-39'
+    implementation 'org.libtorrent4j:libtorrent4j-android-x86_64:2.1.0-39'
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'androidx.navigation:navigation-fragment-ktx:2.8.8'

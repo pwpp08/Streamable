@@ -11,6 +11,7 @@ import com.streamflixreborn.streamflix.downloads.DownloadUtil
 import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.extractors.TokenManager
 import com.streamflixreborn.streamflix.models.Video
+import com.streamflixreborn.streamflix.torrent.TorrentAwareDataSource
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import okhttp3.OkHttpClient
 
@@ -60,8 +61,10 @@ class StreamDataSourceFactory(
 
     /** Downloaded titles are read from the download cache; everything else from the network. */
     val dataSourceFactory: DataSource.Factory = DataSource.Factory {
-        if (OfflineMediaProvider.isOffline(currentVideo())) offlineDataSourceFactory.createDataSource()
-        else networkDataSourceFactory.createDataSource()
+        TorrentAwareDataSource(
+            if (OfflineMediaProvider.isOffline(currentVideo())) offlineDataSourceFactory.createDataSource()
+            else networkDataSourceFactory.createDataSource()
+        )
     }
 
     /** Must be called before preparing [video]. */

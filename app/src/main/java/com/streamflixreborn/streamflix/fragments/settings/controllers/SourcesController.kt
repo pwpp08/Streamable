@@ -26,6 +26,7 @@ class SourcesController(
     override fun bind() {
         host.onClick(KEY_PROVIDERS) { host.navigate(R.id.providers) }
         host.onClick(KEY_HEALTH) { host.navigate(R.id.provider_health) }
+        host.bindSwitch(KEY_TORRENT, { UserPreferences.torrentEnabled }) { UserPreferences.torrentEnabled = it }
         bindDoh()
         bindTmdb()
         bindStreamingCommunity()
@@ -46,6 +47,7 @@ class SourcesController(
             value = UserPreferences.dohProviderUrl
             summary = entry
         }
+        host.refreshSwitch(KEY_TORRENT) { UserPreferences.torrentEnabled }
         host.refreshSwitch(KEY_ENABLE_TMDB) { UserPreferences.enableTmdb }
         host.find<EditTextPreference>(KEY_TMDB_API)?.apply {
             text = UserPreferences.tmdbApiKey
@@ -143,6 +145,7 @@ class SourcesController(
         const val KEY_PROVIDERS = "sources_providers"
         const val KEY_HEALTH = "sources_health"
         const val KEY_DOH = "p_doh_provider_url"
+        const val KEY_TORRENT = "TORRENT_ENABLED"
         const val KEY_ENABLE_TMDB = "ENABLE_TMDB"
         const val KEY_TMDB_CATEGORIES = "TMDB_CATEGORIES"
         const val KEY_TMDB_API = "TMDB_API_KEY"

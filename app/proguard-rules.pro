@@ -186,3 +186,8 @@
 -keep class * extends androidx.fragment.app.Fragment { <init>(); }
 -keep class androidx.leanback.** { *; }
 -dontwarn androidx.leanback.**
+
+# ---------------- libtorrent4j (JNI/SWIG: native code looks up Java names) ----------------
+-keep class org.libtorrent4j.** { *; }
+-keep interface org.libtorrent4j.** { *; }
+-dontwarn org.libtorrent4j.**
