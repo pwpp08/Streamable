@@ -234,7 +234,10 @@ class HomeViewModel : ViewModel() {
             }
         }.flowOn(Dispatchers.IO),
 
-        ) { state, history, moviesDb, tvShowsDb ->
+        // Settings > Home screen: row order and visibility.
+        HomeRowsStore.changes,
+
+        ) { state, history, moviesDb, tvShowsDb, _ ->
 
         when (state) {
             is State.SuccessLoading -> {
@@ -329,7 +332,10 @@ class HomeViewModel : ViewModel() {
                         )
                     })
 
-                State.SuccessLoading(categories)
+                val rowsConfig = HomeRowsStore.load()
+                State.SuccessLoading(
+                    rowsConfig?.apply(categories) { HomeRowsConfig.keyForCategory(it.name) } ?: categories
+                )
             }
 
             else -> state

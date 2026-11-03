@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_row_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:background="@drawable/bg_item_option"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="56dp"
+    android:orientation="horizontal"
+    android:paddingStart="4dp"
+    android:paddingEnd="12dp">
+
+    <ImageView
+        android:id="@+id/iv_home_row_drag"
+        android:layout_width="40dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/home_rows_drag_handle"
+        android:padding="8dp"
+        android:src="@drawable/ic_library_drag_handle" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_weight="1"
+        android:duplicateParentState="true"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/tv_home_row_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:duplicateParentState="true"
+            android:textColor="@color/option_text"
+            android:textSize="16sp"
+            tools:text="Continue Watching" />
+
+        <TextView
+            android:id="@+id/tv_home_row_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alpha="0.7"
+            android:duplicateParentState="true"
+            android:textColor="@color/option_text"
+            android:textSize="12sp"
+            tools:text="Your library" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/iv_home_row_visible"
+        android:layout_width="48dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:src="@drawable/ic_switch_on" />
+
+    <TextView
+        android:id="@+id/btn_home_row_up"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:background="@drawable/bg_item_option"
+        android:focusable="true"
+        android:padding="10dp"
+        android:text="@string/home_rows_move_up"
+        android:textColor="@color/option_text"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/btn_home_row_down"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_item_option"
+        android:focusable="true"
+        android:padding="10dp"
+        android:text="@string/home_rows_move_down"
+        android:textColor="@color/option_text"
+        android:visibility="gone" />
+
+</LinearLayout>

@@ -264,4 +264,9 @@
         android:name="com.streamflixreborn.streamflix.fragments.pairing.PairTvFragment"
         android:label="fragment_pair_tv"
         tools:layout="@layout/fragment_pair_tv" />
+    <fragment
+        android:id="@+id/home_rows"
+        android:name="com.streamflixreborn.streamflix.fragments.settings.homerows.HomeRowsFragment"
+        android:label="fragment_home_rows"
+        tools:layout="@layout/fragment_home_rows" />
 </navigation>

@@ -41,6 +41,7 @@ class SettingsScreenDelegate(
         SourcesController(host, parental),
         parental,
         ProfilesController(host),
+        HomeScreenController(host),
         AppearanceController(host),
         backup.attach(host),
         AboutController(host),

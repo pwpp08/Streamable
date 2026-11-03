@@ -403,12 +403,12 @@
         </PreferenceCategory>
     </PreferenceScreen>
 
-    <!-- 6. Home screen (filled in a later phase) -->
+    <!-- 6. Home screen: row order and visibility (HomeScreenController) -->
     <Preference
         android:key="screen_home"
         android:title="@string/settings_section_home"
-        android:summary="@string/settings_coming_soon"
-        android:enabled="false"
+        android:summary="@string/settings_home_summary"
+        android:widgetLayout="@layout/preference_widget_chevron"
         android:persistent="false"
         app:iconSpaceReserved="false" />
 
