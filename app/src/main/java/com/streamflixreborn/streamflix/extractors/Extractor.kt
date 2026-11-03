@@ -20,7 +20,10 @@ abstract class Extractor {
     }
 
     companion object {
-        private val extractors = listOf(
+        // Lazy on purpose: building this list instantiates Extractor subclasses. Doing that in
+        // Extractor's static initializer deadlocks when two threads construct different
+        // extractors at the same time (each holds one class-init lock and waits for the other).
+        private val extractors by lazy { listOf(
             FirestreamExtractor(),
             RabbitstreamExtractor(),
             RabbitstreamExtractor.MegacloudExtractor(),
@@ -120,7 +123,7 @@ abstract class Extractor {
             HexloadExtractor(),
             DeltaBitExtractor(),
             TurbovidExtractor(),
-        )
+        ) }
 
         suspend fun extract(link: String, server: Video.Server? = null): Video {
             var finalLink = link

@@ -1,5 +1,8 @@
 package com.streamflixreborn.streamflix.utils
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+
 import android.net.Uri
 import androidx.core.net.toUri
 import com.google.gson.annotations.SerializedName
@@ -62,6 +65,27 @@ object OpenSubtitles {
         season: Int? = null,
         episode: Int? = null,
         subLanguageId: String? = null,
+    ): List<Subtitle> {
+        // The REST API rejects comma-separated language lists (HTTP 400), so query each language
+        // separately, in parallel, and merge in the caller's language order.
+        val languages = subLanguageId?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+        if (languages.size > 1) {
+            return kotlinx.coroutines.coroutineScope {
+                languages
+                    .map { lang -> async { runCatching { searchOne(imdbId, query, season, episode, lang) }.getOrDefault(emptyList()) } }
+                    .awaitAll()
+                    .flatten()
+            }
+        }
+        return searchOne(imdbId, query, season, episode, languages.firstOrNull())
+    }
+
+    private suspend fun searchOne(
+        imdbId: String?,
+        query: String?,
+        season: Int?,
+        episode: Int?,
+        subLanguageId: String?,
     ): List<Subtitle> {
         // The REST API expects its path parameters in alphabetical order.
         val params = linkedMapOf(
