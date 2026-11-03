@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- TV home: a fixed hero (backdrop, title, meta, synopsis) for the focused item above the
+     rows. The backdrop ends at the hero edge so scrolling rows never redraw it. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,35 +8,97 @@
     android:layout_height="match_parent"
     tools:context=".fragments.home.HomeTvFragment">
 
-<ImageView
-    android:id="@+id/iv_home_background"
-    android:layout_width="0dp"
-    android:layout_height="0dp"
-    android:foreground="?attr/home_gradient_drawable"
-    android:scaleType="centerCrop"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintHorizontal_bias="0.0"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintVertical_bias="0.0"
-    tools:ignore="ContentDescription" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/g_home_hero_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.44" />
 
-<androidx.leanback.widget.VerticalGridView
-    android:id="@+id/vgv_home"
-    android:layout_width="0dp"
-    android:layout_height="0dp"
-    android:clipChildren="false"
-    android:clipToPadding="false"
-    android:nextFocusLeft="@id/fl_header_profile_avatar"
-    android:paddingTop="16dp"
-    android:paddingBottom="16dp"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent"
-    tools:itemCount="1"
-    tools:listitem="@layout/content_category_swiper_tv" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/g_home_hero_image_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.32" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/g_home_hero_text_end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.58" />
+
+    <ImageView
+        android:id="@+id/iv_home_background"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:foreground="@drawable/fg_browse_tv_hero_scrim"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="@id/g_home_hero_bottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/g_home_hero_image_start"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/tv_home_hero_overview"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/browse_tv_gutter"
+        android:layout_marginBottom="16dp"
+        android:ellipsize="end"
+        android:lines="2"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="@id/g_home_hero_bottom"
+        app:layout_constraintEnd_toEndOf="@id/g_home_hero_text_end"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:text="Overview of the focused title, two lines at most so the hero height never changes." />
+
+    <TextView
+        android:id="@+id/tv_home_hero_meta"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceTitleSmallEmphasized"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintBottom_toTopOf="@id/tv_home_hero_overview"
+        app:layout_constraintEnd_toEndOf="@id/g_home_hero_text_end"
+        app:layout_constraintStart_toStartOf="@id/tv_home_hero_overview"
+        tools:text="2024 · ★ 7.8 · HD" />
+
+    <TextView
+        android:id="@+id/tv_home_hero_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textAppearance="?attr/textAppearanceDisplaySmallEmphasized"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintBottom_toTopOf="@id/tv_home_hero_meta"
+        app:layout_constraintEnd_toEndOf="@id/g_home_hero_text_end"
+        app:layout_constraintStart_toStartOf="@id/tv_home_hero_overview"
+        tools:text="Title" />
+
+    <androidx.leanback.widget.VerticalGridView
+        android:id="@+id/vgv_home"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:nextFocusLeft="@id/fl_header_profile_avatar"
+        android:paddingTop="8dp"
+        android:paddingBottom="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/g_home_hero_bottom"
+        tools:itemCount="2"
+        tools:listitem="@layout/item_category_tv" />
 
     <include
         android:id="@+id/is_loading"

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phone home: a calm 64dp top bar (provider, profile; the activity's search / remote /
+     downloads buttons sit on its right end), then the hero carousel and the rows. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,65 +8,46 @@
     android:layout_height="match_parent"
     tools:context=".fragments.home.HomeMobileFragment">
 
+    <!-- Unused on phone (kept for the shared binding); the surface shows instead. -->
     <ImageView
         android:id="@+id/iv_home_background"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:foreground="?attr/home_gradient_drawable"
-        android:scaleType="centerCrop"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="ContentDescription" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_home"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:itemCount="1"
-        tools:listitem="@layout/content_category_swiper_mobile" />
-
-    <include
-        android:id="@+id/is_loading"
-        layout="@layout/layout_is_loading_mobile"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <ImageView
         android:id="@+id/iv_provider_logo"
-        android:layout_width="60dp"
-        android:layout_height="0dp"
-        android:background="@drawable/bg_provider_logo_home_mobile"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:duplicateParentState="true"
-        android:padding="8dp"
-        android:importantForAccessibility="no"
-        app:layout_constraintDimensionRatio="1:1"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="@dimen/browse_gutter"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_browse_provider_logo"
+        android:contentDescription="@string/main_menu_change_provider"
+        android:foreground="?attr/selectableItemBackground"
+        android:padding="6dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/ll_profile"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="12dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="@dimen/browse_top_actions_inset"
+        android:background="?attr/selectableItemBackground"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_provider_logo">
+        android:paddingStart="4dp"
+        android:paddingEnd="8dp"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBottom_toBottomOf="@id/iv_provider_logo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toEndOf="@id/iv_provider_logo"
+        app:layout_constraintTop_toTopOf="@id/iv_provider_logo">
 
         <FrameLayout
             android:id="@+id/fl_profile_avatar"
@@ -82,27 +65,48 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
+                android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="11sp"
-                android:textStyle="bold"
                 tools:text="D" />
         </FrameLayout>
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/tv_profile_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tv_profile_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="13sp"
-                tools:text="Default" />
-
-        </LinearLayout>
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceTitleSmallEmphasized"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Default" />
     </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_home"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:orientation="vertical"
+        android:paddingTop="4dp"
+        android:paddingBottom="@dimen/browse_row_gap"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_provider_logo"
+        tools:itemCount="2"
+        tools:listitem="@layout/item_category_mobile" />
+
+    <include
+        android:id="@+id/is_loading"
+        layout="@layout/layout_is_loading_mobile"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_provider_logo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

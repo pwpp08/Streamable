@@ -30,6 +30,11 @@ import androidx.lifecycle.ViewModelProvider
 import com.streamflixreborn.streamflix.utils.LoggingUtils
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.ProviderChangeNotifier
+import com.streamflixreborn.streamflix.utils.format
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
+import com.streamflixreborn.streamflix.ui.motion.Spring
+import com.streamflixreborn.streamflix.ui.motion.springAlpha
+import androidx.leanback.widget.BaseGridView
 
 class HomeTvFragment : Fragment() {
 
@@ -50,6 +55,16 @@ class HomeTvFragment : Fragment() {
     }
 
     private val appAdapter = AppAdapter()
+    private val rowViewPool = RecyclerView.RecycledViewPool().apply {
+        for (type in listOf(
+            AppAdapter.Type.MOVIE_TV_ITEM,
+            AppAdapter.Type.TV_SHOW_TV_ITEM,
+            AppAdapter.Type.EPISODE_TV_ITEM,
+            AppAdapter.Type.MOVIE_RECENTLY_WATCHED_TV_ITEM,
+            AppAdapter.Type.TV_SHOW_RECENTLY_WATCHED_TV_ITEM,
+            AppAdapter.Type.EPISODE_RECENTLY_WATCHED_TV_ITEM,
+        )) setMaxRecycledViews(type.ordinal, 20)
+    }
 
     private val swiperHandler = Handler(Looper.getMainLooper())
     private var isBackgroundPinned = false
@@ -138,47 +153,151 @@ class HomeTvFragment : Fragment() {
     override fun onStop() {
         super.onStop()
         swiperHandler.removeCallbacksAndMessages(null)
+        heroHandler.removeCallbacks(renderHeroRunnable)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         appAdapter.onSaveInstanceState(binding.vgvHome)
+        rowViewPool.clear()
+        heroHandler.removeCallbacks(renderHeroRunnable)
+        heroItem = null
+        heroBackdrop = null
+        pinnedItem = null
+        isBackgroundPinned = false
         _binding = null
     }
 
 
-    private var swiperHasLastFocus: Boolean = false
-    fun updateBackground(uri: String?, swiperHasFocus: Boolean? = false) {
-        if (swiperHasFocus == null && isBackgroundPinned) return
-        if (swiperHasFocus == null && !swiperHasLastFocus) return
+    /** The featured item (swiper row); shown in the hero while no row item is focused. */
+    private var featuredItem: Any? = null
+    /** The row item that currently has focus; pins the hero to it. */
+    private var pinnedItem: Any? = null
+    private var heroItem: Any? = null
+    private var heroBackdrop: String? = null
+    private val heroHandler = Handler(Looper.getMainLooper())
+    private val renderHeroRunnable = Runnable { renderHero(pinnedItem ?: featuredItem) }
 
-        Glide.with(requireContext())
-            .load(uri)
-            .transition(DrawableTransitionOptions.withCrossFade())
-            .into(binding.ivHomeBackground)
-        swiperHasLastFocus = swiperHasFocus ?: swiperHasLastFocus
+    /** Called by the featured row whenever its selected item changes. */
+    fun setFeatured(item: Any) {
+        featuredItem = item
+        if (pinnedItem == null) scheduleHero(immediate = heroItem == null)
     }
 
+    /** A row card (movie, show, episode) gained focus: the hero follows it. */
+    fun focusHero(item: Any) {
+        isBackgroundPinned = true
+        pinnedItem = item
+        scheduleHero()
+    }
+
+    /** Kept for callers that only know the backdrop URL. */
     fun pinBackground(uri: String?) {
         isBackgroundPinned = true
-        Glide.with(requireContext())
-            .load(uri)
-            .transition(DrawableTransitionOptions.withCrossFade())
-            .into(binding.ivHomeBackground)
+        loadHeroBackdrop(uri)
+    }
+
+    /** Kept for compatibility: the featured hero now comes from [setFeatured]. */
+    fun updateBackground(uri: String?, swiperHasFocus: Boolean? = false) {
+        if (pinnedItem != null) return
+        loadHeroBackdrop(uri)
     }
 
     fun releasePinnedBackground() {
         if (!isBackgroundPinned) return
         isBackgroundPinned = false
-        syncFeaturedBackground()
+        pinnedItem = null
+        // Focus usually lands on a neighbour within a frame; the debounce keeps the hero still.
+        scheduleHero()
+    }
+
+    private fun scheduleHero(immediate: Boolean = false) {
+        heroHandler.removeCallbacks(renderHeroRunnable)
+        if (immediate) renderHeroRunnable.run() else heroHandler.postDelayed(renderHeroRunnable, HERO_DEBOUNCE_MS)
+    }
+
+    private fun renderHero(item: Any?) {
+        val binding = _binding ?: return
+        if (item == null || item === heroItem) return
+        heroItem = item
+
+        val context = binding.root.context
+        val title: String?
+        val meta: String
+        val overview: String?
+        val backdrop: String?
+        when (item) {
+            is Movie -> {
+                title = item.title
+                meta = BrowseCards.joinMeta(
+                    context,
+                    item.released?.format("yyyy"),
+                    BrowseCards.ratingValue(item.rating)?.let { getString(R.string.browse_rating_star, it) },
+                    item.quality,
+                )
+                overview = item.overview
+                backdrop = item.banner ?: item.poster
+            }
+            is TvShow -> {
+                title = item.title
+                meta = BrowseCards.joinMeta(
+                    context,
+                    item.released?.format("yyyy"),
+                    BrowseCards.ratingValue(item.rating)?.let { getString(R.string.browse_rating_star, it) },
+                    item.quality,
+                )
+                overview = item.overview
+                backdrop = item.banner ?: item.poster
+            }
+            is Episode -> {
+                title = item.tvShow?.title ?: item.title
+                val episodeLabel = item.season?.takeIf { it.number != 0 }?.let { season ->
+                    getString(R.string.tv_show_item_season_number_episode_number, season.number, item.number)
+                } ?: getString(R.string.tv_show_item_episode_number, item.number)
+                meta = BrowseCards.joinMeta(
+                    context,
+                    episodeLabel,
+                    item.title,
+                    BrowseCards.remainingText(context, item.watchHistory),
+                )
+                overview = item.overview?.takeIf { it.isNotBlank() } ?: item.tvShow?.overview
+                backdrop = item.tvShow?.banner ?: item.poster
+            }
+            else -> return
+        }
+
+        binding.tvHomeHeroTitle.text = title
+        binding.tvHomeHeroMeta.text = meta
+        binding.tvHomeHeroOverview.text = overview
+        for (view in arrayOf(binding.tvHomeHeroTitle, binding.tvHomeHeroMeta, binding.tvHomeHeroOverview)) {
+            view.alpha = 0f
+            view.springAlpha(1f, Spring.EffectsSlow)
+        }
+        loadHeroBackdrop(backdrop)
+    }
+
+    private fun loadHeroBackdrop(uri: String?) {
+        val binding = _binding ?: return
+        if (uri == heroBackdrop) return
+        heroBackdrop = uri
+        Glide.with(binding.ivHomeBackground)
+            .load(uri)
+            .transition(DrawableTransitionOptions.withCrossFade(HERO_CROSSFADE_MS))
+            .into(binding.ivHomeBackground)
     }
 
     private fun initializeHome() {
         binding.vgvHome.apply {
             adapter = appAdapter.apply {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+                childRecycledViewPool = rowViewPool
             }
-            setItemSpacing(resources.getDimension(R.dimen.home_spacing).toInt() * 2)
+            setItemSpacing(resources.getDimensionPixelSize(R.dimen.browse_tv_row_item_gap))
+            // Keep the focused row right under the hero instead of centred in the short grid.
+            windowAlignment = BaseGridView.WINDOW_ALIGN_NO_EDGE
+            windowAlignmentOffset = paddingTop
+            windowAlignmentOffsetPercent = 0f
+            itemAlignmentOffsetPercent = 0f
         }
 
         binding.root.requestFocus()
@@ -195,17 +314,8 @@ class HomeTvFragment : Fragment() {
                     ?: 0
                 it.selectedIndex = index
                 
-                // Initialize background with first item from featured category immediately
-                val firstItem = it.list.getOrNull(index)
-                val poster = when (firstItem) {
-                    is Movie -> firstItem.banner
-                    is TvShow -> firstItem.banner
-                    else -> null
-                }
-                // Force background update without waiting for focus
-                if (poster != null) {
-                    updateBackground(poster, null)
-                }
+                // Show the featured item in the hero right away, without waiting for focus.
+                it.list.getOrNull(index)?.let { firstItem -> setFeatured(firstItem) }
                 
                 resetSwiperSchedule()
             }
@@ -250,7 +360,7 @@ class HomeTvFragment : Fragment() {
                             }
                         }
                     }
-                    category.itemSpacing = resources.getDimension(R.dimen.home_spacing).toInt()
+                    category.itemSpacing = resources.getDimensionPixelSize(R.dimen.browse_tv_row_item_gap)
                     category.itemType = when (category.name) {
                         Category.FEATURED -> AppAdapter.Type.CATEGORY_TV_SWIPER
                         else -> AppAdapter.Type.CATEGORY_TV_ITEM
@@ -274,17 +384,7 @@ class HomeTvFragment : Fragment() {
                     ?.let { category ->
                         category.selectedIndex = (category.selectedIndex + 1) % category.list.size
                         
-                        // Update background when swiper rotates automatically
-                        val currentItem = category.list.getOrNull(category.selectedIndex)
-                        val poster = when (currentItem) {
-                            is Movie -> currentItem.banner
-                            is TvShow -> currentItem.banner
-                            else -> null
-                        }
-                        // Update background if it's not null
-                        if (poster != null) {
-                            updateBackground(poster, null)
-                        }
+                        // The rebind below calls setFeatured() with the new item.
 
                         appAdapter.items.indexOf(category)
                     }
@@ -301,21 +401,8 @@ class HomeTvFragment : Fragment() {
         }, 8_000)
     }
 
-    private fun syncFeaturedBackground() {
-        val featured = appAdapter.items
-            .filterIsInstance<Category>()
-            .find { it.name == Category.FEATURED }
-            ?: return
-
-        val currentItem = featured.list.getOrNull(featured.selectedIndex)
-        val poster = when (currentItem) {
-            is Movie -> currentItem.banner
-            is TvShow -> currentItem.banner
-            else -> null
-        }
-
-        if (poster != null) {
-            updateBackground(poster, null)
-        }
+    private companion object {
+        const val HERO_DEBOUNCE_MS = 180L
+        const val HERO_CROSSFADE_MS = 300
     }
 }

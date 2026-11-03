@@ -11,7 +11,11 @@ import androidx.core.view.children
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import androidx.viewpager2.widget.ViewPager2
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.carousel.CarouselLayoutManager
+import com.google.android.material.carousel.CarouselSnapHelper
+import com.google.android.material.carousel.HeroCarouselStrategy
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.databinding.ContentCategorySwiperMobileBinding
@@ -47,13 +51,21 @@ class CategoryViewHolder(
         get() = when (_binding) {
             is ItemCategoryMobileBinding -> _binding.rvCategory
             is ItemCategoryTvBinding -> _binding.hgvCategory
-            is ContentCategorySwiperMobileBinding -> _binding.vpCategorySwiper.javaClass
-                .getDeclaredField("mRecyclerView").let {
-                    it.isAccessible = true
-                    it.get(_binding.vpCategorySwiper) as RecyclerView
-                }
+            is ContentCategorySwiperMobileBinding -> _binding.rvCategorySwiper
             else -> null
         }
+
+    /** Phone hero auto-advance (every 8 s, paused while the user drags). */
+    private val swiperHandler = Handler(Looper.getMainLooper())
+    private var swiperAdvance: Runnable? = null
+
+    /** Shares one view pool across all nested rows (see AppAdapter.childRecycledViewPool). */
+    fun useSharedRowPool(pool: RecyclerView.RecycledViewPool) {
+        when (_binding) {
+            is ItemCategoryMobileBinding -> _binding.rvCategory.setRecycledViewPool(pool)
+            is ItemCategoryTvBinding -> _binding.hgvCategory.setRecycledViewPool(pool)
+        }
+    }
 
     fun bind(
         category: Category,
@@ -82,6 +94,7 @@ class CategoryViewHolder(
         binding.tvCategoryTitle.text = category.name
 
         binding.rvCategory.apply {
+            (layoutManager as? LinearLayoutManager)?.initialPrefetchItemCount = 4
             val categoryAdapter = (adapter as? AppAdapter) ?: AppAdapter().also { adapter = it }
             categoryAdapter.apply {
                 this.onMovieClickListener = onMovieClick
@@ -106,6 +119,7 @@ class CategoryViewHolder(
         binding.tvCategoryTitle.text = category.name
         binding.hgvCategory.apply {
             setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+            setInitialPrefetchItemCount(4)
 
             val categoryAdapter = (adapter as? AppAdapter) ?: AppAdapter().also { adapter = it }
             categoryAdapter.apply {
@@ -131,72 +145,59 @@ class CategoryViewHolder(
         onTvShowLongClick: ((TvShow) -> Unit)?,
     ) {
         binding.tvCategoryTitle.text = category.name
-        val handler = Handler(Looper.getMainLooper())
-        handler.postDelayed(8_000) {
-            binding.vpCategorySwiper.currentItem += 1
-        }
+        val carousel = binding.rvCategorySwiper
 
-        val items = listOf(
-            listOfNotNull(category.list.lastOrNull()),
-            category.list,
-            listOfNotNull(category.list.firstOrNull()),
-        ).flatten()
-        binding.vpCategorySwiper.apply {
-            adapter = AppAdapter().apply {
-                this.onMovieClickListener = onMovieClick
-                this.onTvShowClickListener = onTvShowClick
-                this.onMovieLongClickListener = onMovieLongClick
-                this.onTvShowLongClickListener = onTvShowLongClick
-                submitList(category.list)
-                post { (adapter as AppAdapter).submitList(items) }
-            }
-        }
-
-        binding.llDotsIndicator.apply {
-            removeAllViews()
-            repeat(category.list.size) {
-                val view = View(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(15, 15).apply {
-                        setMargins(10, 0, 10, 0)
-                    }
-                    setBackgroundResource(R.drawable.bg_dot_indicator)
-                }
-                addView(view)
-            }
-        }
-
-        binding.vpCategorySwiper.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                val indicatorPosition = when (position) {
-                    0 -> category.list.lastIndex
-                    items.lastIndex -> 0
-                    else -> position - 1
-                }
-                binding.llDotsIndicator.children.forEachIndexed { index, view ->
-                    view.isSelected = (indicatorPosition == index)
-                }
-
-                handler.removeCallbacksAndMessages(null)
-                handler.postDelayed(8_000) {
-                    binding.vpCategorySwiper.currentItem += 1
-                }
-            }
-
-            override fun onPageScrollStateChanged(state: Int) {
-                if (state == ViewPager2.SCROLL_STATE_IDLE) {
-                    when (binding.vpCategorySwiper.currentItem) {
-                        0 -> binding.vpCategorySwiper.setCurrentItem(
-                            items.lastIndex - 1,
-                            false
-                        )
-                        items.lastIndex -> binding.vpCategorySwiper.setCurrentItem(
-                            1,
-                            false
-                        )
+        if (carousel.layoutManager !is CarouselLayoutManager) {
+            carousel.layoutManager = CarouselLayoutManager(HeroCarouselStrategy())
+            CarouselSnapHelper().attachToRecyclerView(carousel)
+            carousel.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        scheduleSwiperAdvance(carousel)
+                    } else {
+                        swiperHandler.removeCallbacksAndMessages(null)
                     }
                 }
+            })
+            carousel.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) = scheduleSwiperAdvance(carousel)
+                override fun onViewDetachedFromWindow(v: View) {
+                    swiperHandler.removeCallbacksAndMessages(null)
+                }
+            })
+        }
+
+        val swiperAdapter = (carousel.adapter as? AppAdapter) ?: AppAdapter().also { carousel.adapter = it }
+        swiperAdapter.apply {
+            this.onMovieClickListener = onMovieClick
+            this.onTvShowClickListener = onTvShowClick
+            this.onMovieLongClickListener = onMovieLongClick
+            this.onTvShowLongClickListener = onTvShowLongClick
+            submitList(category.list)
+        }
+        scheduleSwiperAdvance(carousel)
+    }
+
+    private fun scheduleSwiperAdvance(carousel: RecyclerView) {
+        swiperHandler.removeCallbacksAndMessages(null)
+        val advance = swiperAdvance ?: Runnable {
+            val count = carousel.adapter?.itemCount ?: 0
+            if (count > 1 && carousel.isAttachedToWindow) {
+                // The large (snapped) item is the child closest to the start padding.
+                var current = 0
+                var bestDistance = Int.MAX_VALUE
+                for (index in 0 until carousel.childCount) {
+                    val child = carousel.getChildAt(index)
+                    val distance = kotlin.math.abs(child.left - carousel.paddingLeft)
+                    if (distance < bestDistance) {
+                        bestDistance = distance
+                        current = carousel.getChildAdapterPosition(child)
+                    }
+                }
+                carousel.smoothScrollToPosition((current.coerceAtLeast(0) + 1) % count)
             }
-        })
+        }.also { swiperAdvance = it }
+        swiperHandler.postDelayed(advance, 8_000)
     }
 
     private fun displayTvSwiper(binding: ContentCategorySwiperTvBinding) {
@@ -204,7 +205,7 @@ class CategoryViewHolder(
         val selected = category.list.getOrNull(category.selectedIndex) as? Show ?: return
 
         fun checkProviderAndRun(show: Show, action: () -> Unit) {
-            val providerName = when(show){
+            val providerName = when (show) {
                 is Movie -> show.providerName
                 is TvShow -> show.providerName
             }
@@ -216,94 +217,14 @@ class CategoryViewHolder(
             }
             action()
         }
-        
-        // Aggiornamento dello sfondo forzato per TV all'inizio o al cambio indice
-        val poster = when (selected) {
-            is Movie -> selected.banner
-            is TvShow -> selected.banner
-            else -> null
-        }
-        
-        when (val fragment = context.toActivity()?.getCurrentFragment()) {
-            is HomeTvFragment -> {
-                if (poster != null) {
-                    fragment.updateBackground(poster, false) // Imposta lo sfondo senza marcare come focalizzato
-                }
-                
-                // Se l'elemento è stato appena selezionato (indice cambiato), assicura che l'aggiornamento sia visibile
-                if (category.selectedIndex == category.list.indexOf(selected)) {
-                    fragment.resetSwiperSchedule() // Riavvia lo scheduler per assicurarsi che continui
-                }
+
+        // The featured item's backdrop, title and synopsis live in the fragment's hero.
+        (context.toActivity()?.getCurrentFragment() as? HomeTvFragment)?.let { fragment ->
+            fragment.setFeatured(selected)
+            if (category.selectedIndex == category.list.indexOf(selected)) {
+                fragment.resetSwiperSchedule()
             }
         }
-
-        binding.tvSwiperTitle.text = when (selected) {
-            is Movie -> selected.title
-            is TvShow -> selected.title
-        }
-
-        binding.tvSwiperTvShowLastEpisode.apply {
-            text = when (selected) {
-                is TvShow -> selected.seasons.lastOrNull()?.let { season ->
-                    season.episodes.lastOrNull()?.let { episode ->
-                        if (season.number != 0) {
-                            context.getString(
-                                R.string.tv_show_item_season_number_episode_number,
-                                season.number,
-                                episode.number
-                            )
-                        } else {
-                            context.getString(
-                                R.string.tv_show_item_episode_number,
-                                episode.number
-                            )
-                        }
-                    }
-                } ?: context.getString(R.string.tv_show_item_type)
-                else -> context.getString(R.string.movie_item_type)
-            }
-        }
-
-        binding.tvSwiperQuality.apply {
-            text = when (selected) {
-                is Movie -> selected.quality
-                is TvShow -> selected.quality
-            }
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvSwiperReleased.apply {
-            text = when (selected) {
-                is Movie -> selected.released?.format("yyyy")
-                is TvShow -> selected.released?.format("yyyy")
-            }
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvSwiperRating.apply {
-            text = when (selected) {
-                is Movie -> selected.rating?.let { String.format(Locale.ROOT, "%.1f", it) }
-                is TvShow -> selected.rating?.let { String.format(Locale.ROOT, "%.1f", it) }
-            }
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.ivSwiperRatingIcon.visibility = binding.tvSwiperRating.visibility
-
-        binding.tvSwiperOverview.text = when (selected) {
-            is Movie -> selected.overview
-            is TvShow -> selected.overview
-        }
-
 
         binding.btnSwiperWatchNow.apply {
             setOnClickListener {
@@ -328,12 +249,6 @@ class CategoryViewHolder(
                                 is HomeTvFragment -> fragment.resetSwiperSchedule()
                             }
                             category.selectedIndex = (category.selectedIndex + 1) % category.list.size
-                            when (val fragment = context.toActivity()?.getCurrentFragment()) {
-                                is HomeTvFragment -> when (val it = category.list[category.selectedIndex]) {
-                                    is Movie -> fragment.updateBackground(it.banner, true)
-                                    is TvShow -> fragment.updateBackground(it.banner, true)
-                                }
-                            }
                             bindingAdapter?.notifyItemChanged(bindingAdapterPosition)
                             return@setOnKeyListener true
                         }
@@ -348,11 +263,7 @@ class CategoryViewHolder(
                 is Movie -> selected.watchHistory
                 is TvShow -> null
             }
-
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
+            progress = BrowseCards.progressPercent(watchHistory)
             visibility = when {
                 watchHistory != null -> View.VISIBLE
                 else -> View.GONE
@@ -360,17 +271,20 @@ class CategoryViewHolder(
         }
 
         binding.llDotsIndicator.apply {
-            removeAllViews()
-            repeat(category.list.size) { index ->
-                val view = View(context).apply {
-                    layoutParams = LinearLayout.LayoutParams(15, 15).apply {
-                        setMargins(10, 0, 10, 0)
-                    }
-                    setBackgroundResource(R.drawable.bg_dot_indicator)
-                    isSelected = (category.selectedIndex == index)
+            if (childCount != category.list.size) {
+                removeAllViews()
+                val size = (8 * resources.displayMetrics.density).toInt()
+                val gap = (3 * resources.displayMetrics.density).toInt()
+                repeat(category.list.size) {
+                    addView(View(context).apply {
+                        layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                            setMargins(gap, 0, gap, 0)
+                        }
+                        setBackgroundResource(R.drawable.bg_browse_dot_indicator)
+                    })
                 }
-                addView(view)
             }
+            children.forEachIndexed { index, view -> view.isSelected = category.selectedIndex == index }
         }
     }
 }

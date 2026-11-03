@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Home row (phone): emphasized title, then a horizontal row on a 16dp gutter. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -9,12 +10,11 @@
 
     <TextView
         android:id="@+id/tv_category_title"
+        style="@style/Widget.StreamFlix.Browse.RowHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="18sp"
+        android:layout_marginStart="@dimen/browse_gutter"
+        android:layout_marginEnd="@dimen/browse_gutter"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -24,12 +24,13 @@
         android:id="@+id/rv_category"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="12dp"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:orientation="horizontal"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
+        android:overScrollMode="never"
+        android:paddingStart="@dimen/browse_gutter"
+        android:paddingEnd="@dimen/browse_gutter"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
