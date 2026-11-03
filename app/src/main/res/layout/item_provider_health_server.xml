@@ -5,17 +5,18 @@
     android:layout_height="wrap_content"
     android:background="@drawable/bg_health_row"
     android:gravity="center_vertical"
-    android:minHeight="48dp"
+    android:layout_marginTop="2dp"
+    android:minHeight="56dp"
     android:orientation="horizontal"
-    android:paddingStart="8dp"
-    android:paddingTop="6dp"
-    android:paddingEnd="8dp"
-    android:paddingBottom="6dp">
+    android:paddingStart="16dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="10dp">
 
     <View
         android:id="@+id/v_health_dot"
-        android:layout_width="12dp"
-        android:layout_height="12dp"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
         android:background="@drawable/bg_health_dot" />
 
     <LinearLayout
@@ -31,7 +32,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceBody1"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
             android:textColor="?attr/colorOnSurface"
             tools:text="VidCloud" />
 
@@ -41,8 +42,8 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textAppearance="?attr/textAppearanceCaption"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="Movie · HTTP 403" />
     </LinearLayout>
 
@@ -53,8 +54,8 @@
         android:layout_marginStart="12dp"
         android:gravity="end"
         android:minWidth="64dp"
-        android:textAppearance="?attr/textAppearanceBody2"
-        android:textColor="?android:attr/textColorSecondary"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
         tools:text="1.2 s" />
 
     <com.google.android.material.textview.MaterialTextView
@@ -64,9 +65,8 @@
         android:layout_marginStart="12dp"
         android:gravity="end"
         android:minWidth="56dp"
-        android:textAppearance="?attr/textAppearanceBody2"
-        android:textColor="?attr/colorOnSurface"
-        android:textStyle="bold"
+        android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
+        android:textColor="?attr/colorPrimary"
         tools:text="1080p" />
 
 </LinearLayout>

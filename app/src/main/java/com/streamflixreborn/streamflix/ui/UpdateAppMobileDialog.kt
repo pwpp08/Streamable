@@ -28,6 +28,7 @@ class UpdateAppMobileDialog(
 
     init {
         setContentView(binding.root)
+        window?.setBackgroundDrawable(DialogSurface.create(context))
 
         binding.tvUpdateCurrentVersion.text = BuildConfig.VERSION_NAME
 

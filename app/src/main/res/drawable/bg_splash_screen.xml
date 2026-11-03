@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Launch window: the app mark centred on the palette surface (AppTheme.SplashScreen is Crimson). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android"
     android:opacity="opaque">
 
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/sf_crimson_dark_surface" />
+            <solid android:color="?attr/colorSurface" />
         </shape>
     </item>
 
+    <!-- Adaptive-icon foreground: the mark fills the middle half of its 108dp canvas. -->
     <item
-        android:width="320dp"
-        android:height="180dp"
-        android:drawable="@mipmap/ic_banner_foreground"
+        android:width="176dp"
+        android:height="176dp"
+        android:drawable="@mipmap/ic_launcher_foreground"
         android:gravity="center" />
 
 </layer-list>
