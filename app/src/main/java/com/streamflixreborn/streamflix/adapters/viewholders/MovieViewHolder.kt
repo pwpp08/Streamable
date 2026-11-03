@@ -40,8 +40,6 @@ import com.streamflixreborn.streamflix.databinding.ItemMovieContinueWatchingMobi
 import com.streamflixreborn.streamflix.databinding.ItemMovieContinueWatchingTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieGridMobileBinding
 import android.widget.ImageView
-import android.widget.TextView
-import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.streamflixreborn.streamflix.databinding.ItemMovieGridTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieMobileBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieTvBinding

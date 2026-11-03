@@ -37,8 +37,6 @@ import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.loadTvShowCardArtwork
 import com.streamflixreborn.streamflix.utils.loadTvShowBanner
 import com.streamflixreborn.streamflix.ui.browse.BrowseCards
-import com.google.android.material.progressindicator.LinearProgressIndicator
-import android.widget.TextView
 import com.streamflixreborn.streamflix.utils.toActivity
 
 class EpisodeViewHolder(
