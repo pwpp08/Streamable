@@ -34,7 +34,8 @@ class MainViewModel : ViewModel() {
 
 
     fun checkUpdate() = viewModelScope.launch(Dispatchers.IO) {
-        if (!UserPreferences.updateCheckEnabled) return@launch
+        // This build is a fork: upstream StreamFlix releases would replace it, so never offer them.
+        if (UPSTREAM_UPDATES_DISABLED || !UserPreferences.updateCheckEnabled) return@launch
         _state.emit(State.CheckingUpdate)
 
         try {
@@ -89,3 +90,5 @@ class MainViewModel : ViewModel() {
         }
     }
 }
+
+private const val UPSTREAM_UPDATES_DISABLED = true

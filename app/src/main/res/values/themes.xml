@@ -13,6 +13,18 @@
 
     <!-- ===================================================================== phone base -->
     <style name="Theme.StreamFlix" parent="Theme.Material3Expressive.Dark.NoActionBar">
+        <!-- Fallback Expressive button size tokens. Widget.Material3Expressive.Button resolves
+             padding/insets from ?attr/container* that normally come from its materialSizeOverlay;
+             a <Button> inflated with another style (e.g. buttonBarButtonStyle) would crash without these. -->
+        <item name="containerPaddingStart">@dimen/m3_comp_button_small_leading_space</item>
+        <item name="containerPaddingEnd">@dimen/m3_comp_button_small_trailing_space</item>
+        <item name="containerPaddingTop">10dp</item>
+        <item name="containerPaddingBottom">10dp</item>
+        <item name="containerInsetTop">4dp</item>
+        <item name="containerInsetBottom">4dp</item>
+        <item name="containerIconSize">@dimen/m3_comp_button_small_icon_size</item>
+        <item name="containerIconPadding">@dimen/m3_comp_button_small_icon_label_space</item>
+        <item name="labelTextAppearance">?attr/textAppearanceLabelLarge</item>
         <!-- Window / edge-to-edge. System bars are transparent; ThemeManager.applySystemBars()
              sets icon contrast from colorSurface. -->
         <item name="android:windowBackground">@drawable/bg_window</item>
