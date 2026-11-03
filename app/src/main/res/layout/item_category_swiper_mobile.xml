@@ -82,7 +82,7 @@
             app:layout_constraintBottom_toBottomOf="@id/tv_swiper_rating"
             app:layout_constraintStart_toEndOf="@id/tv_swiper_quality"
             app:layout_constraintTop_toTopOf="@id/tv_swiper_rating"
-            app:tint="?attr/colorOnSurfaceVariant"
+            android:tint="?attr/colorOnSurfaceVariant"
             tools:ignore="ContentDescription" />
 
         <TextView

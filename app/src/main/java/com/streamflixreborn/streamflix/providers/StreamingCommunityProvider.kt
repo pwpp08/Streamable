@@ -251,12 +251,12 @@ class StreamingCommunityProvider(private val _language: String? = null) : Provid
             if (titles.isEmpty()) return@forEach
             
             val italianName = when {
-                slider.name.contains("trending", true) -> "I titoli del momento"
-                slider.name.contains("latest-movies", true) -> "Film aggiunti di recente"
-                slider.name.contains("latest-tv-shows", true) -> "Serie TV aggiunte di recente"
-                slider.name.contains("top-10", true) -> "Top 10 titoli di oggi"
-                slider.name.contains("upcoming", true) -> "In arrivo"
-                slider.name.contains("new-releases", true) -> "Nuove uscite"
+                slider.name.contains("trending", true) -> "Trending now"
+                slider.name.contains("latest-movies", true) -> "Recently added movies"
+                slider.name.contains("latest-tv-shows", true) -> "Recently added TV shows"
+                slider.name.contains("top-10", true) -> "Top 10 today"
+                slider.name.contains("upcoming", true) -> "Coming soon"
+                slider.name.contains("new-releases", true) -> "New releases"
                 else -> null
             }
 
@@ -268,11 +268,11 @@ class StreamingCommunityProvider(private val _language: String? = null) : Provid
 
         // 3. Aggiungiamo i fallback da props (se non già aggiunti dagli slider)
         val propsMapping = listOf(
-            "I titoli del momento" to (res.props?.trendingTitles ?: res.props?.trending),
-            "Film aggiunti di recente" to res.props?.latestMovies,
-            "Serie TV aggiunte di recente" to res.props?.latestTvShows,
-            "Top 10 titoli di oggi" to (res.props?.top10Titles ?: res.props?.top10),
-            "In arrivo" to (res.props?.upcomingTitles ?: res.props?.upcoming)
+            "Trending now" to (res.props?.trendingTitles ?: res.props?.trending),
+            "Recently added movies" to res.props?.latestMovies,
+            "Recently added TV shows" to res.props?.latestTvShows,
+            "Top 10 today" to (res.props?.top10Titles ?: res.props?.top10),
+            "Coming soon" to (res.props?.upcomingTitles ?: res.props?.upcoming)
         )
         propsMapping.forEach { (name, list) ->
             if (list != null && list.isNotEmpty()) {

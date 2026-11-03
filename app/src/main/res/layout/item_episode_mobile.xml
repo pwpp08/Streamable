@@ -37,7 +37,7 @@
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="@id/iv_episode_poster"
         app:layout_constraintTop_toTopOf="@id/iv_episode_poster"
-        app:tint="?attr/colorOnPrimary"
+        android:tint="?attr/colorOnPrimary"
         tools:visibility="visible" />
 
     <TextView

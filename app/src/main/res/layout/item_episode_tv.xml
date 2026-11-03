@@ -39,7 +39,7 @@
             android:padding="5dp"
             android:src="@drawable/ic_ud_check"
             android:visibility="gone"
-            app:tint="?attr/colorOnPrimary"
+            android:tint="?attr/colorOnPrimary"
             tools:visibility="visible" />
 
         <com.google.android.material.progressindicator.LinearProgressIndicator

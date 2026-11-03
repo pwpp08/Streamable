@@ -79,7 +79,7 @@
                 android:layout_height="16dp"
                 android:importantForAccessibility="no"
                 android:src="@drawable/ic_star"
-                app:tint="?attr/colorPrimary" />
+                android:tint="?attr/colorPrimary" />
 
             <TextView
                 android:id="@+id/tv_movie_rating"
