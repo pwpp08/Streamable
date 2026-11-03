@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- API 28 and older crash when a gradient mixes a theme colour with centerColor, so this
+     fixed-colour copy is used there. drawable-v29 holds the themed original. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Fades the artwork into the palette surface. -->
     <item>
         <shape android:shape="rectangle">
             <gradient
                 android:angle="90"
-                android:startColor="?attr/colorSurface"
+                android:startColor="@color/sf_crimson_dark_surface"
                 android:centerColor="#80000000"
                 android:endColor="#00000000"
                 android:centerY="0.4"

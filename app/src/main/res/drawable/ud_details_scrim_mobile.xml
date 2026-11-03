@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- API 28 and older crash when a gradient mixes a theme colour with centerColor, so this
+     fixed-colour copy is used there. drawable-v29 holds the themed original. -->
 <!-- Phone details backdrop: status-bar protection on top, fade into the surface at the bottom. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:gravity="top|fill_horizontal" android:height="120dp">
@@ -12,7 +14,7 @@
                 android:angle="270"
                 android:centerColor="@android:color/transparent"
                 android:centerY="0.45"
-                android:endColor="?attr/colorSurface"
+                android:endColor="@color/sf_crimson_dark_surface"
                 android:startColor="@android:color/transparent" />
         </shape>
     </item>

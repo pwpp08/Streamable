@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- API 28 and older crash when a gradient mixes a theme colour with centerColor, so this
+     fixed-colour copy is used there. drawable-v29 holds the themed original. -->
 <!-- TV details backdrop: the text column side and the bottom fade into the surface. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
@@ -8,7 +10,7 @@
                 android:centerColor="#B3000000"
                 android:centerX="0.38"
                 android:endColor="@android:color/transparent"
-                android:startColor="?attr/colorSurface" />
+                android:startColor="@color/sf_crimson_dark_surface" />
         </shape>
     </item>
     <item>
@@ -18,7 +20,7 @@
                 android:centerColor="@android:color/transparent"
                 android:centerY="0.4"
                 android:endColor="@android:color/transparent"
-                android:startColor="?attr/colorSurface" />
+                android:startColor="@color/sf_crimson_dark_surface" />
         </shape>
     </item>
 </layer-list>

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- API 28 and older crash when a gradient mixes a theme colour with centerColor, so this
+     fixed-colour copy is used there. drawable-v29 holds the themed original. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Sfumatura Laterale dinamica per lo stacco con il menu -->
     <!-- Utilizza il colore di sfondo dell'app anziché il nero assoluto fisso -->
@@ -6,7 +8,7 @@
         <shape android:shape="rectangle">
             <gradient
                 android:angle="0"
-                android:startColor="?attr/app_background_color"
+                android:startColor="@color/sf_crimson_dark_surface"
                 android:centerColor="#00000000"
                 android:endColor="#00000000"
                 android:type="linear" />

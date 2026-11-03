@@ -181,10 +181,11 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
     fun search(query: String) = viewModelScope.launch(Dispatchers.IO) {
         _state.emit(State.Searching)
         recordSearch(query)
+        // Set up front so Retry after a failure repeats this query instead of the previous one.
+        this@SearchViewModel.query = query
 
         try {
             val results = ParentalControlUtils.filterItems(UserPreferences.currentProvider!!.search(query))
-            this@SearchViewModel.query = query
             page = 1
             _state.emit(State.SuccessSearching(results, results.isNotEmpty()))
         } catch (e: Exception) {

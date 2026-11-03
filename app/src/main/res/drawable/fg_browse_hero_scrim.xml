@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- API 28 and older crash when a gradient mixes a theme colour with centerColor, so this
+     fixed-colour copy is used there. drawable-v29 holds the themed original. -->
 <!-- Phone hero card: fades the backdrop into the surface behind the title and buttons. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <gradient
         android:angle="90"
         android:centerY="0.4"
-        android:startColor="?attr/colorSurfaceContainerLowest"
+        android:startColor="@color/sf_crimson_dark_surface_container_lowest"
         android:centerColor="#99000000"
         android:endColor="@android:color/transparent"
         android:type="linear" />
