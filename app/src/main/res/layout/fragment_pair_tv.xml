@@ -77,6 +77,7 @@
             android:layout_marginTop="4dp"
             android:fontFeatureSettings="tnum"
             android:letterSpacing="0.06"
+            android:maxLines="1"
             android:textAppearance="?attr/textAppearanceDisplayLargeEmphasized"
             android:textColor="?attr/colorOnSurface"
             tools:text="123 456" />
@@ -121,6 +122,7 @@
                 android:layout_height="wrap_content"
                 android:focusable="true"
                 android:nextFocusRight="@id/btn_pair_done"
+                android:maxLines="1"
                 android:text="@string/pair_tv_new_code"
                 app:icon="@drawable/ic_refresh" />
 
@@ -132,6 +134,7 @@
                 android:layout_marginStart="16dp"
                 android:focusable="true"
                 android:nextFocusLeft="@id/btn_pair_new_code"
+                android:maxLines="1"
                 android:text="@string/pair_tv_done" />
         </LinearLayout>
     </LinearLayout>
