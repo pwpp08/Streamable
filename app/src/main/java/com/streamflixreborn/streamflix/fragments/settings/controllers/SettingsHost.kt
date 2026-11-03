@@ -10,6 +10,7 @@ import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.TwoStatePreference
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
  * What a settings controller needs from the screen hosting it. Both the phone
@@ -32,10 +33,10 @@ class SettingsHost(val fragment: PreferenceFragmentCompat, val isTv: Boolean) {
     }
 
     /**
-     * AppCompat dialogs work on both form factors: every TV theme sets an AppCompat
-     * `alertDialogTheme`, and AlertDialog lists are D-pad navigable.
+     * M3 Expressive dialogs on both form factors (`materialAlertDialogTheme`); the builder is an
+     * AppCompat AlertDialog.Builder, and its lists are D-pad navigable on TV.
      */
-    fun dialog(): AlertDialog.Builder = AlertDialog.Builder(context)
+    fun dialog(): AlertDialog.Builder = MaterialAlertDialogBuilder(context)
 
     fun navigate(destinationId: Int) {
         runCatching { fragment.findNavController().navigate(destinationId) }

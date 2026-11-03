@@ -118,6 +118,8 @@
         <item name="materialSearchBarStyle">@style/Widget.StreamFlix.SearchBar</item>
         <item name="materialSearchViewStyle">@style/Widget.Material3Expressive.SearchView</item>
         <item name="snackbarStyle">@style/Widget.Material3.Snackbar</item>
+        <!-- Expressive grouped settings rows (values/styles_ui_misc.xml). TV overrides it. -->
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.StreamFlix</item>
     </style>
 
     <!-- Light phone base. Generated Light palettes hang off it; unused until screens are light-safe. -->
@@ -185,11 +187,7 @@
         <item name="sliderStyle">@style/Widget.StreamFlix.Slider.Tv</item>
     </style>
 
-    <!-- Leanback preferences on the palette surface (replaces PreferenceThemeOverlay.Leanback.Amoled). -->
-    <style name="PreferenceThemeOverlay.StreamFlix.Leanback" parent="PreferenceThemeOverlayLeanback">
-        <item name="android:windowBackground">?attr/colorSurface</item>
-        <item name="android:colorBackground">?attr/colorSurface</item>
-    </style>
+    <!-- PreferenceThemeOverlay.StreamFlix(.Leanback): see values/styles_ui_misc.xml. -->
 
     <!-- ===================================================================== aliases -->
     <!-- Manifest defaults; activities replace them via ThemeManager in onCreate. -->

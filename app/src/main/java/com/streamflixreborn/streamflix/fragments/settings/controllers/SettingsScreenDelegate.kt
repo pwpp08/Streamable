@@ -22,6 +22,9 @@ class SettingsScreenDelegate(
     private data class ScreenState(val rootKey: String?, val title: String?)
 
     private var current = ScreenState(rootKey = null, title = null)
+
+    /** Called with the screen title and whether a nested screen is open (phone top app bar). */
+    var onScreenChanged: ((title: String, isNested: Boolean) -> Unit)? = null
     private val backStack = ArrayDeque<ScreenState>()
     private val backCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
@@ -92,6 +95,8 @@ class SettingsScreenDelegate(
     }
 
     private fun applyTitle() {
-        fragment.activity?.title = current.title ?: fragment.getString(R.string.player_settings_title)
+        val title = current.title ?: fragment.getString(R.string.player_settings_title)
+        fragment.activity?.title = title
+        onScreenChanged?.invoke(title, backStack.isNotEmpty())
     }
 }

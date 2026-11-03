@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Trailing chevron for rows that open a nested settings screen. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    android:foregroundGravity="center"
-    android:minWidth="32dp"
-    android:paddingStart="4dp"
-    android:paddingEnd="2dp">
+    android:minWidth="24dp">
 
     <ImageView
         android:id="@+id/settings_chevron"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:layout_gravity="center"
-        android:alpha="0.82"
         android:importantForAccessibility="no"
         android:src="@drawable/ic_player_setting_arrow_right"
-        android:tint="?attr/colorOnSurfaceVariant" />
+        app:tint="?attr/colorOnSurfaceVariant" />
 </FrameLayout>
