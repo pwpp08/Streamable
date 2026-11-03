@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        M3 type scale + MDC 1.14 emphasized scale, re-pointed at @font/sf_sans (Google Sans Flex).
+        Sizes / line heights / tracking come from the MDC parents; only family and weight change.
+        Emphasized = one weight step up (400 -> 500, 500 -> 600).
+        Use through theme attrs, e.g. android:textAppearance="?attr/textAppearanceTitleLargeEmphasized".
+    -->
+    <style name="TextAppearance.StreamFlix.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.DisplayLarge.Emphasized" parent="TextAppearance.Material3.DisplayLarge.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.DisplayMedium.Emphasized" parent="TextAppearance.Material3.DisplayMedium.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.DisplaySmall.Emphasized" parent="TextAppearance.Material3.DisplaySmall.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.HeadlineLarge.Emphasized" parent="TextAppearance.Material3.HeadlineLarge.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.HeadlineMedium.Emphasized" parent="TextAppearance.Material3.HeadlineMedium.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.HeadlineSmall.Emphasized" parent="TextAppearance.Material3.HeadlineSmall.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.TitleLarge.Emphasized" parent="TextAppearance.Material3.TitleLarge.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.TitleMedium.Emphasized" parent="TextAppearance.Material3.TitleMedium.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">600</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.TitleSmall.Emphasized" parent="TextAppearance.Material3.TitleSmall.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">600</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.BodyLarge.Emphasized" parent="TextAppearance.Material3.BodyLarge.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.BodyMedium.Emphasized" parent="TextAppearance.Material3.BodyMedium.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">400</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.BodySmall.Emphasized" parent="TextAppearance.Material3.BodySmall.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.LabelLarge.Emphasized" parent="TextAppearance.Material3.LabelLarge.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">600</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.LabelMedium.Emphasized" parent="TextAppearance.Material3.LabelMedium.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">600</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">500</item>
+    </style>
+    <style name="TextAppearance.StreamFlix.LabelSmall.Emphasized" parent="TextAppearance.Material3.LabelSmall.Emphasized">
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="android:textFontWeight" tools:targetApi="p">600</item>
+    </style>
+</resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Spring tokens for the MDC 1.14 theme attrs motionSpring{Fast,Default,Slow}{Spatial,Effects}.
+    Values follow the M3 Expressive guide (stiffness 1400/700/300 spatial, 3800/1600/800 effects)
+    with spatial damping raised from 0.6 to 0.8: a slight overshoot instead of a wobble, which
+    reads better at 10 feet and costs fewer frames on low-end TV hardware.
+    Consumed by com.streamflixreborn.streamflix.ui.motion.Springs and by MDC widgets.
+-->
+<resources>
+    <style name="Motion.StreamFlix.Spring.Fast.Spatial" parent="">
+        <item name="stiffness">1400</item>
+        <item name="damping">0.8</item>
+    </style>
+    <style name="Motion.StreamFlix.Spring.Default.Spatial" parent="">
+        <item name="stiffness">700</item>
+        <item name="damping">0.8</item>
+    </style>
+    <style name="Motion.StreamFlix.Spring.Slow.Spatial" parent="">
+        <item name="stiffness">300</item>
+        <item name="damping">0.8</item>
+    </style>
+    <style name="Motion.StreamFlix.Spring.Fast.Effects" parent="">
+        <item name="stiffness">3800</item>
+        <item name="damping">1</item>
+    </style>
+    <style name="Motion.StreamFlix.Spring.Default.Effects" parent="">
+        <item name="stiffness">1600</item>
+        <item name="damping">1</item>
+    </style>
+    <style name="Motion.StreamFlix.Spring.Slow.Effects" parent="">
+        <item name="stiffness">800</item>
+        <item name="damping">1</item>
+    </style>
+
+    <!-- Focus / press scale targets used by FocusScaleAnimator and PressScale. -->
+    <item name="sf_focus_scale" format="float" type="dimen">1.08</item>
+    <item name="sf_press_scale" format="float" type="dimen">0.96</item>
+</resources>

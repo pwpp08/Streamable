@@ -63,7 +63,7 @@ class BypassWebViewActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(ThemeManager.mobileThemeRes(UserPreferences.selectedTheme))
+        ThemeManager.applyMobileTheme(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bypass_webview)
         WindowCompat.setDecorFitsSystemWindows(window, false)

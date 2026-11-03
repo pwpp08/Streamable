@@ -50,14 +50,11 @@ class MainMobileActivity : FragmentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(ThemeManager.mobileThemeRes(UserPreferences.selectedTheme))
+        ThemeManager.applyMobileTheme(this)
 
         super.onCreate(savedInstanceState)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        val palette = ThemeManager.palette(UserPreferences.selectedTheme)
-        window.statusBarColor = palette.systemBar
-        window.navigationBarColor = palette.systemBar
+        ThemeManager.applySystemBars(this)
 
         _binding = ActivityMainMobileBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -380,28 +377,8 @@ class MainMobileActivity : FragmentActivity() {
     }
 
     private fun applyThemeNavigationChrome() {
-        val palette = ThemeManager.palette(UserPreferences.selectedTheme)
-        val navColors = ColorStateList(
-            arrayOf(
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf(),
-            ),
-            intArrayOf(
-                palette.mobileNavActive,
-                palette.mobileNavInactive,
-            )
-        )
-
-        binding.bnvMain.setBackgroundColor(palette.mobileNavBackground)
-        binding.bnvMain.itemIconTintList = navColors
-        binding.bnvMain.itemTextColor = navColors
-
-        window.statusBarColor = palette.systemBar
-        window.navigationBarColor = palette.systemBar
-
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
-        }
+        // The bottom bar is styled by ?attr/bottomNavigationStyle (M3 Expressive); only the
+        // system bars need refreshing here.
+        ThemeManager.applySystemBars(this)
     }
 }

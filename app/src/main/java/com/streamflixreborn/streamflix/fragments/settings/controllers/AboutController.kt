@@ -26,7 +26,7 @@ class AboutController(private val host: SettingsHost) : SettingsController {
         }
 
         host.find<Preference>("p_settings_about")?.apply {
-            val palette = ThemeManager.palette(UserPreferences.selectedTheme)
+            val palette = ThemeManager.palette(host.fragment.requireContext())
             val titleText = host.string(if (host.isTv) R.string.settings_version_tv else R.string.settings_version_mobile)
             title = SpannableString(titleText).apply {
                 setSpan(ForegroundColorSpan(palette.tvHeaderPrimary), 0, titleText.length, 0)

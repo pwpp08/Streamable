@@ -143,7 +143,7 @@ internal object SettingsListStyler {
             return
         }
 
-        val palette = ThemeManager.palette(UserPreferences.selectedTheme)
+        val palette = ThemeManager.palette(context)
         val surfaceColor = resolveThemeColor(view, R.attr.app_background_color, 0xFF181818.toInt())
         val titleColor = palette.tvHeaderPrimary
         val summaryColor = palette.tvHeaderSecondary

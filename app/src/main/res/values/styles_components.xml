@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Component defaults wired into Theme.StreamFlix (see themes.xml). All parents are MDC 1.14
+    styles verified in the AAR's values.xml. Prefer these via theme attrs (materialButtonStyle, ...)
+    or the explicit style names below; do not hard-code colours in screen layouts.
+-->
+<resources>
+
+    <!-- Buttons: Expressive filled; round, shape morphs on press (m3expressive_button_shape_state_list). -->
+    <style name="Widget.StreamFlix.Button" parent="Widget.Material3Expressive.Button" />
+    <style name="Widget.StreamFlix.Button.Tonal" parent="Widget.Material3Expressive.Button.TonalButton" />
+    <style name="Widget.StreamFlix.Button.Outlined" parent="Widget.Material3Expressive.Button.OutlinedButton" />
+    <style name="Widget.StreamFlix.Button.Text" parent="Widget.Material3Expressive.Button.TextButton" />
+    <style name="Widget.StreamFlix.Button.Icon" parent="Widget.Material3Expressive.Button.IconButton.Filled" />
+    <style name="Widget.StreamFlix.Button.Icon.Tonal" parent="Widget.Material3Expressive.Button.IconButton.Tonal" />
+
+    <!-- Cards: filled (surfaceContainerHighest) with the Poster (16dp) shape; elevated variant. -->
+    <style name="Widget.StreamFlix.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="shapeAppearance">@style/ShapeAppearance.StreamFlix.Poster</item>
+    </style>
+    <style name="Widget.StreamFlix.Card.Elevated" parent="Widget.Material3.CardView.Elevated">
+        <item name="shapeAppearance">@style/ShapeAppearance.StreamFlix.Poster</item>
+    </style>
+    <style name="Widget.StreamFlix.Card.Hero" parent="Widget.Material3.CardView.Filled">
+        <item name="shapeAppearance">@style/ShapeAppearance.StreamFlix.HeroBanner</item>
+    </style>
+
+    <!-- Navigation -->
+    <style name="Widget.StreamFlix.BottomNavigation" parent="Widget.Material3Expressive.BottomNavigationView" />
+    <style name="Widget.StreamFlix.NavigationRail" parent="Widget.Material3Expressive.NavigationRailView" />
+
+    <!-- Progress / loading -->
+    <style name="Widget.StreamFlix.CircularProgressIndicator" parent="Widget.Material3Expressive.CircularProgressIndicator.Wavy" />
+    <style name="Widget.StreamFlix.LinearProgressIndicator" parent="Widget.Material3Expressive.LinearProgressIndicator.Wavy" />
+    <!-- Flat (non-wavy) linear bar for watch-progress strips on posters. -->
+    <style name="Widget.StreamFlix.LinearProgressIndicator.Flat" parent="Widget.Material3Expressive.LinearProgressIndicator" />
+    <style name="Widget.StreamFlix.LoadingIndicator" parent="Widget.Material3.LoadingIndicator" />
+    <style name="Widget.StreamFlix.LoadingIndicator.Contained" parent="Widget.Material3.LoadingIndicator.Contained" />
+
+    <!-- Dialogs / sheets -->
+    <style name="ThemeOverlay.StreamFlix.MaterialAlertDialog" parent="ThemeOverlay.Material3Expressive.MaterialAlertDialog" />
+    <style name="ThemeOverlay.StreamFlix.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.StreamFlix.BottomSheet</item>
+    </style>
+    <style name="Widget.StreamFlix.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="shapeAppearance">@style/ShapeAppearance.StreamFlix.Sheet</item>
+        <item name="backgroundTint">?attr/colorSurfaceContainerLow</item>
+    </style>
+
+    <!-- Chips: filter chips by default (genres, filters). Use Widget.Material3.Chip.Assist/Input explicitly otherwise. -->
+    <style name="Widget.StreamFlix.Chip" parent="Widget.Material3.Chip.Filter" />
+
+    <!-- Sliders -->
+    <style name="Widget.StreamFlix.Slider" parent="Widget.Material3Expressive.Slider.Small" />
+    <style name="Widget.StreamFlix.Slider.Tv" parent="Widget.Material3Expressive.Slider.Medium" />
+
+    <!-- Search -->
+    <style name="Widget.StreamFlix.SearchBar" parent="Widget.Material3Expressive.SearchBar" />
+
+</resources>
