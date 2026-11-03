@@ -104,7 +104,7 @@ object TorrentioParser {
  */
 object TorrentCandidateSelector {
     const val MIN_SEEDERS = 5
-    const val MAX_BYTES = 12L shl 30
+    const val MAX_BYTES = 8L shl 30
 
     private val badCodec = Regex(
         "(?<![a-z0-9])(x265|h[. ]?265|hevc|av1|10[ -]?bit|hi10p?|hdr10?\\+?|hdr|dv|dovi|dolby[ .]?vision|remux|2160p|4k|uhd)(?![a-z0-9])",
@@ -113,6 +113,8 @@ object TorrentCandidateSelector {
     private val goodCodec = Regex("(?<![a-z0-9])(x264|h[. ]?264|avc|yts|yify)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val goodSource = Regex("(?<![a-z0-9])(web-?dl|bluray|brrip|bdrip|webrip)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val badSource = Regex("(?<![a-z0-9])(cam|hdcam|ts|hdts|telesync|telecine|screener|scr)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val heavyAudio = Regex("(?<![a-z0-9])(dts|dts-?hd|truehd|atmos|ddp|dd[+]|eac3|e-ac3)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val lightAudio = Regex("(?<![a-z0-9])(aac|ac3|ac-3|dd5[. ]?1|dd2[. ]?0)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val cyrillic = Regex("[\\u0400-\\u04FF]")
     // GB, US, HU flags and the globe Torrentio uses for "multi audio".
     private val acceptedFlags = listOf("🇬🇧", "🇺🇸", "🇭🇺", "🌎")
@@ -153,6 +155,9 @@ object TorrentCandidateSelector {
             else -> 10.0
         }
         if (goodSource.containsMatchIn(text)) score += 10
+        // The box decodes AAC/AC3 in hardware; DTS/TrueHD/Atmos/E-AC3 may fall back or stay silent.
+        if (heavyAudio.containsMatchIn(text)) score -= 40
+        else if (lightAudio.containsMatchIn(text)) score += 10
         return score
     }
 }

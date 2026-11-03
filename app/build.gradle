@@ -37,6 +37,10 @@ android {
         versionCode 174
         versionName "1.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // -PonlyAbi=armeabi-v7a builds a slim APK for the 32-bit projector (drops the other libtorrent .so files).
+        if (project.hasProperty('onlyAbi')) {
+            ndk { abiFilters project.property('onlyAbi') }
+        }
 
         buildConfigField "String", "APP_LAYOUT", "\"${properties.getProperty("APP_LAYOUT")}\""
         buildConfigField "String", "TMDB_API_KEY", "\"${properties.getProperty("TMDB_API_KEY", "9b4396c90d4c866105c05677002f6a15")}\""

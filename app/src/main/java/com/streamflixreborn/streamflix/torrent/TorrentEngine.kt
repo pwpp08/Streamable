@@ -35,15 +35,15 @@ class TorrentUnavailableException(message: String) : FileNotFoundException(messa
  */
 object TorrentEngine {
     private const val TAG = "TorrentEngine"
-    private const val METADATA_TIMEOUT_S = 50
-    private const val STALL_TIMEOUT_MS = 75_000L
+    private const val METADATA_TIMEOUT_S = 30
+    private const val STALL_TIMEOUT_MS = 40_000L
     private const val IDLE_STOP_MS = 30_000L
     private const val WINDOW_AHEAD_BYTES = 40L shl 20
     private const val URGENT_BYTES = 8L shl 20
     private const val TAIL_BYTES = 3L shl 20
     private const val STATS_INTERVAL_MS = 4_000L
-    private const val MAX_CONNECTIONS = 60
-    private const val UPLOAD_LIMIT_BPS = 48 * 1024
+    private const val MAX_CONNECTIONS = 45
+    private const val UPLOAD_LIMIT_BPS = 128 * 1024
     private val VIDEO_EXT = setOf("mkv", "mp4", "m4v", "avi", "mov", "webm", "ts")
 
     private val DEFAULT_TRACKERS = listOf(
@@ -61,7 +61,10 @@ object TorrentEngine {
     private var idleStop: ScheduledFuture<*>? = null
     private var statsTask: ScheduledFuture<*>? = null
     private val scheduler = Executors.newSingleThreadScheduledExecutor { r ->
-        Thread(r, "torrent-scheduler").apply { isDaemon = true }
+        Thread(r, "torrent-scheduler").apply {
+            isDaemon = true
+            priority = Thread.MIN_PRIORITY
+        }
     }
 
     private fun baseDir() = File(StreamFlixApp.instance.cacheDir, "torrent")
@@ -120,6 +123,14 @@ object TorrentEngine {
             setBoolean(settings_pack.bool_types.enable_natpmp.swigValue(), false)
             setInteger(settings_pack.int_types.max_peerlist_size.swigValue(), 400)
             setInteger(settings_pack.int_types.aio_threads.swigValue(), 2)
+            // Low-RAM / weak-CPU tuning: few half-open connects, short request queues, few upload slots.
+            setInteger(settings_pack.int_types.connection_speed.swigValue(), 8)
+            setInteger(settings_pack.int_types.max_out_request_queue.swigValue(), 60)
+            setInteger(settings_pack.int_types.max_allowed_in_request_queue.swigValue(), 100)
+            setInteger(settings_pack.int_types.unchoke_slots_limit.swigValue(), 4)
+            setInteger(settings_pack.int_types.max_queued_disk_bytes.swigValue(), 2 shl 20)
+            setInteger(settings_pack.int_types.checking_mem_usage.swigValue(), 64)
+            setInteger(settings_pack.int_types.send_buffer_watermark.swigValue(), 256 * 1024)
             setEnableDht(true)
             setDhtBootstrapNodes(
                 "router.bittorrent.com:6881,router.utorrent.com:6881,dht.transmissionbt.com:6881,dht.libtorrent.org:25401",
