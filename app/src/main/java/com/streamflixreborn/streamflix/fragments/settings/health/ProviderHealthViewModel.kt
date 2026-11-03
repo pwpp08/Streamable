@@ -38,10 +38,12 @@ class ProviderHealthViewModel : ViewModel() {
 
     fun start(includeCandidates: Boolean) {
         if (job?.isActive == true) return
-        val checker = ProviderHealthChecker(ProviderHealthChecker.defaultProviders(includeCandidates))
+        val providers = ProviderHealthChecker.defaultProviders(includeCandidates)
+        val known = ProviderHealthChecker.defaultProviders(true).mapTo(HashSet()) { it.name }
+        val checker = ProviderHealthChecker(providers)
         job = viewModelScope.launch {
             val fresh = mutableListOf<ServerHealth>()
-            _state.update { it.copy(running = true, checkedCount = 0, providerIndex = 0) }
+            _state.update { state -> state.copy(running = true, checkedCount = 0, providerIndex = 0, results = state.results.filter { it.provider in known }) }
             try {
                 checker.run().collect { progress ->
                     when (progress) {
@@ -65,7 +67,7 @@ class ProviderHealthViewModel : ViewModel() {
                 }
             } finally {
                 // Keep partial results of a stopped run too.
-                if (fresh.isNotEmpty()) withContext(Dispatchers.IO + kotlinx.coroutines.NonCancellable) { HealthStore.save(fresh.toList()) }
+                if (fresh.isNotEmpty()) withContext(Dispatchers.IO + kotlinx.coroutines.NonCancellable) { HealthStore.save(fresh.toList(), known) }
                 _state.update { it.copy(running = false, currentProvider = null) }
             }
         }

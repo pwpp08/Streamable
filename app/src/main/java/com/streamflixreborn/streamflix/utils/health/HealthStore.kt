@@ -41,12 +41,13 @@ object HealthStore {
 
     /**
      * Stores [results]. Everything previously stored for a provider that appears in [results] is
-     * replaced; other providers keep their old results.
+     * replaced; other providers keep their old results, unless [knownProviders] is given, in which
+     * case results of providers outside it (e.g. removed sources) are dropped.
      */
-    fun save(results: List<ServerHealth>) {
+    fun save(results: List<ServerHealth>, knownProviders: Set<String>? = null) {
         synchronized(lock) {
             val providers = results.mapTo(HashSet()) { it.provider }
-            val merged = load().filterNot { it.provider in providers } + results
+            val merged = load().filterNot { it.provider in providers || (knownProviders != null && it.provider !in knownProviders) } + results
             cache = merged
             write(merged)
         }
