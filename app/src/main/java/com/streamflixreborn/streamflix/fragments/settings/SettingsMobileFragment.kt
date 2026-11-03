@@ -43,6 +43,8 @@ class SettingsMobileFragment : PreferenceFragmentCompat() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         SettingsListStyler.attach(this, isTv = false)
+        // The list sits inside a FrameLayout, so point the app bar's lift-on-scroll at it directly.
+        chrome?.ablSettings?.setLiftOnScrollTargetView(listView)
         screens.onScreenChanged = { title, isNested ->
             chrome?.apply {
                 val changed = ctlSettings.title?.toString() != title

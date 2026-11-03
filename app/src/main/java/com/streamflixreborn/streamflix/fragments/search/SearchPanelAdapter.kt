@@ -49,7 +49,7 @@ class SearchPanelAdapter(
         val context = binding.root.context
         val density = context.resources.displayMetrics.density
         binding.root.apply {
-            background = ContextCompat.getDrawable(context, R.drawable.bg_sf_tv_row)
+            background = ContextCompat.getDrawable(context, R.drawable.bg_sf_tv_list_item)
             minimumHeight = (60 * density).toInt()
             setPaddingRelative((20 * density).toInt(), paddingTop, (20 * density).toInt(), paddingBottom)
             (layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin = (4 * density).toInt()
