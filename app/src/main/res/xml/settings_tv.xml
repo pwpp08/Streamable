@@ -271,6 +271,15 @@
         android:widgetLayout="@layout/preference_widget_chevron">
 
         <PreferenceCategory
+            android:key="pc_devices"
+            android:title="@string/settings_devices_category">
+            <Preference
+                android:key="sync_pair_phone"
+                android:title="@string/settings_pair_phone_title"
+                android:summary="@string/settings_pair_phone_summary" />
+        </PreferenceCategory>
+
+        <PreferenceCategory
             android:key="pc_supabase_config"
             android:title="@string/supabase_config_category">
             <EditTextPreference

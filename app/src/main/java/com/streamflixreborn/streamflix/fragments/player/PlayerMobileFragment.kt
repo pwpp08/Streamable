@@ -1031,7 +1031,8 @@ class PlayerMobileFragment : Fragment() {
                 startActivity(Intent.createChooser(intent, getString(R.string.player_external_player_title)))
             }
         }
-        player.seekTo(resumeMs ?: savedResumePositionMs() ?: 0)
+        val remoteStartMs = if (failover) null else com.streamflixreborn.streamflix.sync.PlayerStartPosition.consume(args.id)
+        player.seekTo(remoteStartMs ?: resumeMs ?: savedResumePositionMs() ?: 0)
 
         if (failover) showPlayerMessage(getString(R.string.player_switched_server, server.name))
 

@@ -325,6 +325,22 @@
         app:iconSpaceReserved="false">
 
         <PreferenceCategory
+            android:key="pc_devices"
+            android:title="@string/settings_devices_category"
+            app:iconSpaceReserved="false">
+            <Preference
+                android:key="sync_pair_tv"
+                android:title="@string/settings_pair_tv_title"
+                android:summary="@string/settings_pair_tv_summary"
+                app:iconSpaceReserved="false" />
+            <Preference
+                android:key="sync_remote"
+                android:title="@string/settings_remote_title"
+                android:summary="@string/settings_remote_summary"
+                app:iconSpaceReserved="false" />
+        </PreferenceCategory>
+
+        <PreferenceCategory
             android:key="pc_supabase_config"
             android:title="@string/supabase_config_category"
             app:iconSpaceReserved="false">

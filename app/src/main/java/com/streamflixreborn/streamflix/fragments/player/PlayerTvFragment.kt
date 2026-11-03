@@ -244,6 +244,7 @@ class PlayerTvFragment : Fragment() {
         initializeVideo()
         binding.pvPlayer.onMediaPreviousClicked = ::handleMediaPrevious
         binding.pvPlayer.onMediaNextClicked = ::handleMediaNext
+        collectRemoteControl()
         gestureHelper = PlayerGestureHelper(
             requireContext(),
             binding.pvPlayer,
@@ -634,6 +635,37 @@ class PlayerTvFragment : Fragment() {
             EpisodeManager.ensureNextEpisodeAvailable(type, database)
             withContext(Dispatchers.Main) {
                 setupEpisodeNavigationButtons()
+            }
+        }
+    }
+
+    /** Applies play/pause, seek, next, subtitles and stop commands sent from a paired phone. */
+    private fun collectRemoteControl() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                com.streamflixreborn.streamflix.sync.RemoteControl.actions.collect { control ->
+                    if (!::player.isInitialized) return@collect
+                    val step = control.amountMs ?: com.streamflixreborn.streamflix.sync.RemoteControl.DEFAULT_SEEK_MS
+                    when (control.action) {
+                        com.streamflixreborn.streamflix.sync.DeviceCommand.Control.Action.PLAY_PAUSE ->
+                            player.playWhenReady = !player.playWhenReady
+                        com.streamflixreborn.streamflix.sync.DeviceCommand.Control.Action.SEEK_FORWARD ->
+                            player.seekTo(player.currentPosition + step)
+                        com.streamflixreborn.streamflix.sync.DeviceCommand.Control.Action.SEEK_BACK ->
+                            player.seekTo((player.currentPosition - step).coerceAtLeast(0))
+                        com.streamflixreborn.streamflix.sync.DeviceCommand.Control.Action.NEXT_EPISODE ->
+                            playNextEpisodeAcrossSeasons()
+                        com.streamflixreborn.streamflix.sync.DeviceCommand.Control.Action.SUBTITLES_TOGGLE -> {
+                            val params = player.trackSelectionParameters
+                            val disabled = params.disabledTrackTypes.contains(androidx.media3.common.C.TRACK_TYPE_TEXT)
+                            player.trackSelectionParameters = params.buildUpon()
+                                .setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_TEXT, !disabled)
+                                .build()
+                        }
+                        com.streamflixreborn.streamflix.sync.DeviceCommand.Control.Action.STOP ->
+                            findNavController().navigateUp()
+                    }
+                }
             }
         }
     }
@@ -1141,7 +1173,8 @@ class PlayerTvFragment : Fragment() {
                 }
             }
 
-        player.seekTo(resumeMs ?: savedResumePositionMs() ?: 0)
+        val remoteStartMs = if (failover) null else com.streamflixreborn.streamflix.sync.PlayerStartPosition.consume(args.id)
+        player.seekTo(remoteStartMs ?: resumeMs ?: savedResumePositionMs() ?: 0)
 
         if (failover) showPlayerMessage(getString(R.string.player_switched_server, server.name))
 

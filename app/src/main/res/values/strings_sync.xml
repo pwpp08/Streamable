@@ -78,4 +78,11 @@
     <string name="handoff_resume">Resume</string>
     <string name="handoff_dismiss">Not now</string>
     <string name="handoff_other_device">another device</string>
+    <string name="settings_devices_category">Devices</string>
+    <string name="settings_pair_tv_title">Pair a TV</string>
+    <string name="settings_pair_tv_summary">Scan the QR code shown on your TV to sign it in. Nothing to type on the TV.</string>
+    <string name="settings_remote_title">Remote</string>
+    <string name="settings_remote_summary">Type searches and control playback on your TV from this phone</string>
+    <string name="settings_pair_phone_title">Pair with phone</string>
+    <string name="settings_pair_phone_summary">Show a QR code to scan with the StreamFlix app on your phone</string>
 </resources>

@@ -19,9 +19,8 @@ object BuiltInQrRenderer : QrRenderer {
 
 /**
  * Seam for scanning a QR code on the phone. The default asks an installed
- * barcode scanner app (ZXing "SCAN" intent). Once
- * com.journeyapps:zxing-android-embedded is added, switch [QrScanners.default]
- * to the embedded scanner from app/src/pending.
+ * barcode scanner app (ZXing "SCAN" intent); [QrScanners.default] uses the
+ * embedded zxing scanner instead.
  */
 interface QrScanner {
     /** Intent to launch for a result, or null when no scanner is available. */
@@ -49,6 +48,5 @@ object IntentQrScanner : QrScanner {
 }
 
 object QrScanners {
-    /** Replace with `ZxingEmbeddedQrScanner` once the dependency is added. */
-    val default: QrScanner = IntentQrScanner
+    val default: QrScanner = ZxingEmbeddedQrScanner
 }

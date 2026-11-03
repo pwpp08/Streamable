@@ -78,6 +78,10 @@ class StreamFlixApp : Application() {
         UserPreferences.setup(this)
         ProfileManager.initialize(this)
         DnsResolver.setDnsUrl(UserPreferences.dohProviderUrl)
+        // HealthStore scores are 0..140; the ranker expects 0..100.
+        com.streamflixreborn.streamflix.fragments.player.engine.ServerRanker.healthScore = { name ->
+            com.streamflixreborn.streamflix.utils.health.HealthStore.scoreFor(name)?.let { (it * 100 / 140).coerceIn(0, 100) }
+        }
 
         val appContext = applicationContext
         val isTv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)

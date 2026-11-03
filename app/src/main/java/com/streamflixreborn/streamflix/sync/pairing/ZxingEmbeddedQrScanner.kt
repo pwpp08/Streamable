@@ -1,11 +1,6 @@
 package com.streamflixreborn.streamflix.sync.pairing
 
-// PENDING: not compiled yet. Requires
-//   `implementation 'com.journeyapps:zxing-android-embedded:4.3.0'`
-//   `implementation 'com.google.zxing:core:3.5.3'`
-// To enable: move this file to app/src/main/java/... and set
-// `QrScanners.default = ZxingEmbeddedQrScanner` in QrSupport.kt. It scans with
-// the camera inside the app and does not need Google Play services.
+// Scans with the camera inside the app; does not need Google Play services.
 
 import android.content.Context
 import android.content.Intent

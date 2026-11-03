@@ -153,6 +153,9 @@ dependencies {
     testImplementation "junit:junit:4.13.2"
     implementation 'org.conscrypt:conscrypt-android:2.5.2'
     implementation "androidx.browser:browser:1.7.0"
+    // 4.x defaults to zxing core 3.4+, which needs minSdk 24; core 3.3.0 supports 23.
+    implementation('com.journeyapps:zxing-android-embedded:4.3.0') { transitive = false }
+    implementation 'com.google.zxing:core:3.3.0'
     
 }
 

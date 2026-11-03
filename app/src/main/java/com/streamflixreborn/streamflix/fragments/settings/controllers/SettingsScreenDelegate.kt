@@ -44,6 +44,7 @@ class SettingsScreenDelegate(
         AppearanceController(host),
         backup.attach(host),
         AboutController(host),
+        DevicesController(host),
         object : SettingsController {
             override fun bind() {
                 SupabaseSettingsController.bind(fragment, fragment.lifecycleScope) { key -> fragment.findPreference(key) }
