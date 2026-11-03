@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_channel_name">Downloads</string>
+    <string name="downloads_empty">No downloads yet. Use the download button on a movie or an episode to watch it offline.</string>
+    <string name="downloads_storage">Used %1$s · Free %2$s</string>
+    <string name="downloads_wifi_only">Download on Wi-Fi only</string>
+    <string name="downloads_save_space">Save space (720p)</string>
+    <string name="downloads_offline_server">Downloaded</string>
+
+    <string name="download_action">Download</string>
+    <string name="download_state_resolving">Finding a server…</string>
+    <string name="download_state_queued">Queued</string>
+    <string name="download_state_waiting_wifi">Waiting for Wi-Fi</string>
+    <string name="download_state_waiting">Waiting</string>
+    <string name="download_state_downloading">Downloading %1$d%%</string>
+    <string name="download_state_paused">Paused</string>
+    <string name="download_state_completed">Downloaded</string>
+    <string name="download_state_failed">Download failed</string>
+    <string name="download_state_removing">Removing…</string>
+
+    <string name="download_menu_pause">Pause</string>
+    <string name="download_menu_resume">Resume</string>
+    <string name="download_menu_cancel">Cancel download</string>
+    <string name="download_menu_delete">Delete download</string>
+    <string name="download_menu_retry">Try another server</string>
+    <string name="download_menu_play">Play</string>
+
+    <string name="download_delete_confirm">Delete the downloaded copy of \"%1$s\"?</string>
+    <string name="download_delete">Delete</string>
+    <string name="download_cancel">Cancel</string>
+    <string name="download_started">Download started: %1$s</string>
+    <string name="download_completed_notification">Downloaded: %1$s</string>
+    <string name="download_failed_notification">Download failed: %1$s</string>
+    <string name="download_error_no_servers">No server could be downloaded.</string>
+    <string name="download_error_no_provider">No provider selected.</string>
+    <string name="download_error_unsupported">This stream can\'t be downloaded.</string>
+    <string name="download_item_subtitle_episode">S%1$d·E%2$d %3$s</string>
+</resources>

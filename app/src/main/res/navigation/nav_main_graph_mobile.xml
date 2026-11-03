@@ -291,4 +291,9 @@
         android:name="com.streamflixreborn.streamflix.fragments.settings.homerows.HomeRowsFragment"
         android:label="fragment_home_rows"
         tools:layout="@layout/fragment_home_rows" />
+    <fragment
+        android:id="@+id/downloads"
+        android:name="com.streamflixreborn.streamflix.fragments.downloads.DownloadsMobileFragment"
+        android:label="fragment_downloads_mobile"
+        tools:layout="@layout/fragment_downloads_mobile" />
 </navigation>

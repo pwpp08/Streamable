@@ -7,6 +7,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.streamflixreborn.streamflix.downloads.DownloadUtil
+import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.extractors.TokenManager
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.NetworkClient
@@ -48,8 +50,19 @@ class StreamDataSourceFactory(
     val httpDataSourceFactory: OkHttpDataSource.Factory = OkHttpDataSource.Factory(okHttpClient)
         .setUserAgent(NetworkClient.USER_AGENT)
 
-    val dataSourceFactory: DataSource.Factory =
+    private val networkDataSourceFactory: DataSource.Factory =
         DefaultDataSource.Factory(context.applicationContext, httpDataSourceFactory)
+
+    /** Read-only view of the download cache, created only when a download is played. */
+    private val offlineDataSourceFactory: DataSource.Factory by lazy {
+        DownloadUtil.readOnlyCacheFactory(context.applicationContext, networkDataSourceFactory)
+    }
+
+    /** Downloaded titles are read from the download cache; everything else from the network. */
+    val dataSourceFactory: DataSource.Factory = DataSource.Factory {
+        if (OfflineMediaProvider.isOffline(currentVideo())) offlineDataSourceFactory.createDataSource()
+        else networkDataSourceFactory.createDataSource()
+    }
 
     /** Must be called before preparing [video]. */
     fun applyHeaders(video: Video) {

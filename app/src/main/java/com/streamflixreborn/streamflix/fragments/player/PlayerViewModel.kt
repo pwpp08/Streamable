@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamflixreborn.streamflix.StreamFlixApp
+import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.fragments.player.engine.NextEpisodePrefetch
 import com.streamflixreborn.streamflix.fragments.player.engine.ServerRanker
 import com.streamflixreborn.streamflix.fragments.player.engine.StickyServers
@@ -38,7 +39,7 @@ import kotlin.coroutines.coroutineContext
 
 class PlayerViewModel(
     private val videoType: Video.Type,
-    id: String,
+    private val id: String,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<State>(State.LoadingServers)
@@ -71,9 +72,30 @@ class PlayerViewModel(
     private val stickyKey: String?
         get() = StickyServers.key(UserPreferences.currentProvider, videoType)
 
+    /** Set while a completed download is playing (see [loadSources]). */
+    @Volatile
+    private var offlineServer: Video.Server? = null
+
     init {
-        getServers(videoType, id)
+        loadSources()
         getSubtitles(videoType)
+    }
+
+    /**
+     * A title with a completed download plays from the download cache, skipping server
+     * resolution entirely (also online, to save data). Otherwise the provider's servers load.
+     */
+    private fun loadSources() = viewModelScope.launch(Dispatchers.IO) {
+        val offline = OfflineMediaProvider.lookup(
+            StreamFlixApp.instance, videoType, UserPreferences.currentProvider?.name
+        )
+        if (offline == null) {
+            getServers(videoType, id)
+            return@launch
+        }
+        offlineServer = offline.server
+        currentServerId = offline.server.id
+        _state.emit(State.SuccessLoadingVideo(prepareVideo(offline.video), offline.server))
     }
 
     fun playEpisode(direction: Direction) {
@@ -180,6 +202,14 @@ class PlayerViewModel(
     fun onPlaybackFailed(server: Video.Server?) {
         val failedId = server?.id ?: currentServerId ?: return
         if (failedId != currentServerId) return
+        if (failedId == offlineServer?.id) {
+            // The downloaded copy is unreadable: fall back to streaming.
+            Log.w(TAG, "offline playback failed, loading servers")
+            offlineServer = null
+            currentServerId = null
+            getServers(videoType, id)
+            return
+        }
         failedIds += failedId
         resolved.remove(failedId)
         currentServerId = null
@@ -188,6 +218,7 @@ class PlayerViewModel(
 
     /** [server] is playing fine; remember it for this title. */
     fun onPlaybackStarted(server: Video.Server) {
+        if (server.id == offlineServer?.id) return
         StickyServers.put(StreamFlixApp.instance, stickyKey, server.name)
     }
 

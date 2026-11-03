@@ -88,6 +88,7 @@ import com.streamflixreborn.streamflix.fragments.player.engine.OverlayUi
 import com.streamflixreborn.streamflix.fragments.player.engine.PlaybackAnalytics
 import com.streamflixreborn.streamflix.fragments.player.engine.PlayerFactory
 import com.streamflixreborn.streamflix.fragments.player.engine.ProgressSaver
+import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.fragments.player.engine.SkipSegmentController
 import com.streamflixreborn.streamflix.fragments.player.engine.StreamDataSourceFactory
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleStyler
@@ -935,9 +936,10 @@ class PlayerMobileFragment : Fragment() {
         dataSources.applyHeaders(video)
 
         player.setMediaItem(
-            MediaItem.Builder()
+            // A downloaded title keeps its stream keys and cache key (offline playback).
+            (OfflineMediaProvider.mediaItemBuilder(video) ?: MediaItem.Builder()
                 .setUri(video.source.toUri())
-                .setMimeType(video.type)
+                .setMimeType(video.type))
                 .setSubtitleConfigurations(video.subtitles.map { subtitle ->
                     MediaItem.SubtitleConfiguration.Builder(subtitle.file.toUri())
                         .setMimeType(subtitle.file.toSubtitleMimeType())

@@ -69,6 +69,7 @@ import com.streamflixreborn.streamflix.fragments.tv_shows.TvShowsTvFragment
 import com.streamflixreborn.streamflix.fragments.tv_shows.TvShowsTvFragmentDirections
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
+import com.streamflixreborn.streamflix.downloads.DownloadStarter
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.ui.ShowOptionsMobileDialog
 import com.streamflixreborn.streamflix.sync.PlayOnTv
@@ -867,6 +868,21 @@ class MovieViewHolder(
             val activity = context.toActivity() as? androidx.fragment.app.FragmentActivity
             visibility = if (activity != null && PlayOnTv.isAvailable(activity)) View.VISIBLE else View.GONE
             setOnClickListener { activity?.let { PlayOnTv.play(it, movie) } }
+        }
+
+        // Offline download (phone only; the button hides itself on TV).
+        binding.btnMovieDownload.apply {
+            showLabel = true
+            beforeStart = { SyncProviders.switchTo(movie.providerName) }
+            bind((movie.providerName ?: UserPreferences.currentProvider?.name)?.let { providerName ->
+                DownloadStarter.Target(
+                    providerName = providerName,
+                    videoType = Video.Type.Movie(id = movie.id, title = movie.title, releaseDate = movie.released?.format("yyyy-MM-dd") ?: "", poster = movie.poster ?: movie.banner ?: "", imdbId = movie.imdbId),
+                    title = movie.title,
+                    subtitle = movie.released?.format("yyyy") ?: "",
+                    poster = movie.poster ?: movie.banner,
+                )
+            })
         }
 
         binding.btnMovieFavorite.apply {
