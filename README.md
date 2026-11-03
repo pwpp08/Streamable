@@ -1,158 +1,123 @@
-<h1 align="center">Streamflix Reborn</h1>
+<h1 align="center">Streamable</h1>
 
 <p align="center">
   <img src="./app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" height="100px" />
   <br />
-  <strong>🔄 Reborn Version</strong> - Community continuation of the original Streamflix project
+  A redesigned, phone ↔ TV connected fork of <a href="https://git.gay/streamflix-reborn2/streamflix">Streamflix Reborn</a> for Android phones, tablets and Android TV.
   <br />
-  An open-source Android TV and mobile app for educational streaming interface, made with Android Studio, in Kotlin
   <br />
-  <a href="https://git.gay/streamflix-reborn2/streamflix/releases/latest">
-    <strong>Download app »</strong>
+  <a href="https://github.com/pwpp08/Streamable/releases/latest">
+    <strong>⬇ Download the latest APK »</strong>
   </a>
-  <br />
-  <br />
-  <a href="https://git.gay/streamflix-reborn2/streamflix/issues">Report Bug</a>
-  ·
-  <a href="https://git.gay/streamflix-reborn2/streamflix/issues">Request Feature</a>
 </p>
-
-<details>
-  <summary>Table of Contents</summary>
-
-- [About the project](#about-the-project)
-  - [What is Streamflix Reborn?](#-what-is-streamflix-reborn2)
-  - [Features](#features)
-  - [Built with](#built-with)
-- [Getting started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Setup](#setup)
-- [Development](#development)
-- [Contributing](#contributing)
-- [Legal Disclaimer](#legal-disclaimer)
-- [Credits & Authors](#credits--authors)
-- [License](#license)
-</details>
-
-## About the project
 
 <p align="center">
-  <img src="./.github/docs/screenshot.png" alt="Streamflix Preview">
+  <img src="./.github/docs/streamable/home.jpg" width="200" alt="Home" />
+  <img src="./.github/docs/streamable/details.jpg" width="200" alt="Details" />
+  <img src="./.github/docs/streamable/remote.jpg" width="200" alt="Phone remote" />
+  <img src="./.github/docs/streamable/settings.jpg" width="200" alt="Settings" />
 </p>
 
-**Streamflix Reborn** is an independent continuation of the original Streamflix project created by [Lory-Stan TANASI](https://github.com/stantanasi). This reborn version maintains the same educational purpose and functionality while ensuring continued development and support.
+## What's different from Streamflix Reborn
 
-### 🔄 What is Streamflix Reborn?
+### 🎨 Material 3 Expressive redesign
+- Material Components 1.14 Expressive theme throughout, with the Google Sans Flex font and spring motion.
+- Hero carousel and emphasized headers on the home screen, a split **Play | choose server** button on details pages, and grouped settings.
+- Android TV: an expressive side rail, focus rings and cards that grow on focus. Phone: bottom navigation bar. Tablet: navigation rail.
 
-- **Independent Continuation**: This is an independent continuation of the original Streamflix project
-- **Same Vision**: Maintains the original educational and open-source philosophy
-- **Enhanced Support**: Continued development and bug fixes by an independent developer
-- **Respectful Fork**: Built with full respect for the original creator's work
+### 📱↔📺 Phone and TV, connected
+- **Shared library**: watchlist, watched episodes and Continue Watching sync between all your devices through Supabase, in realtime.
+- **QR pairing**: the TV shows a QR code, you scan it with the phone, and the TV is signed in. Nothing to type with a remote.
+- **Play on TV**: start something on the phone and it opens on the TV.
+- **Phone as remote and keyboard**: play/pause, ±10 s, next episode, subtitles, and type searches on the TV from your phone.
+- **Hand-off**: pick up on one device where you stopped on the other.
 
-Streamflix Reborn is an open-source Android TV and mobile app that provides a user interface for accessing publicly available streaming content from various third-party providers.
+### ▶️ Smoother, more reliable playback
+- **Your languages only**: choose the languages you speak (default English + Hungarian). Only those audio and subtitle tracks are loaded and shown.
+- Servers are resolved in parallel and ranked 1080p-first. If one fails, playback switches to the next server at the same position.
+- Device-aware buffering (low-memory profile for projectors and cheap TV boxes), retries before giving up, and progress saved every 15 s.
+- **Skip intro / recap / credits** (TheIntroDB), with an Up Next countdown.
+- Subtitle presets (Classic, Yellow, Outline, Large) and frame-rate matching on TV.
+- Media3 1.11, R8-optimised release build (~20 MB).
 
-This app is designed for educational purposes and personal use only. Users are responsible for ensuring they have proper authorization to access any content they view through this application.
+### 🧹 Cleaner sources
+- Only English sources are kept, and dead ones were removed after an automated health test.
+- **Source health** screen (Settings → Sources): tests each source and shows whether it works, how fast it is and its best quality.
 
-The interface aggregates content from multiple sources and provides a convenient way to browse available streaming options.
+### 📥 More
+- Offline downloads on phones.
+- Customisable home rows (reorder or hide).
+- Search history and suggestions.
+- Continue Watching control: remove items, mark watched or unwatched.
 
-### Features
+## Install
 
-- Open-source and ad-free interface
-- Aggregates content from multiple third-party providers
-- No account required for the app interface
-- Educational and personal use only
-- Optimized UI & UX
-- Multiple providers
-- Resume from last playback position
-- In-app update
+1. Download `Streamable-<version>.apk` from the [latest release](https://github.com/pwpp08/Streamable/releases/latest).
+2. Open it on your phone, tablet or Android TV and allow installing from unknown sources. On a TV, copy it over with a USB stick or send it with an app like *Send files to TV*.
+3. One APK works everywhere: it opens the phone or TV interface automatically.
 
-### Built with
+> **Coming from Streamflix?** Streamable uses the same package name but a different signing key, so Android won't install it over an existing Streamflix. Back up first (Settings → Backup), uninstall Streamflix, install Streamable, then restore.
 
-- [Android Studio](https://developer.android.com/studio)
-- [Kotlin](https://kotlinlang.org)
-- [Retrofit](https://square.github.io/retrofit)
-- [ExoPlayer](https://exoplayer.dev)
-- Leanback
-- Coroutines
-- MVVM Architecture
-- Android Architecture Components
+Requires Android 6.0 or newer.
 
+## Set up sync (once per person)
 
-## Getting started
+The app comes connected to a shared Supabase project, so there's nothing to configure:
 
-### Prerequisites
+1. On your phone: **Settings → Sync & devices**, then sign up with an e-mail and password. Everyone gets their own private library.
+2. On the TV: **Settings → Sync & devices → Pair with phone**. A QR code appears.
+3. On the phone: **Settings → Sync & devices → Pair a TV**, and scan the code (or type the 6-digit code shown).
 
-Install [Android Studio](https://developer.android.com/studio)
+Both devices must be on the same Wi-Fi network for pairing. After that, sync works anywhere.
 
-### Setup
+<p align="center">
+  <img src="./.github/docs/streamable/tv-pairing.jpg" width="320" alt="TV pairing screen" />
+</p>
 
-1. Clone the project to your local machine
+### Using your own Supabase project instead
+1. Create a free project at [supabase.com](https://supabase.com).
+2. Run [`app/src/main/res/raw/supabase_setup.sql`](app/src/main/res/raw/supabase_setup.sql) in its SQL Editor.
+3. Turn off **Authentication → Sign In / Providers → Email → Confirm email**.
+4. Put your URL and publishable key in the app (Settings → Sync & devices), or in `local.properties` before building (see below).
+
+## Building
+
+Requirements: JDK 17 and the Android SDK (AGP 8.13, Gradle 8.14).
 
 ```bash
-git clone https://git.gay/streamflix-reborn2/streamflix.git
+./gradlew :app:assembleRelease
 ```
 
-2. Open the project in Android Studio
+The APK is written to `app/build/outputs/apk/release/`. Optional overrides go in `local.properties`:
 
-## Development
+```properties
+TMDB_API_KEY=your_tmdb_v3_key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=sb_publishable_...
+APP_LAYOUT=tv   # or mobile; leave unset for automatic
+```
 
-1. Select the device that you want to run the app
+Without them, the shared TMDB key and Supabase project built into `app/build.gradle` are used.
 
-2. Click **Run**
+Tests: `./gradlew :app:testDebugUnitTest` (unit) and `./gradlew :app:connectedDebugAndroidTest` (on a device or emulator, includes a QR pairing loopback test).
 
-## Contributing
+## Legal disclaimer
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+**This application is for educational and personal use only.**
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a pull request
+- Streamable does not host, store or distribute any copyrighted content.
+- All content comes from third-party providers and websites.
+- You are solely responsible for making sure you have the legal right to access any content.
+- The developers do not endorse or encourage copyright infringement.
+- Please support creators and use official streaming services where available.
 
-## Legal Disclaimer
+## Credits
 
-**IMPORTANT: This application is for educational and personal use only.**
-
-- Streamflix does not host, store, or distribute any copyrighted content
-- All content is sourced from third-party providers and websites
-- Users are solely responsible for ensuring they have legal rights to access any content
-- The developers do not endorse or encourage copyright infringement
-- Users must comply with all applicable laws in their jurisdiction
-- Any legal issues should be directed to the actual content providers
-- This app functions as a search engine aggregator only
-- No copyrighted material is stored on our servers
-
-## Legal Notice
-
-This application is provided "as is" for educational purposes. The developers:
-- Do not claim ownership of any content
-- Do not profit from copyrighted material
-- Do not control third-party content providers
-- Encourage users to support content creators through legal means
-- Recommend using official streaming services when available
-
-## Credits & Authors
-
-### Original Creator
-- **[Lory-Stan TANASI](https://github.com/stantanasi)** - Original Streamflix project creator
-
-### Reborn Development
-- **Independent Developer** - Streamflix Reborn maintainer
-- **Special thanks** to the original creator for the excellent foundation
+- **[Lory-Stan TANASI](https://github.com/stantanasi)**, creator of the original Streamflix.
+- **[Streamflix Reborn](https://git.gay/streamflix-reborn2/streamflix)**, the community continuation this fork is based on.
 
 ## License
 
-This project is licensed under the `Apache-2.0` License - see the [LICENSE](LICENSE) file for details
+Licensed under the `Apache-2.0` License. See [LICENSE](LICENSE).
 
-### Original Project
-<p align="center">
-  <br />
-  © 2022 Lory-Stan TANASI. All rights reserved
-</p>
-
-### Reborn Project
-<p align="center">
-  <br />
-  © 2025 Streamflix Reborn. Built with respect for the original work.
-</p>
+© 2022 Lory-Stan TANASI · © 2025 Streamflix Reborn · Streamable modifications © 2026.
