@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The :nextui player controls use these names; point them at the app's translated strings. -->
+    <string name="select_server">@string/player_settings_servers_title</string>
+    <string name="select_quality">@string/player_settings_quality_label</string>
+    <string name="select_audio_track">@string/player_settings_audio_title</string>
+    <string name="select_subtitle_track">@string/player_settings_subtitles_label</string>
+    <string name="select_playback_speed">@string/player_settings_speed_title</string>
+    <string name="more_settings">@string/player_settings_title</string>
+    <string name="best_fit">@string/player_aspect_ratio_fit</string>
+    <string name="stretch">@string/player_aspect_ratio_fill</string>
+    <string name="crop">@string/player_aspect_ratio_zoom</string>
+</resources>

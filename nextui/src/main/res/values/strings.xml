@@ -20,5 +20,6 @@
     <string name="more_settings">More settings</string>
     <string name="video_zoom">Video zoom</string>
     <string name="skip_silence">Skip silence</string>
+    <string name="open_in_external_player">Open in external player</string>
     <string name="picker_empty">Nothing to choose from</string>
 </resources>

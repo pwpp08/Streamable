@@ -40,6 +40,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -135,6 +137,7 @@ internal fun BoxScope.PlayerMessage(model: NextUiModel) {
 @Composable
 internal fun BoxScope.UpNextCard(
     upNext: UpNext?,
+    poster: Bitmap?,
     bottomPadding: Dp,
     focusRequester: FocusRequester,
     onPlay: () -> Unit,
@@ -166,7 +169,6 @@ internal fun BoxScope.UpNextCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                val poster = card.poster
                 Box(
                     modifier = Modifier
                         .size(width = 100.dp, height = 56.dp)
@@ -175,7 +177,7 @@ internal fun BoxScope.UpNextCard(
                 ) {
                     if (poster != null) {
                         Image(
-                            bitmap = poster,
+                            bitmap = remember(poster) { poster.asImageBitmap() },
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.matchParentSize(),

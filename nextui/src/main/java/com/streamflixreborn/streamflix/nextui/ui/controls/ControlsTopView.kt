@@ -41,11 +41,13 @@ fun ControlsTopView(
     serverName: String?,
     showServerButton: Boolean,
     showQualityButton: Boolean,
+    showExternalPlayerButton: Boolean,
     onBackClick: () -> Unit,
     onServerClick: () -> Unit,
     onQualityClick: () -> Unit,
     onAudioClick: () -> Unit,
     onSubtitleClick: () -> Unit,
+    onExternalPlayerClick: () -> Unit,
     onMoreClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -137,6 +139,14 @@ fun ControlsTopView(
                     painter = painterResource(R.drawable.ic_subtitle_track),
                     contentDescription = stringResource(R.string.select_subtitle_track),
                 )
+            }
+            if (showExternalPlayerButton) {
+                PlayerButton(onClick = onExternalPlayerClick) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_open_in_new),
+                        contentDescription = stringResource(R.string.open_in_external_player),
+                    )
+                }
             }
             PlayerButton(onClick = onMoreClick) {
                 Icon(

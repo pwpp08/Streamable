@@ -15,7 +15,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -36,13 +35,11 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
-import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.SubtitleView
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.database.AppDatabase
-import com.streamflixreborn.streamflix.databinding.ContentExoControllerMobileBinding
 import com.streamflixreborn.streamflix.databinding.FragmentPlayerMobileBinding
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Movie
@@ -50,8 +47,6 @@ import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.models.WatchItem
-import com.streamflixreborn.streamflix.ui.player.PlayerChrome
-import com.streamflixreborn.streamflix.ui.PlayerMobileView
 import com.streamflixreborn.streamflix.utils.MediaServer
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.UserDataCache
@@ -75,17 +70,17 @@ import java.io.File
 import java.io.FileOutputStream
 import androidx.core.content.FileProvider
 import androidx.navigation.NavOptions
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.streamflixreborn.streamflix.utils.EpisodeManager
-import com.streamflixreborn.streamflix.utils.PlayerGestureHelper
 import com.streamflixreborn.streamflix.utils.UserDataCache.toEpisode
 import com.streamflixreborn.streamflix.utils.UserDataCache.toMovie
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import com.streamflixreborn.streamflix.fragments.player.engine.NextUiBinder
 import com.streamflixreborn.streamflix.fragments.player.engine.OverlayUi
+import com.streamflixreborn.streamflix.nextui.NextUiCallbacks
+import com.streamflixreborn.streamflix.nextui.model.VideoContentScale
 import com.streamflixreborn.streamflix.fragments.player.engine.PlaybackAnalytics
 import com.streamflixreborn.streamflix.fragments.player.engine.PlayerFactory
 import com.streamflixreborn.streamflix.fragments.player.engine.ProgressSaver
@@ -110,9 +105,6 @@ class PlayerMobileFragment : Fragment() {
     private val binding get() = _binding!!
     private var isSetupDone = false
 
-    private val PlayerControlView.binding
-        get() = ContentExoControllerMobileBinding.bind(this.findViewById(R.id.cl_exo_controller))
-
     private val args by navArgs<PlayerMobileFragmentArgs>()
     private val database by lazy { AppDatabase.getInstance(requireContext()) }
     private val viewModel by viewModelsFactory { PlayerViewModel(args.videoType, args.id) }
@@ -131,10 +123,9 @@ class PlayerMobileFragment : Fragment() {
     private var stickyReportedServerId: String? = null
     private lateinit var progressHandler: android.os.Handler
     private lateinit var progressRunnable: Runnable
-    private lateinit var gestureHelper: PlayerGestureHelper
+    private lateinit var nextUi: NextUiBinder
 
     private var servers = listOf<Video.Server>()
-    private var zoomToast: Toast? = null
 
     private var currentVideo: Video? = null
     private var currentServer: Video.Server? = null
@@ -225,7 +216,6 @@ class PlayerMobileFragment : Fragment() {
         }
         isIgnoringPip = false
         if (::player.isInitialized) {
-            binding.pvPlayer.useController = true
             // Resume playback after returning from bypass or any pause
             if (!player.isPlaying) {
                 player.play()
@@ -245,19 +235,9 @@ class PlayerMobileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupNextUi()
         initializePlayer(false)
         initializeVideo()
-        gestureHelper = PlayerGestureHelper(
-            requireContext(), 
-            binding.pvPlayer, 
-            binding.llBrightness, 
-            binding.pbBrightness, 
-            binding.tvBrightnessPercentage,
-            binding.llVolume, 
-            binding.pbVolume, 
-            binding.tvVolumePercentage
-        )
-
         // Stato Video
         viewLifecycleOwner.lifecycleScope.launch { 
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED).collect { state ->
@@ -265,6 +245,7 @@ class PlayerMobileFragment : Fragment() {
                     PlayerViewModel.State.LoadingServers -> {}
                     is PlayerViewModel.State.SuccessLoadingServers -> {
                         servers = state.servers
+                        nextUi.setServers(servers, currentServer)
                         if (servers.isEmpty()) {
                             Toast.makeText(requireContext(), unavailableMessage("No servers found for this content."), Toast.LENGTH_LONG).show()
                             findNavController().navigateUp()
@@ -451,7 +432,7 @@ class PlayerMobileFragment : Fragment() {
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
-        binding.pvPlayer.useController = !isInPictureInPictureMode
+        if (_binding != null) binding.nextUi.model.isInPictureInPictureMode = isInPictureInPictureMode
         super.onPictureInPictureModeChanged(isInPictureInPictureMode)
     }
 
@@ -493,23 +474,8 @@ class PlayerMobileFragment : Fragment() {
     }
 
     fun onBackPressed(): Boolean = when {
-        binding.pvPlayer.isManualZoomEnabled -> {
-            binding.pvPlayer.exitManualZoomMode()
-            true
-        }
-        binding.settings.isVisible -> {
-            binding.settings.onBackPressed()
-        }
-        binding.layoutNextEpisodeOverlay.isVisible -> {
-            upNext.dismiss()
-            true
-        }
-
-        skipSegments.isShowing -> {
-            skipSegments.dismiss()
-            true
-        }
-
+        binding.settings.isVisible -> binding.settings.onBackPressed()
+        binding.nextUi.handleBack() -> true
         else -> false
     }
 
@@ -528,14 +494,13 @@ class PlayerMobileFragment : Fragment() {
     private val skipSegmentsUi = object : SkipSegmentController.Ui {
         override fun showSkipButton(segment: IntroDbClient.Segment) {
             if (_binding == null) return
-            OverlayUi.showSkipButton(binding.overlays.btnSkipSegment, segment, requestFocus = false)
+            nextUi.skipIsFallback = false
+            nextUi.showSkip(getString(OverlayUi.skipLabel(segment)))
         }
 
         override fun hideSkipButton() {
             if (_binding == null) return
-            val hadFocus = binding.overlays.btnSkipSegment.hasFocus()
-            OverlayUi.hideSkipButton(binding.overlays.btnSkipSegment)
-            if (hadFocus) binding.pvPlayer.requestFocus()
+            nextUi.showSkip(null)
         }
 
         override fun showAutoSkipped(segment: IntroDbClient.Segment) {
@@ -552,7 +517,7 @@ class PlayerMobileFragment : Fragment() {
 
         override fun showUpNext(next: Video.Type.Episode, secondsLeft: Int?) {
             if (_binding == null) return
-            showNextEpisodeOverlay(next, secondsLeft)
+            nextUi.showUpNext(next, secondsLeft)
         }
 
         override fun hideUpNext() = hideNextEpisodeOverlay()
@@ -569,15 +534,76 @@ class PlayerMobileFragment : Fragment() {
         }
     }
 
-    /** Toolbar shortcut into the settings panel; keeps the controller timeout like the gear. */
-    private inline fun openSettingsShortcut(open: () -> Unit) {
-        binding.pvPlayer.controllerShowTimeoutMs = binding.pvPlayer.controllerShowTimeoutMs
-        open()
+    /** The NextPlayer controls, wired to this fragment. */
+    private fun setupNextUi() {
+        nextUi = NextUiBinder(binding.nextUi, binding.settings, isTv = false)
+        binding.nextUi.callbacks = object : NextUiCallbacks() {
+            override fun onBack() {
+                findNavController().navigateUp()
+            }
+
+            override fun onServers() = nextUi.showServers()
+            override fun onQuality() = nextUi.showQuality()
+            override fun onAudio() = nextUi.showAudio()
+            override fun onSubtitles() = nextUi.showSubtitles()
+            override fun onMore() = binding.settings.show()
+            override fun onExternalPlayer() = openExternalPlayer()
+            override fun onPreviousEpisode() = goToEpisode(EpisodeManager::hasPreviousEpisode, viewModel::playPreviousEpisode)
+            override fun onNextEpisode() = goToEpisode(EpisodeManager::hasNextEpisode, ::playNextEpisodeAcrossSeasons)
+
+            override fun onSkipSegment() {
+                if (nextUi.skipIsFallback) {
+                    player.seekTo(player.currentPosition + 85000)
+                    nextUi.skipIsFallback = false
+                    nextUi.showSkip(null)
+                } else {
+                    skipSegments.skip(player.duration)
+                }
+            }
+
+            override fun onSkipDismiss() {
+                if (nextUi.skipIsFallback) {
+                    nextUi.skipIsFallback = false
+                    nextUi.showSkip(null)
+                } else {
+                    skipSegments.dismiss()
+                }
+            }
+
+            override fun onUpNextPlay() {
+                if (!upNext.launchNext()) playNextEpisodeAcrossSeasons()
+            }
+
+            override fun onUpNextCancel() {
+                upNext.dismiss()
+            }
+
+            override fun onPictureInPicture() = enterPIPMode()
+
+            override fun onVideoContentScaleChanged(scale: VideoContentScale) {
+                UserPreferences.playerResize = when (scale) {
+                    VideoContentScale.STRETCH -> UserPreferences.PlayerResize.Fill
+                    VideoContentScale.CROP -> UserPreferences.PlayerResize.Zoom
+                    VideoContentScale.BEST_FIT -> UserPreferences.PlayerResize.Fit
+                }
+                binding.pvPlayer.resizeMode = UserPreferences.playerResize.resizeMode
+            }
+
+            override fun onVideoTransform(scale: VideoContentScale, zoom: Float, offsetX: Float, offsetY: Float) {
+                binding.pvPlayer.videoSurfaceView?.apply {
+                    scaleX = zoom
+                    scaleY = zoom
+                    translationX = offsetX
+                    translationY = offsetY
+                }
+            }
+        }
+        binding.settings.onHidden = { nextUi.refreshGestureSetting() }
     }
 
     private fun showPlayerMessage(message: String) {
         if (_binding == null) return
-        OverlayUi.showMessage(binding.overlays.cardPlayerMessage, binding.overlays.tvPlayerMessage, message)
+        nextUi.showMessage(message)
     }
 
 
@@ -640,71 +666,8 @@ class PlayerMobileFragment : Fragment() {
         skipSegments.load(UserPreferences.currentProvider, args.videoType)
         setupEpisodeNavigationButtons()
 
-        binding.pvPlayer.controller.binding.btnExoBack.setOnClickListener {
-            findNavController().navigateUp()
-        }
-
         updatePlayerHeader()
-
-        binding.pvPlayer.controller.binding.btnExoExternalPlayer.setOnClickListener {
-            Toast.makeText(
-                requireContext(),
-                getString(R.string.player_external_player_error_video),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        binding.pvPlayer.controller.binding.exoReplay.setOnClickListener {
-            player.seekTo(0)
-        }
-
-        binding.pvPlayer.controller.binding.btnExoLock.setOnClickListener {
-            binding.pvPlayer.controller.binding.gControlsLock.isGone = true
-            binding.pvPlayer.controller.binding.btnExoUnlock.isVisible = true
-        }
-
-        binding.pvPlayer.controller.binding.btnExoUnlock.setOnClickListener {
-            binding.pvPlayer.controller.binding.gControlsLock.isVisible = true
-            binding.pvPlayer.controller.binding.btnExoUnlock.isGone = true
-        }
-
-        binding.pvPlayer.controller.binding.btnExoPictureInPicture.setOnClickListener {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.player_picture_in_picture_not_supported),
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                enterPIPMode()
-            }
-        }
-
-        binding.pvPlayer.controller.binding.btnExoAspectRatio.setOnClickListener {
-            val newResize = UserPreferences.playerResize.next()
-            zoomToast?.cancel()
-            zoomToast = Toast.makeText(requireContext(), newResize.stringRes, Toast.LENGTH_SHORT)
-            zoomToast?.show()
-
-            UserPreferences.playerResize = newResize
-            binding.pvPlayer.controllerShowTimeoutMs = binding.pvPlayer.controllerShowTimeoutMs
-            updatePlayerScale()
-        }
-
-        binding.pvPlayer.controller.binding.exoSettings.setOnClickListener {
-            binding.pvPlayer.controllerShowTimeoutMs = binding.pvPlayer.controllerShowTimeoutMs
-            binding.settings.show()
-        }
-
-        // Floating toolbar: straight to one settings page (Back closes it again).
-        binding.pvPlayer.controller.binding.apply {
-            btnExoSubtitles.setOnClickListener { openSettingsShortcut { binding.settings.showSubtitles() } }
-            btnExoAudio.setOnClickListener { openSettingsShortcut { binding.settings.showAudio() } }
-            btnExoQuality.setOnClickListener { openSettingsShortcut { binding.settings.showQuality() } }
-            btnExoSpeed.setOnClickListener { openSettingsShortcut { binding.settings.showSpeed() } }
-            btnExoServers.setOnClickListener { openSettingsShortcut { binding.settings.showServers() } }
-            PlayerChrome.styleTimeBar(exoProgress)
-        }
+        nextUi.setServers(servers, currentServer)
 
         binding.settings.setOnLocalSubtitlesClickedListener {
             isIgnoringPip = true
@@ -738,130 +701,68 @@ class PlayerMobileFragment : Fragment() {
             )
         }
 
-        binding.pvPlayer.controller.binding.btnSkipIntro.setOnClickListener {
-            player.seekTo(player.currentPosition + 85000)
-            it.isGone = true
-        }
-
-        binding.overlays.btnSkipSegment.setOnClickListener {
-            skipSegments.skip(player.duration)
-        }
-
-        binding.btnNextEpisodeAction.setOnClickListener {
-            if (!upNext.launchNext()) playNextEpisodeAcrossSeasons()
-        }
-        binding.btnNextEpisodeDismiss.setOnClickListener {
-            upNext.dismiss()
-        }
-
-        binding.settings.onManualZoomClicked = {
-            binding.settings.hide()
-            binding.pvPlayer.hideController()
-            binding.pvPlayer.enterManualZoomMode()
-        }
-    }
-
- private fun updatePlayerScale() {
-        val videoSurfaceView = binding.pvPlayer.videoSurfaceView
-        val playerResize = UserPreferences.playerResize 
-
-        binding.pvPlayer.resizeMode = playerResize.resizeMode 
-
-        when (playerResize) { 
-            UserPreferences.PlayerResize.Stretch43 -> {
-                val scale = 1.33f 
-                videoSurfaceView?.scaleX = scale
-                videoSurfaceView?.scaleY = 1f
-            }
-            UserPreferences.PlayerResize.StretchVertical -> {
-                videoSurfaceView?.scaleX = 1f
-                videoSurfaceView?.scaleY = 1.25f
-            }
-            UserPreferences.PlayerResize.SuperZoom -> {
-                videoSurfaceView?.scaleX = 1.5f
-                videoSurfaceView?.scaleY = 1.5f
-            }
-            else -> {
-                videoSurfaceView?.scaleX = 1f
-                videoSurfaceView?.scaleY = 1f
-            }
-        }
     }
 
     fun setupEpisodeNavigationButtons() {
-        val btnPrevious = binding.pvPlayer.controller.binding.btnCustomPrev
-        val btnNext = binding.pvPlayer.controller.binding.btnCustomNext
+        if (!::nextUi.isInitialized || _binding == null) return
+        val isEpisode = args.videoType is Video.Type.Episode
+        nextUi.setEpisodeNavigation(
+            hasPrevious = isEpisode && EpisodeManager.hasPreviousEpisode(),
+            hasNext = isEpisode && EpisodeManager.hasNextEpisode(),
+        )
+    }
 
-        fun handleNavigationButton(
-            button: ImageView,
-            hasEpisode: () -> Boolean,
-            playEpisode: () -> Unit
-        ) {
-            if (!hasEpisode()) {
-                button.isGone = true
-                return
+    /** Saves the watch state of the title being left, then plays the neighbouring episode. */
+    private fun goToEpisode(hasEpisode: () -> Boolean, playEpisode: () -> Unit) {
+        if (!hasEpisode()) return
+
+        val videoType = args.videoType
+
+        val watchItem: WatchItem? = when (videoType) {
+            is Video.Type.Movie -> database.movieDao().getById(videoType.id)
+            is Video.Type.Episode -> database.episodeDao().getById(videoType.id)
+        }
+
+        when (videoType) {
+            is Video.Type.Movie -> {
+                val provider = UserPreferences.currentProvider ?: return
+                val movie = watchItem as? Movie
+                movie?.let { database.movieDao().update(it) }
+                movie?.let { UserDataCache.addMovieToContinueWatching(requireContext(), provider, it) }
             }
 
-            button.isGone = false
-            button.setOnClickListener listener@{
-                if (!hasEpisode()) return@listener
+            is Video.Type.Episode -> {
+                val provider = UserPreferences.currentProvider ?: return
+                val episode = watchItem as? Episode
+                episode?.let {
+                    if (player.hasFinished()) {
+                        database.episodeDao().resetProgressionFromEpisode(videoType.id)
+                        UserDataCache.removeEpisodeFromContinueWatching(requireContext(), provider, it.id)
+                    }
+                    database.episodeDao().update(it)
 
-                val videoType = args.videoType
-
-                val watchItem: WatchItem? = when (videoType) {
-                    is Video.Type.Movie -> database.movieDao().getById(videoType.id)
-                    is Video.Type.Episode -> database.episodeDao().getById(videoType.id)
-                }
-
-                when (videoType) {
-                    is Video.Type.Movie -> {
-                        val provider = UserPreferences.currentProvider ?: return@listener
-                        val movie = watchItem as? Movie
-                        movie?.let { database.movieDao().update(it) }
-                        movie?.let { UserDataCache.addMovieToContinueWatching(requireContext(), provider, it) }
+                    if (!player.hasFinished()) {
+                        UserDataCache.addEpisodeToContinueWatching(requireContext(), provider, it)
                     }
 
-                    is Video.Type.Episode -> {
-                        val provider = UserPreferences.currentProvider ?: return@listener
-                        val episode = watchItem as? Episode
-                        episode?.let {
-                            if (player.hasFinished()) {
-                                database.episodeDao().resetProgressionFromEpisode(videoType.id)
-                                UserDataCache.removeEpisodeFromContinueWatching(requireContext(), provider, it.id)
-                            }
-                            database.episodeDao().update(it)
+                    it.tvShow?.let { tvShow ->
+                        database.tvShowDao().getById(tvShow.id)
+                    }?.let { tvShow ->
+                        val episodeDao = database.episodeDao()
+                        val isStillWatching = episodeDao.hasAnyWatchHistoryForTvShow(tvShow.id)
 
-                            if (!player.hasFinished()) {
-                                UserDataCache.addEpisodeToContinueWatching(requireContext(), provider, it)
-                            }
-
-                            it.tvShow?.let { tvShow ->
-                                database.tvShowDao().getById(tvShow.id)
-                            }?.let { tvShow ->
-                                val episodeDao = database.episodeDao()
-                                val isStillWatching = episodeDao.hasAnyWatchHistoryForTvShow(tvShow.id)
-
-                                val updatedTvShow = tvShow.copy().apply {
-                                    merge(tvShow)
-                                    isWatching = !player.hasReallyFinished() || isStillWatching
-                                }
-                                database.tvShowDao().update(updatedTvShow)
-                                CloudSyncHooks.tvShow(requireContext(), provider, updatedTvShow)
-                            }
+                        val updatedTvShow = tvShow.copy().apply {
+                            merge(tvShow)
+                            isWatching = !player.hasReallyFinished() || isStillWatching
                         }
+                        database.tvShowDao().update(updatedTvShow)
+                        CloudSyncHooks.tvShow(requireContext(), provider, updatedTvShow)
                     }
                 }
-
-                playEpisode()
             }
         }
 
-        handleNavigationButton(
-            btnPrevious,
-            EpisodeManager::hasPreviousEpisode,
-            viewModel::playPreviousEpisode
-        )
-        handleNavigationButton(btnNext, EpisodeManager::hasNextEpisode, ::playNextEpisodeAcrossSeasons)
+        playEpisode()
     }
 
     private fun refreshEpisodeNavigation(type: Video.Type.Episode) {
@@ -929,6 +830,7 @@ class PlayerMobileFragment : Fragment() {
         currentVideo = video
         currentServer = server
         updatePlayerHeader()
+        nextUi.setServers(servers, server)
 
         val extraBuffering = PlayerSettingsView.Settings.ExtraBuffering.isEnabled
         val softwareDecoder = PlayerSettingsView.Settings.SoftwareDecoder.isEnabled
@@ -973,7 +875,27 @@ class PlayerMobileFragment : Fragment() {
                 .build()
         )
 
-        binding.pvPlayer.controller.binding.btnExoExternalPlayer.setOnClickListener {
+        binding.nextUi.model.showExternalPlayerButton = true
+        val remoteStartMs = if (failover) null else com.streamflixreborn.streamflix.sync.PlayerStartPosition.consume(args.id)
+        player.seekTo(remoteStartMs ?: resumeMs ?: savedResumePositionMs() ?: 0)
+
+        if (failover) showPlayerMessage(getString(R.string.player_switched_server, server.name))
+
+        analytics?.markPlayRequested(server.name)
+        player.prepare()
+        player.play()
+    }
+
+    private fun openExternalPlayer() {
+        val video = currentVideo
+        if (video == null) {
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.player_external_player_error_video),
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
             isIgnoringPip = true
             
             val videoTitle = when (val type = args.videoType) {
@@ -1049,15 +971,6 @@ class PlayerMobileFragment : Fragment() {
                 Log.e("ExternalPlayer", "Errore selettore app", e)
                 startActivity(Intent.createChooser(intent, getString(R.string.player_external_player_title)))
             }
-        }
-        val remoteStartMs = if (failover) null else com.streamflixreborn.streamflix.sync.PlayerStartPosition.consume(args.id)
-        player.seekTo(remoteStartMs ?: resumeMs ?: savedResumePositionMs() ?: 0)
-
-        if (failover) showPlayerMessage(getString(R.string.player_switched_server, server.name))
-
-        analytics?.markPlayRequested(server.name)
-        player.prepare()
-        player.play()
     }
 
     /** Saved watch position minus 10 s (cache first, then DB). */
@@ -1138,7 +1051,6 @@ class PlayerMobileFragment : Fragment() {
 
     private fun enterPIPMode() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            binding.pvPlayer.useController = false
             requireActivity().enterPictureInPictureMode(
                 PictureInPictureParams.Builder()
                     .build()
@@ -1181,8 +1093,7 @@ class PlayerMobileFragment : Fragment() {
     }
 
     private fun updatePlayerHeader(videoType: Video.Type = currentVideoTypeForUi()) {
-        binding.pvPlayer.controller.binding.tvExoTitle.text = resolvePlayerTitle(videoType)
-        binding.pvPlayer.controller.binding.tvExoSubtitle.text = resolvePlayerSubtitle(videoType)
+        nextUi.setHeader(resolvePlayerTitle(videoType), resolvePlayerSubtitle(videoType))
     }
 
     private fun startProgressHandler() {
@@ -1241,69 +1152,21 @@ class PlayerMobileFragment : Fragment() {
         }
     }
 
-    private fun showNextEpisodeOverlay(nextEpisode: Video.Type.Episode, secondsLeft: Int?) {
-        binding.tvNextEpisodeMeta.text = getString(
-            R.string.tv_show_item_season_number_episode_number,
-            nextEpisode.season.number,
-            nextEpisode.number
-        )
-        binding.tvNextEpisodeTitle.text = nextEpisode.title
-            ?: getString(R.string.episode_number, nextEpisode.number)
-        binding.tvNextEpisodeCountdown.text = if (secondsLeft != null) {
-            getString(R.string.player_next_episode_autoplay_in, secondsLeft)
-        } else {
-            getString(R.string.player_next_episode_ready)
-        }
-        binding.flNextEpisodeCountdown.isVisible = secondsLeft != null
-        if (secondsLeft != null) {
-            binding.tvNextEpisodeSeconds.text = secondsLeft.toString()
-            PlayerChrome.setCountdown(
-                binding.piNextEpisodeCountdown,
-                secondsLeft,
-                UserPreferences.upNextSeconds,
-                animate = binding.layoutNextEpisodeOverlay.isVisible,
-            )
-        }
-        if (binding.layoutNextEpisodeOverlay.isVisible) return
-
-        Glide.with(this)
-            .load(nextEpisode.poster ?: nextEpisode.tvShow.poster)
-            .error(R.drawable.glide_fallback_cover)
-            .fallback(R.drawable.glide_fallback_cover)
-            .centerCrop()
-            .transition(DrawableTransitionOptions.withCrossFade())
-            .into(binding.ivNextEpisodePoster)
-
-        if (binding.layoutNextEpisodeOverlay.isGone) {
-            val fadeIn = android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.fade_in)
-            binding.layoutNextEpisodeOverlay.startAnimation(fadeIn)
-            binding.layoutNextEpisodeOverlay.isVisible = true
-        }
-    }
-
     private fun hideNextEpisodeOverlay() {
         if (_binding == null) return
-        if (binding.layoutNextEpisodeOverlay.isVisible) {
-            val fadeOut = android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.fade_out)
-            binding.layoutNextEpisodeOverlay.startAnimation(fadeOut)
-            binding.layoutNextEpisodeOverlay.isGone = true
-        }
+        nextUi.hideUpNext()
     }
 
+    /** The fixed "+85 s" fallback, only offered while there is no skip-segment data for the title. */
     private fun showSkipIntroButton(show: Boolean) {
-        val btnSkipIntro = binding.pvPlayer.controller.binding.btnSkipIntro
-        if (show && btnSkipIntro.isGone) {
-            val fadeIn = android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.fade_in)
-            btnSkipIntro.startAnimation(fadeIn)
-            btnSkipIntro.isVisible = true
-        } else if (!show && btnSkipIntro.isVisible) {
-            val fadeOut = android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.fade_out)
-            btnSkipIntro.startAnimation(fadeOut)
-            btnSkipIntro.isGone = true
+        if (show && !nextUi.skipIsFallback && !skipSegments.isShowing) {
+            nextUi.skipIsFallback = true
+            nextUi.showSkip(getString(R.string.player_skip_intro))
+        } else if (!show && nextUi.skipIsFallback) {
+            nextUi.skipIsFallback = false
+            nextUi.showSkip(null)
         }
     }
-
-
 
     override fun onPause() {
         super.onPause()
@@ -1337,6 +1200,7 @@ class PlayerMobileFragment : Fragment() {
         mediaSession = MediaSession.Builder(requireContext(), player).build()
 
         binding.pvPlayer.player = player
+        binding.nextUi.player = player
         binding.settings.player = player
         binding.settings.subtitleView = binding.pvPlayer.subtitleView
         binding.settings.onSubtitlesClicked = {
@@ -1347,6 +1211,7 @@ class PlayerMobileFragment : Fragment() {
     private fun releasePlayer() {
         stopProgressHandler()
         binding.pvPlayer.player = null
+        binding.nextUi.player = null
         binding.settings.player = null
         binding.settings.subtitleView = null
         if (::player.isInitialized) {

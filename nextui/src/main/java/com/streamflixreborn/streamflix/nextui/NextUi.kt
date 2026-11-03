@@ -280,6 +280,8 @@ private fun NextUiContent(player: Player, model: NextUiModel, callbacks: NextUiC
                             onQualityClick = callbacks::onQuality,
                             onAudioClick = callbacks::onAudio,
                             onSubtitleClick = callbacks::onSubtitles,
+                            showExternalPlayerButton = model.showExternalPlayerButton,
+                            onExternalPlayerClick = callbacks::onExternalPlayer,
                             onMoreClick = callbacks::onMore,
                         )
                     }
@@ -352,6 +354,7 @@ private fun NextUiContent(player: Player, model: NextUiModel, callbacks: NextUiC
         )
         UpNextCard(
             upNext = model.upNext,
+            poster = model.upNextPoster,
             bottomPadding = hostBottomPadding,
             focusRequester = upNextFocusRequester,
             onPlay = callbacks::onUpNextPlay,

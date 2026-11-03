@@ -339,6 +339,11 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
 
     abstract var onSubtitlesClicked: (() -> Unit)?
 
+    abstract fun show()
+    abstract fun showSubtitles()
+    abstract fun onBackPressed(): Boolean
+    abstract fun hide()
+
     protected var onOpenSubtitleSelected: ((Settings.Subtitle.OpenSubtitles.Subtitle) -> Unit)? = null
     fun setOnOpenSubtitleSelectedListener(onOpenSubtitleSelected: (Settings.Subtitle.OpenSubtitles.Subtitle) -> Unit) {
         this.onOpenSubtitleSelected = onOpenSubtitleSelected
@@ -396,6 +401,15 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
         }
     }
 
+    /** Selection entry points for the Compose player UI, which lists the same items. */
+    fun selectQuality(item: Settings.Quality) = onQualitySelected.invoke(item)
+    fun selectAudio(item: Settings.Audio) = onAudioSelected.invoke(item)
+    fun selectSubtitle(item: Settings.Subtitle) = onSubtitleSelected.invoke(item)
+    fun selectServer(item: Settings.Server) {
+        onServerSelected?.invoke(item)
+    }
+    fun toggleLanguageFilter() = toggleShowAllLanguages()
+
     protected var onServerSelected: ((Settings.Server) -> Unit)? = null
     fun setOnServerSelectedListener(onServerSelected: (server: Settings.Server) -> Unit) {
         this.onServerSelected = onServerSelected
@@ -417,7 +431,6 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                 SoftwareDecoder,
                 Gestures,
                 KeepScreenOn,
-                ManualZoom,
             )
             val listTv = listOf(
                 Quality,
@@ -427,11 +440,8 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                 Server,
                 ExtraBuffering,
                 SoftwareDecoder,
-                ManualZoom,
             )
         }
-
-        data object ManualZoom : Settings()
 
         /**
          * Keeps tracks in a spoken language, tracks of unknown language and the track that is

@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.ImageBitmap
+import android.graphics.Bitmap
 import com.streamflixreborn.streamflix.nextui.model.VideoContentScale
 import com.streamflixreborn.streamflix.nextui.state.ControlsVisibilityState
 
@@ -13,8 +13,8 @@ import com.streamflixreborn.streamflix.nextui.state.ControlsVisibilityState
 class PickerItem(
     val label: String,
     val selected: Boolean,
-    val onSelect: () -> Unit,
     val detail: String? = null,
+    val onSelect: () -> Unit,
 )
 
 /** A button under the list of a [Picker]. [dismiss] closes the picker before [onClick] runs. */
@@ -40,7 +40,6 @@ class UpNext(
     val countdownText: String,
     val secondsLeft: Int?,
     val totalSeconds: Int,
-    val poster: ImageBitmap?,
     val playLabel: String,
     val cancelLabel: String,
 )
@@ -53,6 +52,7 @@ open class NextUiCallbacks {
     open fun onAudio() {}
     open fun onSubtitles() {}
     open fun onMore() {}
+    open fun onExternalPlayer() {}
     open fun onPreviousEpisode() {}
     open fun onNextEpisode() {}
     open fun onSkipSegment() {}
@@ -76,8 +76,10 @@ class NextUiModel {
     var serverName by mutableStateOf<String?>(null)
     var showServerButton by mutableStateOf(true)
     var showQualityButton by mutableStateOf(true)
+    var showExternalPlayerButton by mutableStateOf(false)
     var skipLabel by mutableStateOf<String?>(null)
     var upNext by mutableStateOf<UpNext?>(null)
+    var upNextPoster by mutableStateOf<Bitmap?>(null)
     var picker by mutableStateOf<Picker?>(null)
     var isPictureInPictureSupported by mutableStateOf(false)
     var isInPictureInPictureMode by mutableStateOf(false)
