@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentGenreMobileBinding
-import com.streamflixreborn.streamflix.databinding.HeaderGenreMobileBinding
 import com.streamflixreborn.streamflix.models.Genre
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
@@ -24,6 +23,9 @@ import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
+import androidx.core.view.isVisible
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
+import com.streamflixreborn.streamflix.R
 
 class GenreMobileFragment : Fragment() {
 
@@ -108,8 +110,12 @@ class GenreMobileFragment : Fragment() {
 
 
     private fun initializeGenre() {
+        binding.ctlGenre.title = args.name
+        binding.tbGenre.setNavigationOnClickListener {
+            requireActivity().onBackPressedDispatcher.onBackPressed()
+        }
         binding.rvGenre.apply {
-            layoutManager = GridLayoutManager(context, 3).also {
+            layoutManager = GridLayoutManager(context, BrowseCards.gridSpanCount(context)).also {
                 it.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                     override fun getSpanSize(position: Int): Int {
                         val viewType = appAdapter.getItemViewType(position)
@@ -124,24 +130,15 @@ class GenreMobileFragment : Fragment() {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             }
             addItemDecoration(
-                SpacingItemDecoration(10.dp(requireContext()))
+                SpacingItemDecoration(resources.getDimensionPixelSize(R.dimen.browse_row_item_gap))
             )
         }
     }
 
     private fun displayGenre(genre: Genre, hasMore: Boolean) {
-        appAdapter.setHeader(
-            binding = { parent ->
-                HeaderGenreMobileBinding.inflate(
-                    LayoutInflater.from(parent.context),
-                    parent,
-                    false
-                )
-            },
-            bind = { binding ->
-                binding.tvGenreName.text = genre.name.takeIf { it.isNotEmpty() } ?: args.name
-            }
-        )
+        // The genre name is the collapsing app bar title.
+        binding.ctlGenre.title = genre.name.takeIf { it.isNotEmpty() } ?: args.name
+        binding.emptyGenre.root.isVisible = genre.shows.isEmpty() && !hasMore
 
         appAdapter.submitList(genre.shows.onEach {
             when (it) {

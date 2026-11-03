@@ -1,35 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Person (phone): the name is the collapsing title; details header and filmography grid below. -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".fragments.people.PeopleMobileFragment">
 
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/abl_people"
+        style="@style/Widget.StreamFlix.Browse.LargeAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/ctl_people"
+            style="@style/Widget.StreamFlix.Browse.CollapsingToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/browse_large_app_bar_height"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+            >
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/tb_people"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/browse_top_bar_height"
+                android:elevation="0dp"
+                app:navigationContentDescription="@string/browse_navigate_up"
+                app:navigationIcon="?attr/homeAsUpIndicator"
+                app:navigationIconTint="?attr/colorOnSurface"
+                app:layout_collapseMode="pin"
+                app:titleMarginEnd="@dimen/browse_top_actions_inset"></com.google.android.material.appbar.MaterialToolbar>
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_people"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:orientation="vertical"
-        android:padding="10dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        tools:listitem="@layout/item_movie_grid_mobile"
-        tools:spanCount="3" />
+        android:paddingStart="@dimen/browse_gutter"
+        android:paddingTop="8dp"
+        android:paddingEnd="@dimen/browse_gutter"
+        android:paddingBottom="@dimen/browse_row_gap"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:listitem="@layout/item_movie_grid_mobile" />
 
     <include
         android:id="@+id/is_loading"
         layout="@layout/layout_is_loading_mobile"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

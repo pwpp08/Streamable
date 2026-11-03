@@ -20,6 +20,7 @@ import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
+import androidx.core.view.isVisible
 
 class MoviesTvFragment : Fragment() {
 
@@ -116,6 +117,7 @@ class MoviesTvFragment : Fragment() {
     }
 
     private fun displayMovies(movies: List<Movie>, hasMore: Boolean) {
+        binding.emptyMovies.root.isVisible = movies.isEmpty() && !hasMore
         appAdapter.submitList(movies.onEach {
             it.itemType = AppAdapter.Type.MOVIE_GRID_TV_ITEM
         })

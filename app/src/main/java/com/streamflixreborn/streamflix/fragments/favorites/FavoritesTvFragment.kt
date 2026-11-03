@@ -93,6 +93,9 @@ class FavoritesTvFragment : Fragment() {
             }
             addItemDecoration(SpacingItemDecoration(10.dp(requireContext())))
         }
+        binding.tvFavoritesEmpty.tvEmptyTitle.setText(R.string.browse_favorites_empty_title)
+        binding.tvFavoritesEmpty.tvEmptyMessage.setText(R.string.browse_favorites_empty_message)
+        binding.tvFavoritesEmpty.ivEmptyIcon.setImageResource(R.drawable.ic_favorite_enable)
         binding.btnFavoritesReorder.setOnClickListener { showSortDialog() }
         binding.btnFavoritesReorderMode.setOnClickListener { setRearrangeMode(!rearrangeMode) }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, rearrangeBackCallback)
@@ -307,7 +310,7 @@ class FavoritesTvFragment : Fragment() {
                     }
                 }
         }
-        binding.tvFavoritesEmpty.isVisible = gridItems.isEmpty()
+        binding.tvFavoritesEmpty.root.isVisible = gridItems.isEmpty()
         binding.rvFavorites.isVisible = gridItems.isNotEmpty()
         binding.btnFavoritesReorder.isEnabled = gridItems.isNotEmpty()
         appAdapter.submitList(gridItems)

@@ -24,6 +24,7 @@ import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.viewModelsFactory
 import kotlinx.coroutines.launch
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 
 class FavoritesMobileFragment : Fragment() {
 
@@ -47,7 +48,7 @@ class FavoritesMobileFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val columnCount = maxOf(3, resources.configuration.screenWidthDp / 120)
+        val columnCount = BrowseCards.gridSpanCount(requireContext())
         val gridLayoutManager = GridLayoutManager(requireContext(), columnCount).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int =
@@ -59,9 +60,12 @@ class FavoritesMobileFragment : Fragment() {
             adapter = appAdapter.apply {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             }
-            addItemDecoration(SpacingItemDecoration(8.dp(requireContext())))
+            addItemDecoration(SpacingItemDecoration(resources.getDimensionPixelSize(R.dimen.browse_row_item_gap)))
         }
         createDragHelper().attachToRecyclerView(binding.rvFavorites)
+        binding.tvFavoritesEmpty.tvEmptyTitle.setText(R.string.browse_favorites_empty_title)
+        binding.tvFavoritesEmpty.tvEmptyMessage.setText(R.string.browse_favorites_empty_message)
+        binding.tvFavoritesEmpty.ivEmptyIcon.setImageResource(R.drawable.ic_favorite_enable)
         binding.btnFavoritesReorder.setOnClickListener { showSortDialog() }
         binding.btnFavoritesReorderMode.setOnClickListener { setRearrangeMode(!rearrangeMode) }
         setRearrangeMode(false)
@@ -243,7 +247,7 @@ class FavoritesMobileFragment : Fragment() {
                     }
                 }
         }
-        binding.tvFavoritesEmpty.isVisible = gridItems.isEmpty()
+        binding.tvFavoritesEmpty.root.isVisible = gridItems.isEmpty()
         binding.rvFavorites.isVisible = gridItems.isNotEmpty()
         binding.btnFavoritesReorder.isEnabled = gridItems.isNotEmpty()
         appAdapter.submitList(gridItems)
