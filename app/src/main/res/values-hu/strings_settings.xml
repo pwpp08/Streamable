@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_category_torrent">Torrent</string>
+    <string name="settings_torrent_title">Torrent források (P2P)</string>
+    <string name="settings_torrent_summary">A torrentes lejátszás megosztja az IP-címedet a többi partnerrel. Fontold meg a VPN használatát.</string>
+</resources>

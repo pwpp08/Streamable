@@ -196,4 +196,7 @@
         <item>60</item>
     </string-array>
 
+    <string name="settings_category_torrent">Torrent</string>
+    <string name="settings_torrent_title">Torrent sources (P2P)</string>
+    <string name="settings_torrent_summary">Torrent playback shares your IP address with other peers. Consider a VPN.</string>
 </resources>

@@ -23,6 +23,7 @@ import com.streamflixreborn.streamflix.models.People
 import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
+import com.streamflixreborn.streamflix.torrent.TorrentServers
 import com.streamflixreborn.streamflix.utils.TMDb3
 import com.streamflixreborn.streamflix.utils.TMDb3.w342
 import com.streamflixreborn.streamflix.utils.TMDb3.w780
@@ -760,10 +761,17 @@ class TmdbProvider(override val language: String) : Provider {
         servers.addAll(VidemExtractor().servers(videoType, "en"))
         servers.addAll(VidloveExtractor().servers(videoType))
 
+        // Torrent servers last: they are the 1080p fallback/upgrade (opt-out in Settings > Sources).
+        servers.addAll(
+            runCatching { kotlinx.coroutines.withTimeoutOrNull(8_000L) { TorrentServers().servers(videoType) } }
+                .getOrNull().orEmpty()
+        )
+
         return servers.distinctBy { it.id }
     }
 
     override suspend fun getVideo(server: Video.Server): Video {
+        if (TorrentServers.isTorrentServer(server)) return TorrentServers.videoFor(server)
         val url = server.src.ifEmpty { server.id }
         return server.video ?: Extractor.extract(url, server)
     }

@@ -315,6 +315,19 @@
             </PreferenceCategory>
 
             <PreferenceCategory
+                android:key="pc_torrent_settings"
+                android:title="@string/settings_category_torrent"
+                app:iconSpaceReserved="false">
+
+                <SwitchPreferenceCompat
+                    android:key="TORRENT_ENABLED"
+                    android:title="@string/settings_torrent_title"
+                    android:summary="@string/settings_torrent_summary"
+                    android:defaultValue="true"
+                    app:iconSpaceReserved="false" />
+            </PreferenceCategory>
+
+            <PreferenceCategory
                 android:key="pc_tmdb_settings"
                 android:title="@string/settings_category_tmdb"
                 app:iconSpaceReserved="false">

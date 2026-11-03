@@ -6,6 +6,7 @@ import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.providers.TmdbProvider
+import com.streamflixreborn.streamflix.torrent.TorrentSpec
 import com.streamflixreborn.streamflix.utils.MetadataLanguage
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.utils.format
@@ -142,7 +143,9 @@ class ProviderHealthChecker(
      * neither can be read.
      */
     suspend fun probeHeight(video: Video): Int? = try {
-        inspectStream(video).maxHeight ?: estimateFromBitrate(video)
+        // Torrent sources carry their quality in the URI; nothing to fetch.
+        if (TorrentSpec.isTorrentUri(video.source)) TorrentSpec.heightOf(video.source)
+        else inspectStream(video).maxHeight ?: estimateFromBitrate(video)
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -187,6 +190,10 @@ class ProviderHealthChecker(
     private class StreamCheck(val ok: Boolean, val maxHeight: Int?, val error: String?)
 
     private suspend fun inspectStream(video: Video): StreamCheck {
+        if (TorrentSpec.isTorrentUri(video.source)) {
+            val spec = TorrentSpec.parse(video.source)
+            return StreamCheck(spec != null, spec?.height, if (spec == null) "bad torrent uri" else null)
+        }
         val hls = isHls(video)
         // Some extractors (e.g. Vixcloud) hand the player an inline data: playlist; read it directly.
         if (video.source.startsWith("data:", ignoreCase = true)) return inspectDataUri(video.source, hls)

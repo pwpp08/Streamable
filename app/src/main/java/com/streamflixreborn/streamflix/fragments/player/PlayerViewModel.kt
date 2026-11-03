@@ -10,6 +10,8 @@ import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.fragments.player.engine.NextEpisodePrefetch
 import com.streamflixreborn.streamflix.fragments.player.engine.QualityMemory
 import com.streamflixreborn.streamflix.fragments.player.engine.ServerRanker
+import com.streamflixreborn.streamflix.torrent.TorrentEngine
+import com.streamflixreborn.streamflix.torrent.TorrentSpec
 import com.streamflixreborn.streamflix.fragments.player.engine.StickyServers
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.EpisodeManager
@@ -222,6 +224,8 @@ class PlayerViewModel(
     /** [server] is playing fine; remember it for this title. */
     fun onPlaybackStarted(server: Video.Server) {
         if (server.id == offlineServer?.id) return
+        // A torrent takes ~30 s to start, so it is never the "sticky" first choice; the quality upgrade finds it.
+        if (ServerRanker.isTorrentServer(server.name)) return
         StickyServers.put(StreamFlixApp.instance, stickyKey, server.name)
     }
 
@@ -374,14 +378,31 @@ class PlayerViewModel(
             if (current != null && current >= FULL_HD) return@launch
             val deadline = SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
             var probes = 0
-            for (candidate in ranked) {
-                if (SystemClock.elapsedRealtime() > deadline || probes >= UPGRADE_MAX_PROBES) break
+            // Web servers first (they start faster); torrents get their own turn after them.
+            val order = ranked.filterNot { ServerRanker.isTorrentServer(it.name) } +
+                ranked.filter { ServerRanker.isTorrentServer(it.name) }
+            for (candidate in order) {
+                val torrent = ServerRanker.isTorrentServer(candidate.name)
+                if (!torrent && (SystemClock.elapsedRealtime() > deadline || probes >= UPGRADE_MAX_PROBES)) continue
+                if (torrent && !UserPreferences.torrentEnabled) continue
                 if (candidate.id == server.id || candidate.id in failedIds) continue
                 if (QualityMemory.height(candidate.name)?.let { it in 1 until FULL_HD } == true) continue
                 val video = cachedVideo(candidate) ?: resolve(candidate) ?: continue
-                probes++
+                if (!torrent) probes++
                 val height = prober.probeHeight(video)
                 QualityMemory.hint(candidate.name, height)
+                // A torrent is only worth switching to when its swarm is alive; check before cutting the picture.
+                if (TorrentSpec.isTorrentUri(video.source) && height != null && height >= FULL_HD) {
+                    val spec = TorrentSpec.parse(video.source)
+                    val alive = spec != null && withTimeoutOrNull(TORRENT_PREWARM_MS) {
+                        kotlinx.coroutines.runInterruptible { TorrentEngine.prewarm(spec, TORRENT_PREWARM_MS / 2) }
+                    } == true
+                    Log.d(TAG, "upgrade probe: ${candidate.name} swarm alive=$alive")
+                    if (!alive) {
+                        failedIds += candidate.id
+                        continue
+                    }
+                }
                 Log.d(TAG, "upgrade probe: ${candidate.name} -> ${height ?: "?"}p (playing ${current ?: "?"}p)")
                 if (height != null && height >= FULL_HD && height > (current ?: 0)) {
                     if (currentServerId != server.id) return@launch
@@ -575,6 +596,7 @@ class PlayerViewModel(
         private const val PREFETCH_ATTEMPTS = 3
         private const val FULL_HD = 1080
         private const val UPGRADE_DELAY_MS = 8_000L
+        private const val TORRENT_PREWARM_MS = 90_000L
         private const val UPGRADE_MAX_PROBES = 4
         /** How long after start the other servers are checked for a sharper picture. */
         private const val UPGRADE_WINDOW_MS = 40_000L
