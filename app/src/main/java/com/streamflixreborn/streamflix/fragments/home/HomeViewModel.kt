@@ -35,6 +35,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import com.streamflixreborn.streamflix.providers.TmdbProvider
+import com.streamflixreborn.streamflix.sync.ContinueWatchingAggregator
+import com.streamflixreborn.streamflix.utils.ProfileManager
 import java.util.concurrent.ConcurrentHashMap
 
 class HomeViewModel : ViewModel() {
@@ -67,6 +69,8 @@ class HomeViewModel : ViewModel() {
     private val continueWatchingTvShowCache = ConcurrentHashMap<String, TvShow>()
     private val continueWatchingSeasonEpisodesCache = ConcurrentHashMap<String, List<Episode>>()
     private val _userDataCache = MutableStateFlow<UserDataCache.UserData?>(null)
+    // In-progress items from the active profile's other provider databases.
+    private val _otherProvidersContinueWatching = MutableStateFlow<List<AppAdapter.Item>>(emptyList())
     private var currentProvider: Provider? = null
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -100,7 +104,8 @@ class HomeViewModel : ViewModel() {
             _state.transformLatest {
                 emitAll(db().tvShowDao().getAll())
             }.flowOn(Dispatchers.IO),
-        ) { watchingMovies, watchingEpisodes, watchNextEpisodes, tvShows ->
+            _otherProvidersContinueWatching,
+        ) { watchingMovies, watchingEpisodes, watchNextEpisodes, tvShows, otherProviders ->
 
             val allEpisodes = (watchingEpisodes + watchNextEpisodes)
                 .distinctBy { it.id }
@@ -137,7 +142,7 @@ class HomeViewModel : ViewModel() {
                 }
             }
 
-            (watchingMovies + enrichedEpisodes)
+            (watchingMovies + enrichedEpisodes + otherProviders)
                 .sortedByDescending { item ->
                     when (item) {
                         is Movie -> item.watchHistory?.lastEngagementTimeUtcMillis
@@ -282,9 +287,11 @@ class HomeViewModel : ViewModel() {
                                 }
                             }
                             .distinctBy {
+                                // One entry per show; ids are only unique per provider.
+                                val current = UserPreferences.currentProvider?.name
                                 when (it) {
-                                    is Episode -> it.tvShow?.id
-                                    is Movie -> it.id
+                                    is Episode -> "${it.tvShow?.providerName ?: current}:${it.tvShow?.id}"
+                                    is Movie -> "${it.providerName ?: current}:movie:${it.id}"
                                     else -> null
                                 }
                             },
@@ -451,10 +458,22 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+    private fun refreshOtherProvidersContinueWatching(provider: Provider) {
+        val profileId = ProfileManager.activeProfileId ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val entries = runCatching {
+                ContinueWatchingAggregator.inProgress(appContext, profileId, excludeProvider = provider.name)
+            }.getOrDefault(emptyList())
+            _otherProvidersContinueWatching.value =
+                ContinueWatchingAggregator.onePerShow(entries).map { it.item }
+        }
+    }
+
     private fun loadUserDataCache(provider: Provider) {
         val appContext = StreamFlixApp.instance.applicationContext
         val cached = UserDataCache.read(appContext, provider)
         _userDataCache.value = cached
+        refreshOtherProvidersContinueWatching(provider)
 
         viewModelScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getInstance(appContext)

@@ -22,6 +22,7 @@ import com.streamflixreborn.streamflix.fragments.tv_show.TvShowMobileFragmentDir
 import com.streamflixreborn.streamflix.fragments.tv_show.TvShowTvFragmentDirections
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Video
+import com.streamflixreborn.streamflix.sync.SyncProviders
 import com.streamflixreborn.streamflix.ui.ShowOptionsMobileDialog
 import com.streamflixreborn.streamflix.ui.ShowOptionsTvDialog
 import com.streamflixreborn.streamflix.utils.EpisodeManager
@@ -264,6 +265,8 @@ class EpisodeViewHolder(
     private fun displayContinueWatchingMobileItem(binding: ItemEpisodeContinueWatchingMobileBinding) {
         binding.root.apply {
             setOnClickListener {
+                // Items from another provider (cross-provider Continue Watching).
+                SyncProviders.switchTo(episode.tvShow?.providerName)
                 findNavController().navigate(
                     HomeMobileFragmentDirections.actionHomeToTvShow(
                         id = episode.tvShow?.id ?: "",
@@ -365,6 +368,8 @@ class EpisodeViewHolder(
     private fun displayContinueWatchingTvItem(binding: ItemEpisodeContinueWatchingTvBinding) {
         binding.root.apply {
             setOnClickListener {
+                // Items from another provider (cross-provider Continue Watching).
+                SyncProviders.switchTo(episode.tvShow?.providerName)
                 findNavController().navigate(
                     HomeTvFragmentDirections.actionHomeToTvShow(
                         id = episode.tvShow?.id ?: "",

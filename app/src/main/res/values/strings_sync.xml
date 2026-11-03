@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Play on TV / device commands -->
+    <string name="sync_play_on_tv">Play on TV</string>
+    <string name="sync_sent_to_tv">Sent to %1$s</string>
+    <string name="sync_sent_from">Sent from %1$s</string>
+    <string name="sync_sent_from_unknown">Sent from your phone</string>
+    <string name="sync_sign_in_first">Set up sync first: Settings → Sync &amp; devices</string>
+    <string name="sync_no_tv_title">No TV found</string>
+    <string name="sync_no_tv_message">No TV signed in to this account was seen in the last 24 hours. Open StreamFlix on the TV, or pair it first (Settings → Sync &amp; devices → Pair a TV).</string>
+    <string name="sync_choose_tv">Choose a TV</string>
+    <string name="sync_send_failed">Could not send to the TV: %1$s</string>
+    <string name="sync_devices_failed">Could not load your devices: %1$s</string>
+    <string name="sync_unknown_provider">Provider %1$s is not available on this device</string>
+    <string name="sync_episode_label">%1$s S%2$02dE%3$02d</string>
+
+    <!-- TV pairing screen -->
+    <string name="pair_tv_title">Pair with your phone</string>
+    <string name="pair_tv_instructions">On your phone: Settings → Sync &amp; devices → Pair a TV, then scan this QR code.</string>
+    <string name="pair_tv_code_hint">Or enter this code on the phone</string>
+    <string name="pair_tv_address">Address %1$s:%2$d</string>
+    <string name="pair_tv_profile_note">Signs in on profile %1$s</string>
+    <string name="pair_tv_status_starting">Starting…</string>
+    <string name="pair_tv_status_waiting">Waiting for your phone…</string>
+    <string name="pair_tv_status_pairing">Signing in…</string>
+    <string name="pair_tv_status_syncing">Paired as %1$s. Syncing your library…</string>
+    <string name="pair_tv_status_done">Paired as %1$s</string>
+    <string name="pair_tv_status_failed">Error: %1$s</string>
+    <string name="pair_tv_status_expired">The code expired.</string>
+    <string name="pair_tv_error_no_network">Connect the TV to Wi-Fi or Ethernet and try again.</string>
+    <string name="pair_tv_error_socket">Could not open the pairing port.</string>
+    <string name="pair_tv_error_attempts">Too many failed attempts.</string>
+    <string name="pair_tv_new_code">New code</string>
+    <string name="pair_tv_done">Done</string>
+
+    <!-- Phone pairing screen -->
+    <string name="pair_phone_title">Pair a TV</string>
+    <string name="pair_phone_account">Signed in as %1$s</string>
+    <string name="pair_phone_not_signed_in">This phone is not signed in. Set up sync first (Settings → Sync &amp; devices), then pair the TV.</string>
+    <string name="pair_phone_explain">On the TV, open Settings → Sync &amp; devices → Pair with phone. Scan the QR code it shows, or type its 6-digit code. Both devices must be on the same network.</string>
+    <string name="pair_phone_scan">Scan TV QR code</string>
+    <string name="pair_phone_enter_code">Enter code instead</string>
+    <string name="pair_phone_code_title">Code shown on the TV</string>
+    <string name="pair_phone_code_hint">6-digit code</string>
+    <string name="pair_phone_password_title">Confirm your password</string>
+    <string name="pair_phone_password_message">The TV signs in to %1$s with its own session. The password is sent encrypted over your local network and is not stored.</string>
+    <string name="pair_phone_password_hint">Password</string>
+    <string name="pair_phone_pair">Pair</string>
+    <string name="pair_phone_in_progress">Pairing…</string>
+    <string name="pair_phone_searching">Looking for the TV…</string>
+    <string name="pair_phone_success">Paired with %1$s</string>
+    <string name="pair_phone_success_unnamed">TV paired</string>
+    <string name="pair_phone_error_not_found">No TV with this code was found. Check that both devices are on the same Wi-Fi and the code is still shown.</string>
+    <string name="pair_phone_error_unreachable">Could not reach the TV. Check that both devices are on the same network.</string>
+    <string name="pair_phone_error_code">The code does not match or has expired. Show a new code on the TV.</string>
+    <string name="pair_phone_error_rejected">The TV could not sign in: %1$s</string>
+    <string name="pair_phone_invalid_qr">This is not a StreamFlix pairing code.</string>
+    <string name="pair_phone_no_scanner">No QR scanner app is installed. Scan the code with your camera app, or enter the code instead.</string>
+    <string name="pair_phone_invalid_code">Enter the 6 digits shown on the TV.</string>
+
+    <!-- Phone remote screen -->
+    <string name="remote_title">Remote</string>
+    <string name="remote_tv_label">TV: %1$s</string>
+    <string name="remote_no_tv">No TV selected</string>
+    <string name="remote_change_tv">Change</string>
+    <string name="remote_search_hint">Type to search on TV</string>
+    <string name="remote_play_pause">Play / Pause</string>
+    <string name="remote_back_10">−10 s</string>
+    <string name="remote_forward_10">+10 s</string>
+    <string name="remote_next_episode">Next episode</string>
+    <string name="remote_subtitles">Subtitles</string>
+    <string name="remote_stop">Stop</string>
+    <string name="remote_pair_tv">Pair a TV</string>
+
+    <!-- Hand-off resume -->
+    <string name="handoff_title">Continue watching?</string>
+    <string name="handoff_message">Continue %1$s at %2$s?\nWatched on %3$s</string>
+    <string name="handoff_resume">Resume</string>
+    <string name="handoff_dismiss">Not now</string>
+    <string name="handoff_other_device">another device</string>
+</resources>

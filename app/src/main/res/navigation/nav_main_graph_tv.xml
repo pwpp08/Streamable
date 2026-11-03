@@ -254,4 +254,9 @@
         android:id="@+id/settings"
         android:name="com.streamflixreborn.streamflix.fragments.settings.SettingsTvFragment"
         android:label="fragment_settings_tv" />
+    <fragment
+        android:id="@+id/pair_tv"
+        android:name="com.streamflixreborn.streamflix.fragments.pairing.PairTvFragment"
+        android:label="fragment_pair_tv"
+        tools:layout="@layout/fragment_pair_tv" />
 </navigation>

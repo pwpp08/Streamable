@@ -25,6 +25,8 @@ import com.streamflixreborn.streamflix.fragments.player.PlayerTvFragment
 import com.streamflixreborn.streamflix.ui.UpdateAppTvDialog
 import com.streamflixreborn.streamflix.providers.IptvProvider
 import com.streamflixreborn.streamflix.providers.Provider
+import com.streamflixreborn.streamflix.sync.HandoffResume
+import com.streamflixreborn.streamflix.sync.TvCommandHandler
 import com.streamflixreborn.streamflix.utils.AppLanguageManager
 import com.streamflixreborn.streamflix.utils.ProfileManager
 import com.streamflixreborn.streamflix.utils.ThemeManager
@@ -92,6 +94,10 @@ class MainTvActivity : FragmentActivity() {
 
         binding.navMain.setupWithNavController(navController)
         updateNavigationVisibility()
+
+        // Phone -> TV commands (Play on TV, remote search/controls) and hand-off resume.
+        TvCommandHandler(this) { navController }.attach()
+        HandoffResume.attach(this) { navController }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             binding.navMainFragment.isFocusedByDefault = true

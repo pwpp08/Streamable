@@ -71,6 +71,8 @@ import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.ui.ShowOptionsMobileDialog
+import com.streamflixreborn.streamflix.sync.PlayOnTv
+import com.streamflixreborn.streamflix.sync.SyncProviders
 import com.streamflixreborn.streamflix.ui.ShowOptionsTvDialog
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
 import com.streamflixreborn.streamflix.utils.dp
@@ -179,11 +181,8 @@ class MovieViewHolder(
     }
 
     private fun checkProviderAndRun(action: () -> Unit) {
-        if (!movie.providerName.isNullOrBlank() && movie.providerName != UserPreferences.currentProvider?.name) {
-            Provider.providers.keys.find { it.name == movie.providerName }?.let {
-                UserPreferences.currentProvider = it
-            }
-        }
+        // Also resolves TMDb providers (cross-provider Continue Watching).
+        SyncProviders.switchTo(movie.providerName)
         action()
     }
 
@@ -856,6 +855,12 @@ class MovieViewHolder(
                 if (trailer != null) handleTrailerClick(trailer, "MovieMobile")
             }
             visibility = if (trailer != null) View.VISIBLE else View.GONE
+        }
+
+        binding.btnMoviePlayOnTv.apply {
+            val activity = context.toActivity() as? androidx.fragment.app.FragmentActivity
+            visibility = if (activity != null && PlayOnTv.isAvailable(activity)) View.VISIBLE else View.GONE
+            setOnClickListener { activity?.let { PlayOnTv.play(it, movie) } }
         }
 
         binding.btnMovieFavorite.apply {

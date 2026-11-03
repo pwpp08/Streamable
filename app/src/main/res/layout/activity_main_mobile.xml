@@ -36,6 +36,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <ImageButton
+        android:id="@+id/btn_main_remote"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/remote_title"
+        android:elevation="8dp"
+        android:padding="12dp"
+        android:src="@drawable/ic_sync_remote"
+        android:visibility="gone"
+        app:tint="@android:color/white"
+        app:layout_constraintEnd_toStartOf="@id/btn_main_search"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginEnd="8dp" />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bnv_main"
         android:layout_width="0dp"

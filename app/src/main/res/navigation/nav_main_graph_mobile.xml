@@ -265,4 +265,20 @@
         android:id="@+id/settings_about"
         android:name="com.streamflixreborn.streamflix.fragments.settings.about.SettingsAboutMobileFragment"
         android:label="fragment_settings_about_mobile" />
+    <fragment
+        android:id="@+id/pair_phone"
+        android:name="com.streamflixreborn.streamflix.fragments.pairing.PairPhoneFragment"
+        android:label="fragment_pair_phone"
+        tools:layout="@layout/fragment_pair_phone">
+        <argument
+            android:name="pairUri"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/remote"
+        android:name="com.streamflixreborn.streamflix.fragments.remote.RemoteMobileFragment"
+        android:label="fragment_remote_mobile"
+        tools:layout="@layout/fragment_remote_mobile" />
 </navigation>

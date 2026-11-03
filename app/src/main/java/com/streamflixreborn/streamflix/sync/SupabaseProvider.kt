@@ -32,15 +32,6 @@ object SupabaseProvider {
 
     fun clientOrNull(profileId: String): SupabaseClient? = clients[profileId]?.client
 
-    @Deprecated("Use clientFor with an explicit profile ID")
-    val client: SupabaseClient
-        get() = clientOrNull(ProfileManager.activeProfileId ?: "default")
-            ?: error("Supabase has not been initialized for the active profile")
-
-    @Deprecated("Use clientOrNull with an explicit profile ID")
-    fun activeClientOrNull(): SupabaseClient? =
-        clientOrNull(ProfileManager.activeProfileId ?: "default")
-
     fun configured(context: Context): Boolean = readConfig(context) != null
 
     fun getUrl(context: Context): String =
@@ -61,6 +52,7 @@ object SupabaseProvider {
             .apply()
         kotlinx.coroutines.runBlocking {
             CloudRealtimeSync.stop()
+            DeviceCommandBus.stop()
             clientsMutex.withLock {
                 clients.values.forEach { runCatching { it.client.close() } }
                 clients.clear()
@@ -112,6 +104,7 @@ object SupabaseProvider {
 
     suspend fun clearConfig(context: Context) {
         CloudRealtimeSync.stop()
+        DeviceCommandBus.stop()
         clientsMutex.withLock {
             clients.values.forEach { runCatching { it.client.close() } }
             clients.clear()
