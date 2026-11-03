@@ -54,19 +54,9 @@ object UserPreferences {
     // Default DoH Provider URL (Cloudflare)
     private const val DEFAULT_DOH_PROVIDER_URL = "https://cloudflare-dns.com/dns-query"
     const val DOH_DISABLED_VALUE = "" // Value to represent DoH being disabled
-    private const val DEFAULT_SERIENSTREAM_DOMAIN = "serienstream.to"
-    private const val DEFAULT_MOFLIX_DOMAIN = "moflix-stream.xyz"
     private const val DEFAULT_STREAMINGCOMMUNITY_DOMAIN = "streamingunity.fun"
-    private const val DEFAULT_CUEVANA_DOMAIN = "cuevana.gs"
-    private const val DEFAULT_POSEIDON_DOMAIN = "www.poseidonhd2.co"
 
-    const val PROVIDER_URL = "URL"
     const val PROVIDER_LOGO = "LOGO"
-    const val PROVIDER_PORTAL_URL = "PORTAL_URL"
-    const val PROVIDER_AUTOUPDATE = "AUTOUPDATE_URL"
-    const val PROVIDER_NEW_INTERFACE = "NEW_INTERFACE"
-    const val PROVIDER_PREFERRED_SERVER = "PREFERRED_SERVER"
-    const val PROVIDER_CUSTOM_DOMAIN = "CUSTOM_DOMAIN"
 
     lateinit var providerCache: JSONObject
 
@@ -188,83 +178,6 @@ object UserPreferences {
             providerCache.remove(providerName)
             Key.PROVIDER_CACHE.setString(providerCache.toString())
         }
-    }
-
-    private fun getProviderCache(providerName: String, key: String): String {
-        return providerCache
-            .optJSONObject(providerName)
-            ?.optString(key)
-            .orEmpty()
-    }
-
-    private fun setProviderCache(providerName: String, key: String, value: String) {
-        val innerJson = providerCache.optJSONObject(providerName)
-            ?: JSONObject().also { providerCache.put(providerName, it) }
-
-        innerJson.put(key, value)
-        Key.PROVIDER_CACHE.setString(providerCache.toString())
-    }
-
-    fun getProviderCustomDomain(providerName: String): String =
-        getProviderCache(providerName, PROVIDER_CUSTOM_DOMAIN)
-
-    fun setProviderCustomDomain(providerName: String, value: String) {
-        setProviderCache(
-            providerName,
-            PROVIDER_CUSTOM_DOMAIN,
-            normalizeProviderDomain(value)
-        )
-    }
-
-    fun resetProviderCustomDomain(providerName: String) {
-        setProviderCache(providerName, PROVIDER_CUSTOM_DOMAIN, "")
-    }
-
-    fun resolveProviderBaseUrl(
-        providerName: String,
-        defaultBaseUrl: String
-    ): String {
-        val customDomain = getProviderCustomDomain(providerName)
-        if (customDomain.isBlank()) return defaultBaseUrl
-
-        return runCatching {
-            val uri = android.net.Uri.parse(defaultBaseUrl)
-            uri.buildUpon()
-                .authority(customDomain)
-                .build()
-                .toString()
-        }.getOrDefault(defaultBaseUrl)
-    }
-
-    fun providerDomainForDisplay(
-        providerName: String,
-        defaultBaseUrl: String
-    ): String {
-        val customDomain = getProviderCustomDomain(providerName)
-        if (customDomain.isNotBlank()) return customDomain
-
-        return runCatching {
-            android.net.Uri.parse(defaultBaseUrl).authority.orEmpty()
-        }.getOrDefault(defaultBaseUrl)
-    }
-
-    private fun normalizeProviderDomain(value: String): String {
-        val trimmed = value.trim().trimEnd('/')
-        if (trimmed.isBlank()) return ""
-
-        val withScheme =
-            if (trimmed.contains("://")) trimmed
-            else "https://$trimmed"
-
-        return runCatching {
-            android.net.Uri.parse(withScheme).authority.orEmpty()
-        }.getOrDefault(trimmed)
-            .ifBlank {
-                trimmed
-                    .removePrefix("https://")
-                    .removePrefix("http://")
-                    .substringBefore('/')
-            }
     }
 
     var currentLanguage: String?
@@ -638,97 +551,6 @@ object UserPreferences {
             }
         }
 
-    var serienstreamDomain: String
-        get() {
-            if (!::prefs.isInitialized) return DEFAULT_SERIENSTREAM_DOMAIN
-            val storedValue = prefs.getString(Key.SERIENSTREAM_DOMAIN.name, null)
-            return if (storedValue.isNullOrEmpty()) DEFAULT_SERIENSTREAM_DOMAIN else storedValue
-        }
-        set(value) {
-            val oldDomain = if (::prefs.isInitialized) prefs.getString(Key.SERIENSTREAM_DOMAIN.name, null) else null
-            if (!::prefs.isInitialized) return
-
-            if (value != oldDomain && !value.isNullOrEmpty() && !oldDomain.isNullOrEmpty()) {
-                clearProviderCache("SerienStream")
-            }
-
-            with(prefs.edit()) {
-                if (value.isNullOrEmpty()) {
-                    remove(Key.SERIENSTREAM_DOMAIN.name)
-                } else {
-                    putString(Key.SERIENSTREAM_DOMAIN.name, value)
-                }
-                apply()
-            }
-        }
-
-    var cuevanaDomain: String
-        get() {
-            if (!::prefs.isInitialized) return DEFAULT_CUEVANA_DOMAIN
-            val storedValue = prefs.getString(Key.CUEVANA_DOMAIN.name, null)
-            return if (storedValue.isNullOrEmpty()) DEFAULT_CUEVANA_DOMAIN else storedValue
-        }
-        set(value) {
-            val oldDomain = if (::prefs.isInitialized) prefs.getString(Key.CUEVANA_DOMAIN.name, null) else null
-            if (!::prefs.isInitialized) return
-
-            if (value != oldDomain && !value.isNullOrEmpty() && !oldDomain.isNullOrEmpty()) {
-                clearProviderCache("Cuevana 3")
-            }
-
-            with(prefs.edit()) {
-                if (value.isNullOrEmpty()) {
-                    remove(Key.CUEVANA_DOMAIN.name)
-                } else {
-                    putString(Key.CUEVANA_DOMAIN.name, value)
-                }
-                apply()
-            }
-        }
-
-    var poseidonDomain: String
-        get() {
-            if (!::prefs.isInitialized) return DEFAULT_POSEIDON_DOMAIN
-            val storedValue = prefs.getString(Key.POSEIDON_DOMAIN.name, null)
-            return if (storedValue.isNullOrEmpty()) DEFAULT_POSEIDON_DOMAIN else storedValue
-        }
-        set(value) {
-            val oldDomain = if (::prefs.isInitialized) prefs.getString(Key.POSEIDON_DOMAIN.name, null) else null
-            if (!::prefs.isInitialized) return
-
-            if (value != oldDomain && !value.isNullOrEmpty() && !oldDomain.isNullOrEmpty()) {
-                clearProviderCache("Poseidonhd2")
-            }
-
-            with(prefs.edit()) {
-                if (value.isNullOrEmpty()) {
-                    remove(Key.POSEIDON_DOMAIN.name)
-                } else {
-                    putString(Key.POSEIDON_DOMAIN.name, value)
-                }
-                apply()
-            }
-        }
-
-    var moflixDomain: String
-        get() {
-            if (!::prefs.isInitialized) return DEFAULT_MOFLIX_DOMAIN
-            val storedValue = prefs.getString(Key.MOFLIX_DOMAIN.name, null)
-            return if (storedValue.isNullOrEmpty()) DEFAULT_MOFLIX_DOMAIN else storedValue
-        }
-        set(value) {
-            if (!::prefs.isInitialized) return
-
-            with(prefs.edit()) {
-                if (value.isNullOrEmpty()) {
-                    remove(Key.MOFLIX_DOMAIN.name)
-                } else {
-                    putString(Key.MOFLIX_DOMAIN.name, value)
-                }
-                apply()
-            }
-        }
-
     var dohProviderUrl: String
         get() = Key.DOH_PROVIDER_URL.getString() ?: DEFAULT_DOH_PROVIDER_URL
         set(value) {
@@ -814,11 +636,7 @@ object UserPreferences {
         SCREEN_PADDING_Y,
         QUALITY_HEIGHT,
         SUBTITLE_NAME,
-        SERIENSTREAM_DOMAIN,
-        MOFLIX_DOMAIN,
         STREAMINGCOMMUNITY_DOMAIN,
-        CUEVANA_DOMAIN,
-        POSEIDON_DOMAIN,
         DOH_PROVIDER_URL,
         AUTOPLAY,
         PROVIDER_CACHE,

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Sections -->
+    <string name="settings_section_languages">Languages</string>
+    <string name="settings_section_languages_summary">Languages you speak, metadata and app language</string>
+    <string name="settings_section_playback">Playback</string>
+    <string name="settings_section_playback_summary">Quality, autoplay, skipping and buffering</string>
+    <string name="settings_section_subtitles">Subtitles</string>
+    <string name="settings_section_subtitles_summary">When to show subtitles and how they look</string>
+    <string name="settings_section_sources">Sources</string>
+    <string name="settings_section_sources_summary">Providers, source health, DNS and TMDb</string>
+    <string name="settings_section_sync">Sync &amp; devices</string>
+    <string name="settings_section_home">Home screen</string>
+    <string name="settings_coming_soon">Coming soon</string>
+    <string name="settings_section_appearance_summary">Theme and screen layout</string>
+    <string name="settings_section_profiles">Profiles &amp; parental control</string>
+    <string name="settings_section_profiles_summary">Profiles, PIN protection, age limit and watch history</string>
+    <string name="settings_section_backup">Backup</string>
+    <string name="settings_section_about_summary">Version, updates and help</string>
+
+    <!-- Languages -->
+    <string name="settings_spoken_languages_title">Languages I speak</string>
+    <string name="settings_spoken_languages_dialog_hint">Tick in order of preference. The first one is your primary language.</string>
+    <string name="settings_spoken_languages_empty">Pick at least one language</string>
+    <string name="settings_primary_language_title">Primary language</string>
+    <string name="settings_primary_language_summary">%1$s · used first for audio and subtitles</string>
+    <string name="settings_language_primary_suffix">%1$s (primary)</string>
+    <string name="settings_metadata_language_title">Metadata language</string>
+    <string name="settings_metadata_language_summary">Titles and descriptions from TMDb: %1$s</string>
+    <string name="settings_metadata_language_saved">Metadata language saved. It applies when you use TMDb.</string>
+    <string-array name="settings_metadata_language_entries">
+        <item>English</item>
+        <item>Magyar (Hungarian)</item>
+    </string-array>
+    <string-array name="settings_metadata_language_values" translatable="false">
+        <item>en</item>
+        <item>hu</item>
+    </string-array>
+
+    <!-- Playback -->
+    <string name="settings_category_quality">Quality</string>
+    <string name="settings_quality_mode_title">Quality mode</string>
+    <string-array name="settings_quality_mode_entries">
+        <item>Max quality</item>
+        <item>Auto (adapt to connection)</item>
+    </string-array>
+    <string-array name="settings_quality_mode_values" translatable="false">
+        <item>MAX</item>
+        <item>AUTO</item>
+    </string-array>
+    <string name="settings_max_resolution_title">Max resolution</string>
+    <string-array name="settings_max_resolution_entries">
+        <item>Auto (match display)</item>
+        <item>1080p</item>
+        <item>720p</item>
+    </string-array>
+    <string-array name="settings_max_resolution_values" translatable="false">
+        <item>0</item>
+        <item>1080</item>
+        <item>720</item>
+    </string-array>
+    <string name="settings_data_saver_title">Data saver on mobile data</string>
+    <string name="settings_data_saver_summary">Lower quality when not on Wi-Fi or Ethernet</string>
+    <string name="settings_buffer_profile_title">Buffer</string>
+    <string-array name="settings_buffer_profile_entries">
+        <item>Auto</item>
+        <item>Low memory</item>
+        <item>Large (slow connections)</item>
+    </string-array>
+    <string-array name="settings_buffer_profile_values" translatable="false">
+        <item>AUTO</item>
+        <item>LOW_MEMORY</item>
+        <item>LARGE</item>
+    </string-array>
+    <string name="settings_category_next_episode">Next episode</string>
+    <string name="settings_autoplay_next_title">Autoplay next episode</string>
+    <string name="settings_up_next_title">Up Next countdown</string>
+    <string-array name="settings_up_next_entries">
+        <item>5 seconds</item>
+        <item>10 seconds</item>
+        <item>15 seconds</item>
+        <item>20 seconds</item>
+    </string-array>
+    <string-array name="settings_up_next_values" translatable="false">
+        <item>5</item>
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+    </string-array>
+    <string name="settings_skip_segments_title">Skip intro &amp; recap</string>
+    <string-array name="settings_skip_segments_entries">
+        <item>Off</item>
+        <item>Show a skip button</item>
+        <item>Skip automatically</item>
+    </string-array>
+    <string-array name="settings_skip_segments_values" translatable="false">
+        <item>OFF</item>
+        <item>BUTTON</item>
+        <item>AUTO</item>
+    </string-array>
+    <string name="settings_category_player">Player</string>
+    <string name="settings_match_frame_rate_title">Match content frame rate</string>
+    <string name="settings_match_frame_rate_summary">Switch the display refresh rate to the video\'s, for smoother motion</string>
+    <string name="settings_tunneled_playback_title">Tunneled playback</string>
+    <string name="settings_tunneled_playback_summary">Can fix stutter or A/V sync on some TV boxes; turn off if video stays black</string>
+
+    <!-- Subtitles -->
+    <string name="settings_subtitle_mode_title">When to show subtitles</string>
+    <string-array name="settings_subtitle_mode_entries">
+        <item>Off</item>
+        <item>Only when the audio isn\'t in my languages</item>
+        <item>Always</item>
+    </string-array>
+    <string-array name="settings_subtitle_mode_values" translatable="false">
+        <item>OFF</item>
+        <item>AUTO</item>
+        <item>ALWAYS</item>
+    </string-array>
+    <string name="settings_subtitle_preset_title">Style</string>
+    <string-array name="settings_subtitle_preset_entries">
+        <item>Classic (white on shadow)</item>
+        <item>Yellow</item>
+        <item>Outline</item>
+        <item>Large (for projectors)</item>
+    </string-array>
+    <string-array name="settings_subtitle_preset_values" translatable="false">
+        <item>CLASSIC</item>
+        <item>YELLOW</item>
+        <item>OUTLINE</item>
+        <item>LARGE</item>
+    </string-array>
+    <string name="settings_show_all_track_languages_title">Show all track languages</string>
+    <string name="settings_show_all_track_languages_summary">List audio and subtitle tracks in every language, not just yours</string>
+    <string name="settings_subtitle_fine_tune_title">Fine-tune size, colours and position</string>
+    <string name="settings_subtitle_fine_tune_summary">Open the subtitle menu while a video is playing</string>
+
+    <!-- Sources -->
+    <string name="settings_sources_providers_title">Providers</string>
+    <string name="settings_sources_providers_summary">Current: %1$s</string>
+    <string name="settings_sources_providers_none">Choose where to watch from</string>
+
+    <!-- Source health -->
+    <string name="settings_health_title">Source health</string>
+    <string name="settings_health_summary">Test which servers work and the quality they deliver</string>
+    <string name="settings_health_test_now">Test now</string>
+    <string name="settings_health_stop">Stop</string>
+    <string name="settings_health_include_candidates">Include experimental sources</string>
+    <string name="settings_health_empty">No results yet. Test now checks every source with a movie (Inception) and an episode (Breaking Bad S01E01). It takes a few minutes.</string>
+    <string name="settings_health_never_checked">Never checked</string>
+    <string name="settings_health_last_checked">Last checked %1$s</string>
+    <string name="settings_health_checking">Checking %1$s (%2$d of %3$d)…</string>
+    <string name="settings_health_checking_short">Checking…</string>
+    <string name="settings_health_provider_summary">%1$d of %2$d working</string>
+    <string name="settings_health_probe_movie">Movie</string>
+    <string name="settings_health_probe_episode">Episode</string>
+    <string name="settings_health_status_ok">Working</string>
+    <string name="settings_health_status_failed">Failed</string>
+    <string name="settings_health_status_no_match">Test title not available here</string>
+
+</resources>

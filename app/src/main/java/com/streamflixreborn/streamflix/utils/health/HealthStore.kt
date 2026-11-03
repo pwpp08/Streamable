@@ -1,0 +1,132 @@
+package com.streamflixreborn.streamflix.utils.health
+
+import android.util.Log
+import com.streamflixreborn.streamflix.StreamFlixApp
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import java.io.File
+
+/**
+ * Persists the latest [ServerHealth] results as JSON in `filesDir/provider_health.json`.
+ *
+ * Thread-safe; reads are served from memory after the first load.
+ */
+object HealthStore {
+
+    private const val TAG = "HealthStore"
+    private const val FILE_NAME = "provider_health.json"
+    private const val FORMAT_VERSION = 1
+
+    /** Results older than this are ignored by [scoreFor]. */
+    const val MAX_AGE_MS = 14L * 24 * 60 * 60 * 1000
+
+    @Serializable
+    private data class Snapshot(val version: Int = FORMAT_VERSION, val results: List<ServerHealth> = emptyList())
+
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val lock = Any()
+    private var cache: List<ServerHealth>? = null
+
+    /** Overridable for tests; defaults to the app's `filesDir`. */
+    internal var fileProvider: () -> File = { File(StreamFlixApp.instance.filesDir, FILE_NAME) }
+        set(value) {
+            synchronized(lock) {
+                field = value
+                cache = null
+            }
+        }
+
+    /** All stored results, in the order they were saved. */
+    fun latest(): List<ServerHealth> = synchronized(lock) { load() }
+
+    /**
+     * Stores [results]. Everything previously stored for a provider that appears in [results] is
+     * replaced; other providers keep their old results.
+     */
+    fun save(results: List<ServerHealth>) {
+        synchronized(lock) {
+            val providers = results.mapTo(HashSet()) { it.provider }
+            val merged = load().filterNot { it.provider in providers } + results
+            cache = merged
+            write(merged)
+        }
+    }
+
+    fun clear() {
+        synchronized(lock) {
+            cache = emptyList()
+            runCatching { fileProvider().delete() }
+        }
+    }
+
+    /**
+     * Health score of a server, for ranking servers before playback. Higher is better.
+     *
+     * Looks at every stored result whose `serverName` equals [serverName] (case-insensitive,
+     * trimmed), across providers and probes, ignoring results older than [MAX_AGE_MS] and
+     * "title not found" results. Each result scores:
+     * - failed: 0
+     * - working: 100, plus a quality bonus (2160p+: 40, 1080p: 30, 720p: 20, lower: 10,
+     *   unknown: 15), minus a latency penalty of 1 point per 500 ms (at most 30).
+     *
+     * The returned score is the average, in the range 0..140.
+     *
+     * @return the score, or null when the server has no usable result (never checked, or stale).
+     */
+    fun scoreFor(serverName: String): Int? {
+        val wanted = serverName.trim()
+        if (wanted.isEmpty()) return null
+        val now = System.currentTimeMillis()
+        val matches = latest().filter {
+            !it.isProviderLevel && !it.isUnknown &&
+                it.serverName.trim().equals(wanted, ignoreCase = true) &&
+                now - it.checkedAt <= MAX_AGE_MS
+        }
+        if (matches.isEmpty()) return null
+        return matches.map(::score).average().toInt()
+    }
+
+    internal fun score(result: ServerHealth): Int {
+        if (!result.ok) return 0
+        val quality = when (val height = result.maxHeight) {
+            null -> 15
+            else -> when {
+                height >= 2160 -> 40
+                height >= 1080 -> 30
+                height >= 720 -> 20
+                else -> 10
+            }
+        }
+        val latencyPenalty = ((result.latencyMs ?: 0L) / 500L).toInt().coerceIn(0, 30)
+        return 100 + quality - latencyPenalty
+    }
+
+    private fun load(): List<ServerHealth> {
+        cache?.let { return it }
+        val loaded = runCatching {
+            val file = fileProvider()
+            if (!file.isFile) emptyList()
+            else json.decodeFromString(Snapshot.serializer(), file.readText()).results
+        }.onFailure { warn("Unreadable health file, starting fresh", it) }
+            .getOrDefault(emptyList())
+        cache = loaded
+        return loaded
+    }
+
+    private fun write(results: List<ServerHealth>) {
+        runCatching {
+            val file = fileProvider()
+            file.parentFile?.mkdirs()
+            val tmp = File(file.parentFile, "${file.name}.tmp")
+            tmp.writeText(json.encodeToString(Snapshot.serializer(), Snapshot(results = results)))
+            if (!tmp.renameTo(file)) {
+                file.delete()
+                tmp.renameTo(file)
+            }
+        }.onFailure { warn("Could not write health file", it) }
+    }
+
+    private fun warn(message: String, error: Throwable) {
+        runCatching { Log.w(TAG, message, error) }
+    }
+}

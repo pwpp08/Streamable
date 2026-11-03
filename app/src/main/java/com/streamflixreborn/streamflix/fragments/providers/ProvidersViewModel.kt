@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.streamflixreborn.streamflix.models.Provider as ModelProvider
 import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.providers.TmdbProvider
+import com.streamflixreborn.streamflix.utils.MetadataLanguage
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -48,7 +49,8 @@ class ProvidersViewModel : ViewModel() {
 
             if (language == null || isFavoritesFilter) {
                 val availableLanguages = Provider.providers.keys.map { it.language }.distinct()
-                availableLanguages.forEach { lang ->
+                // The metadata language (Settings > Languages) also gets its TMDb entry.
+                (availableLanguages + MetadataLanguage.get()).distinct().forEach { lang ->
                     if (lang != "pl") {
                         val tmdbName = "TMDb (${getLanguageDisplayName(lang)})"
                         if (!isFavoritesFilter || favorites.contains(tmdbName)) {
