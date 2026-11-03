@@ -71,6 +71,7 @@ object SubDL {
         episodeNumber: Int? = null,
         type: String? = null,
         subsPerPage: Int = 30,
+        languages: List<String> = emptyList(),
     ): List<Subtitle> {
         
         // If no API key is configured, do not search
@@ -85,7 +86,8 @@ object SubDL {
                 seasonNumber = seasonNumber,
                 episodeNumber = episodeNumber,
                 type = type,
-                subsPerPage = subsPerPage
+                subsPerPage = subsPerPage,
+                languages = toSubDLLanguages(languages),
             )
             val subtitles = response.subtitles ?: emptyList()
             subtitles
@@ -93,6 +95,14 @@ object SubDL {
             emptyList()
         }
     }
+
+    /** SubDL takes upper-case ISO-639-1 codes, comma separated ("EN,HU"). */
+    fun toSubDLLanguages(iso1Codes: List<String>): String? =
+        iso1Codes.map { it.trim().uppercase() }
+            .filter { it.length == 2 }
+            .distinct()
+            .joinToString(",")
+            .ifEmpty { null }
 
     private interface Service {
 
@@ -125,6 +135,7 @@ object SubDL {
             @Query("episode_number") episodeNumber: Int? = null,
             @Query("type") type: String? = null,
             @Query("subs_per_page") subsPerPage: Int? = null,
+            @Query("languages") languages: String? = null,
         ): SearchResponse
     }
 

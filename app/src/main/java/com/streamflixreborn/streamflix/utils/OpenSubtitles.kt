@@ -63,12 +63,13 @@ object OpenSubtitles {
         episode: Int? = null,
         subLanguageId: String? = null,
     ): List<Subtitle> {
-        val params = mapOf(
+        // The REST API expects its path parameters in alphabetical order.
+        val params = linkedMapOf(
             Params.Key.EPISODE to episode?.toString(),
+            Params.Key.IMDB_ID to imdbId,
             Params.Key.QUERY to query?.lowercase(),
             Params.Key.SEASON to season?.toString(),
-            Params.Key.IMDB_ID to imdbId,
-            Params.Key.SUB_LANGUAGE_ID to subLanguageId,
+            Params.Key.SUB_LANGUAGE_ID to subLanguageId?.takeIf { it.isNotBlank() },
         )
         return service.search(
             params = params
@@ -77,6 +78,13 @@ object OpenSubtitles {
                 .joinToString("/")
         )
     }
+
+    /** "eng,hun" for the given ISO-639-1 codes, or null when none can be mapped. */
+    fun subLanguageIds(iso1Codes: List<String>): String? =
+        iso1Codes.mapNotNull { LanguageMatcher.toIso6392B(it) }
+            .distinct()
+            .joinToString(",")
+            .ifEmpty { null }
 
     // Function to get charset from opensubtitles metadata
     private fun getCharsetFromEncoding(encoding: String?): java.nio.charset.Charset {

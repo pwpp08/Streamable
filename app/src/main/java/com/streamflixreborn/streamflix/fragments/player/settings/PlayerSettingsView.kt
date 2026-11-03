@@ -14,6 +14,9 @@ import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.DefaultTrackNameProvider
 import androidx.media3.ui.SubtitleView
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleStyler
+import com.streamflixreborn.streamflix.fragments.player.engine.TrackPreferences.disableText
+import com.streamflixreborn.streamflix.utils.LanguageMatcher
 import com.streamflixreborn.streamflix.utils.OpenSubtitles
 import com.streamflixreborn.streamflix.utils.mediaServers
 import com.streamflixreborn.streamflix.utils.SubDL
@@ -120,7 +123,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                         .buildUpon()
                         .clearOverridesOfType(C.TRACK_TYPE_VIDEO)
                         .setMaxVideoBitrate(Int.MAX_VALUE)
-                        .setForceHighestSupportedBitrate(false)
+                        .setForceHighestSupportedBitrate(UserPreferences.qualityMode == UserPreferences.QualityMode.MAX)
                         .build()
                     UserPreferences.qualityHeight = null
                 }
@@ -175,6 +178,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                     player.trackSelectionParameters = player.trackSelectionParameters
                         .buildUpon()
                         .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                        .disableText()
                         .setIgnoredTextSelectionFlags(C.SELECTION_FLAG_FORCED.inv())
                         .build()
                     UserPreferences.subtitleName = null
@@ -211,8 +215,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
             val subtitleView = subtitleView ?: return
 
             UserPreferences.captionStyle = captionStyle
-            subtitleView.setStyle(UserPreferences.captionStyle)
-            subtitleView.setPadding(0, 0, 0, UserPreferences.captionMargin.dp(subtitleView.context))
+            SubtitleStyler.apply(subtitleView)
         }
 
     protected var onMarginSelected: ((Settings.Subtitle.Style.Margin) -> Unit) =
@@ -220,18 +223,18 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
             val subtitleView = subtitleView ?: return
 
             UserPreferences.captionMargin = margin.value
-            subtitleView.setPadding(0, 0, 0, UserPreferences.captionMargin.dp(subtitleView.context))
+            SubtitleStyler.apply(subtitleView)
         }
 
     protected var onFontColorSelected: ((Settings.Subtitle.Style.FontColor) -> Unit) =
         fun(fontColor) {
             onCaptionStyleChanged.invoke(
                 CaptionStyleCompat(
-                    UserPreferences.captionStyle.foregroundColor.setRgb(fontColor.color),
-                    UserPreferences.captionStyle.backgroundColor,
-                    UserPreferences.captionStyle.windowColor,
-                    UserPreferences.captionStyle.edgeType,
-                    UserPreferences.captionStyle.edgeColor,
+                    SubtitleStyler.effectiveStyle().foregroundColor.setRgb(fontColor.color),
+                    SubtitleStyler.effectiveStyle().backgroundColor,
+                    SubtitleStyler.effectiveStyle().windowColor,
+                    SubtitleStyler.effectiveStyle().edgeType,
+                    SubtitleStyler.effectiveStyle().edgeColor,
                     null
                 )
             )
@@ -242,18 +245,18 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
             val subtitleView = subtitleView ?: return
 
             UserPreferences.captionTextSize = textSize.value
-            subtitleView.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * UserPreferences.captionTextSize)
+            SubtitleStyler.apply(subtitleView)
         }
 
     protected var onFontOpacitySelected: ((Settings.Subtitle.Style.FontOpacity) -> Unit) =
         fun(fontOpacity) {
             onCaptionStyleChanged.invoke(
                 CaptionStyleCompat(
-                    UserPreferences.captionStyle.foregroundColor.setAlpha(fontOpacity.alpha),
-                    UserPreferences.captionStyle.backgroundColor,
-                    UserPreferences.captionStyle.windowColor,
-                    UserPreferences.captionStyle.edgeType,
-                    UserPreferences.captionStyle.edgeColor,
+                    SubtitleStyler.effectiveStyle().foregroundColor.setAlpha(fontOpacity.alpha),
+                    SubtitleStyler.effectiveStyle().backgroundColor,
+                    SubtitleStyler.effectiveStyle().windowColor,
+                    SubtitleStyler.effectiveStyle().edgeType,
+                    SubtitleStyler.effectiveStyle().edgeColor,
                     null
                 )
             )
@@ -263,11 +266,11 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
         fun(edgeStyle) {
             onCaptionStyleChanged.invoke(
                 CaptionStyleCompat(
-                    UserPreferences.captionStyle.foregroundColor,
-                    UserPreferences.captionStyle.backgroundColor,
-                    UserPreferences.captionStyle.windowColor,
+                    SubtitleStyler.effectiveStyle().foregroundColor,
+                    SubtitleStyler.effectiveStyle().backgroundColor,
+                    SubtitleStyler.effectiveStyle().windowColor,
                     edgeStyle.type,
-                    UserPreferences.captionStyle.edgeColor,
+                    SubtitleStyler.effectiveStyle().edgeColor,
                     null
                 )
             )
@@ -277,11 +280,11 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
         fun(backgroundColor) {
             onCaptionStyleChanged.invoke(
                 CaptionStyleCompat(
-                    UserPreferences.captionStyle.foregroundColor,
-                    UserPreferences.captionStyle.backgroundColor.setRgb(backgroundColor.color),
-                    UserPreferences.captionStyle.windowColor,
-                    UserPreferences.captionStyle.edgeType,
-                    UserPreferences.captionStyle.edgeColor,
+                    SubtitleStyler.effectiveStyle().foregroundColor,
+                    SubtitleStyler.effectiveStyle().backgroundColor.setRgb(backgroundColor.color),
+                    SubtitleStyler.effectiveStyle().windowColor,
+                    SubtitleStyler.effectiveStyle().edgeType,
+                    SubtitleStyler.effectiveStyle().edgeColor,
                     null
                 )
             )
@@ -291,11 +294,11 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
         fun(backgroundOpacity) {
             onCaptionStyleChanged.invoke(
                 CaptionStyleCompat(
-                    UserPreferences.captionStyle.foregroundColor,
-                    UserPreferences.captionStyle.backgroundColor.setAlpha(backgroundOpacity.alpha),
-                    UserPreferences.captionStyle.windowColor,
-                    UserPreferences.captionStyle.edgeType,
-                    UserPreferences.captionStyle.edgeColor,
+                    SubtitleStyler.effectiveStyle().foregroundColor,
+                    SubtitleStyler.effectiveStyle().backgroundColor.setAlpha(backgroundOpacity.alpha),
+                    SubtitleStyler.effectiveStyle().windowColor,
+                    SubtitleStyler.effectiveStyle().edgeType,
+                    SubtitleStyler.effectiveStyle().edgeColor,
                     null
                 )
             )
@@ -305,11 +308,11 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
         fun(windowColor) {
             onCaptionStyleChanged.invoke(
                 CaptionStyleCompat(
-                    UserPreferences.captionStyle.foregroundColor,
-                    UserPreferences.captionStyle.backgroundColor,
-                    UserPreferences.captionStyle.windowColor.setRgb(windowColor.color),
-                    UserPreferences.captionStyle.edgeType,
-                    UserPreferences.captionStyle.edgeColor,
+                    SubtitleStyler.effectiveStyle().foregroundColor,
+                    SubtitleStyler.effectiveStyle().backgroundColor,
+                    SubtitleStyler.effectiveStyle().windowColor.setRgb(windowColor.color),
+                    SubtitleStyler.effectiveStyle().edgeType,
+                    SubtitleStyler.effectiveStyle().edgeColor,
                     null
                 )
             )
@@ -319,11 +322,11 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
         fun(windowOpacity) {
             onCaptionStyleChanged.invoke(
                 CaptionStyleCompat(
-                    UserPreferences.captionStyle.foregroundColor,
-                    UserPreferences.captionStyle.backgroundColor,
-                    UserPreferences.captionStyle.windowColor.setAlpha(windowOpacity.alpha),
-                    UserPreferences.captionStyle.edgeType,
-                    UserPreferences.captionStyle.edgeColor,
+                    SubtitleStyler.effectiveStyle().foregroundColor,
+                    SubtitleStyler.effectiveStyle().backgroundColor,
+                    SubtitleStyler.effectiveStyle().windowColor.setAlpha(windowOpacity.alpha),
+                    SubtitleStyler.effectiveStyle().edgeType,
+                    SubtitleStyler.effectiveStyle().edgeColor,
                     null
                 )
             )
@@ -384,6 +387,15 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
             onSoftwareDecoderListener?.invoke(newValue)
         }
 
+    /** Flips "show all languages" and rebuilds the audio/subtitle lists. */
+    protected fun toggleShowAllLanguages() {
+        UserPreferences.showAllTrackLanguages = !UserPreferences.showAllTrackLanguages
+        player?.let {
+            Settings.Audio.init(it, resources)
+            Settings.Subtitle.init(it, resources)
+        }
+    }
+
     protected var onServerSelected: ((Settings.Server) -> Unit)? = null
     fun setOnServerSelectedListener(onServerSelected: (server: Settings.Server) -> Unit) {
         this.onServerSelected = onServerSelected
@@ -420,6 +432,16 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
         }
 
         data object ManualZoom : Settings()
+
+        /**
+         * Keeps tracks in a spoken language, tracks of unknown language and the track that is
+         * currently selected, unless [UserPreferences.showAllTrackLanguages] is on.
+         */
+        fun <T> filterByLanguage(tracks: List<T>, language: (T) -> String?, isSelected: (T) -> Boolean): List<T> {
+            if (UserPreferences.showAllTrackLanguages) return tracks
+            val spoken = UserPreferences.spokenLanguages
+            return tracks.filter { isSelected(it) || LanguageMatcher.isSpoken(language(it), spoken) }
+        }
 
         sealed class Gestures : Item {
             companion object : Settings() {
@@ -638,10 +660,10 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
         sealed class Audio : Item {
 
             companion object : Settings() {
-                val list = mutableListOf<AudioTrackInformation>()
+                val list = mutableListOf<Audio>()
 
                 val selected: AudioTrackInformation?
-                    get() = list.find { it.isSelected }
+                    get() = list.filterIsInstance<AudioTrackInformation>().find { it.isSelected }
 
                 fun init(player: ExoPlayer, resources: Resources) {
                     val currentServerId = player.currentMediaItem?.mediaMetadata?.extras?.getString("mediaServerId")
@@ -652,9 +674,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                             ?: Regex("\\((.*?)\\)").find(name)?.groupValues?.get(1)
                     }
 
-                    list.clear()
-                    list.addAll(
-                        player.currentTracks.groups
+                    val tracks = player.currentTracks.groups
                             .filter { it.type == C.TRACK_TYPE_AUDIO }
                             .flatMap { trackGroup ->
                                 trackGroup.supportedTrackFormats
@@ -672,6 +692,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
 
                                         AudioTrackInformation(
                                             name = finalName,
+                                            language = LanguageMatcher.detect(trackFormat.language, trackFormat.label),
 
                                             trackGroup = trackGroup,
                                             trackIndex = trackIndex,
@@ -679,14 +700,26 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                                     }
                             }
                             .sortedBy { it.name }
-                    )
+
+                    val visible = filterByLanguage(tracks, { it.language }, { it.isSelected })
+                    list.clear()
+                    list.addAll(visible)
+                    if (visible.size < tracks.size || UserPreferences.showAllTrackLanguages) {
+                        list.add(ShowAllLanguages)
+                    }
                 }
             }
 
             abstract val isSelected: Boolean
 
+            /** Toggles [UserPreferences.showAllTrackLanguages]. */
+            data object ShowAllLanguages : Audio() {
+                override val isSelected: Boolean get() = UserPreferences.showAllTrackLanguages
+            }
+
             class AudioTrackInformation(
                 val name: String,
+                val language: String?,
 
                 val trackGroup: Tracks.Group,
                 val trackIndex: Int,
@@ -711,12 +744,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                     } ?: None
 
                 fun init(player: ExoPlayer, resources: Resources) {
-                    list.clear()
-                    list.add(Style)
-                    list.add(Offset)
-                    list.add(None)
-                    list.addAll(
-                        player.currentTracks.groups
+                    val tracks = player.currentTracks.groups
                             .filter { it.type == C.TRACK_TYPE_TEXT }
                             .flatMap { trackGroup ->
                                 trackGroup.supportedTrackFormats
@@ -727,6 +755,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                                                 .getTrackName(trackFormat),
                                             label = trackFormat.label ?: "",
                                             language = trackFormat.language?.replaceFirstChar { it.titlecase() },
+                                            languageCode = LanguageMatcher.detect(trackFormat.language, trackFormat.label),
 
                                             trackGroup = trackGroup,
                                             trackIndex = trackIndex,
@@ -734,7 +763,16 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                                     }
                             }
                             .sortedBy { it.language ?: it.label }
-                    )
+
+                    val visible = filterByLanguage(tracks, { it.languageCode }, { it.isSelected })
+                    list.clear()
+                    list.add(Style)
+                    list.add(Offset)
+                    list.add(None)
+                    list.addAll(visible)
+                    if (visible.size < tracks.size || UserPreferences.showAllTrackLanguages) {
+                        list.add(ShowAllLanguages)
+                    }
                     list.add(LocalSubtitles)
                     list.add(OpenSubtitles)
                     // Add SubDL only if an API key is configured
@@ -745,7 +783,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
             }
 
             data object Offset : Subtitle() {
-                val list: List<Item> = (-10_000L..10_000L step 500L).map(::Value)
+                val list: List<Item> = (-10_000L..10_000L step 250L).map(::Value)
                 val selected: Value
                     get() = list.filterIsInstance<Value>()
                         .find { it.milliseconds == SubtitleOffset.offsetMs }
@@ -803,7 +841,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                     val color: Int,
                 ) : Item {
                     val isSelected: Boolean
-                        get() = color == UserPreferences.captionStyle.foregroundColor.getRgb()
+                        get() = color == SubtitleStyler.effectiveStyle().foregroundColor.getRgb()
 
                     companion object : Style() {
                         private val DEFAULT = FontColor(
@@ -910,7 +948,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                         get() = (value * 255).roundToInt()
 
                     val isSelected: Boolean
-                        get() = alpha == UserPreferences.captionStyle.foregroundColor.getAlpha()
+                        get() = alpha == SubtitleStyler.effectiveStyle().foregroundColor.getAlpha()
 
                     companion object : Style() {
                         private val DEFAULT = FontOpacity(
@@ -940,7 +978,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                     val type: Int,
                 ) : Item {
                     val isSelected: Boolean
-                        get() = type == UserPreferences.captionStyle.edgeType
+                        get() = type == SubtitleStyler.effectiveStyle().edgeType
 
                     companion object : Style() {
                         private val DEFAULT = EdgeStyle(
@@ -978,7 +1016,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                     val color: Int,
                 ) : Item {
                     val isSelected: Boolean
-                        get() = color == UserPreferences.captionStyle.backgroundColor.getRgb()
+                        get() = color == SubtitleStyler.effectiveStyle().backgroundColor.getRgb()
 
                     companion object : Style() {
                         private val DEFAULT = BackgroundColor(
@@ -1031,7 +1069,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                         get() = (value * 255).roundToInt()
 
                     val isSelected: Boolean
-                        get() = alpha == UserPreferences.captionStyle.backgroundColor.getAlpha()
+                        get() = alpha == SubtitleStyler.effectiveStyle().backgroundColor.getAlpha()
 
                     companion object : Style() {
                         private val DEFAULT = BackgroundOpacity(
@@ -1069,7 +1107,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                     val color: Int,
                 ) : Item {
                     val isSelected: Boolean
-                        get() = color == UserPreferences.captionStyle.windowColor.getRgb()
+                        get() = color == SubtitleStyler.effectiveStyle().windowColor.getRgb()
 
                     companion object : Style() {
                         private val DEFAULT = WindowColor(
@@ -1122,7 +1160,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                         get() = (value * 255).roundToInt()
 
                     val isSelected: Boolean
-                        get() = alpha == UserPreferences.captionStyle.windowColor.getAlpha()
+                        get() = alpha == SubtitleStyler.effectiveStyle().windowColor.getAlpha()
 
                     companion object : Style() {
                         private val DEFAULT = WindowOpacity(
@@ -1167,6 +1205,7 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                 val name: String,
                 val label: String,
                 val language: String?,
+                val languageCode: String?,
 
                 val trackGroup: Tracks.Group,
                 val trackIndex: Int,
@@ -1176,6 +1215,11 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
             }
 
             data object LocalSubtitles : Subtitle()
+
+            /** Toggles [UserPreferences.showAllTrackLanguages]. */
+            data object ShowAllLanguages : Subtitle() {
+                val isSelected: Boolean get() = UserPreferences.showAllTrackLanguages
+            }
 
             sealed class OpenSubtitles : Item {
 
