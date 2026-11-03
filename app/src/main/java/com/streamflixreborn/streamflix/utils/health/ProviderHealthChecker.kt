@@ -4,11 +4,7 @@ import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
-import com.streamflixreborn.streamflix.providers.AnyMovieProvider
-import com.streamflixreborn.streamflix.providers.HiAnimeProvider
 import com.streamflixreborn.streamflix.providers.Provider
-import com.streamflixreborn.streamflix.providers.SflixProvider
-import com.streamflixreborn.streamflix.providers.SuperStreamProvider
 import com.streamflixreborn.streamflix.providers.TmdbProvider
 import com.streamflixreborn.streamflix.utils.MetadataLanguage
 import com.streamflixreborn.streamflix.utils.NetworkClient
@@ -144,6 +140,8 @@ class ProviderHealthChecker(
 
     private suspend fun inspectStream(video: Video): StreamCheck {
         val hls = isHls(video)
+        // Some extractors (e.g. Vixcloud) hand the player an inline data: playlist; read it directly.
+        if (video.source.startsWith("data:", ignoreCase = true)) return inspectDataUri(video.source, hls)
         val builder = Request.Builder().url(video.source)
         video.headers?.forEach { (name, value) -> runCatching { builder.header(name, value) } }
         if (!hls) builder.header("Range", "bytes=0-1")
@@ -153,6 +151,22 @@ class ProviderHealthChecker(
         return runInterruptible(Dispatchers.IO) {
             httpClient().newCall(request).execute().use { response -> readStream(response, hls) }
         }
+    }
+
+    private fun inspectDataUri(uri: String, hls: Boolean): StreamCheck {
+        val comma = uri.indexOf(',')
+        if (comma < 0) return StreamCheck(false, null, "bad data uri")
+        val meta = uri.substring(5, comma)
+        val payload = uri.substring(comma + 1)
+        val text = runCatching {
+            if (meta.endsWith(";base64", ignoreCase = true)) {
+                String(android.util.Base64.decode(payload, android.util.Base64.DEFAULT), Charsets.UTF_8)
+            } else {
+                java.net.URLDecoder.decode(payload, "UTF-8")
+            }
+        }.getOrElse { return StreamCheck(false, null, "bad data uri") }
+        if (!HlsPlaylistParser.isPlaylist(text)) return StreamCheck(!hls, null, if (hls) "not a playlist" else null)
+        return StreamCheck(true, HlsPlaylistParser.maxHeight(text), null)
     }
 
     private fun readStream(response: Response, hls: Boolean): StreamCheck {
@@ -253,7 +267,7 @@ class ProviderHealthChecker(
 
         /** Providers not in `Provider.providers` that can be probed on request. */
         val candidateProviders: List<Provider>
-            get() = listOf(AnyMovieProvider, HiAnimeProvider, SflixProvider, SuperStreamProvider)
+            get() = emptyList<Provider>()
 
         /** Registered providers plus the TMDb provider of the metadata language. */
         fun defaultProviders(includeCandidates: Boolean): List<Provider> = buildList {

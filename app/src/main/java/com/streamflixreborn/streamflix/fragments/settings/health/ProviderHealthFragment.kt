@@ -1,6 +1,7 @@
 package com.streamflixreborn.streamflix.fragments.settings.health
 
 import android.os.Bundle
+import androidx.core.view.isVisible
 import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.View
@@ -48,6 +49,11 @@ class ProviderHealthFragment : Fragment() {
         binding.rvHealth.layoutManager = LinearLayoutManager(requireContext())
         binding.rvHealth.adapter = adapter
         binding.rvHealth.itemAnimator = null
+
+        // Only offer the toggle while unregistered candidate providers exist.
+        binding.cbHealthCandidates.isVisible =
+            com.streamflixreborn.streamflix.utils.health.ProviderHealthChecker.defaultProviders(true).size >
+                com.streamflixreborn.streamflix.utils.health.ProviderHealthChecker.defaultProviders(false).size
 
         binding.btnHealthTest.setOnClickListener {
             if (viewModel.state.value.running) viewModel.stop()
