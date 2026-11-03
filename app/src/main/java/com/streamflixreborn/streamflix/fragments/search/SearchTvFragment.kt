@@ -73,6 +73,16 @@ class SearchTvFragment : Fragment() {
 
     private lateinit var voiceHelper: VoiceRecognitionHelper
 
+    private val panelAdapter = SearchPanelAdapter(
+        onQuery = { query -> runQuery(query) },
+        onClearHistory = {
+            viewModel.clearHistory()
+        },
+    )
+
+    /** Hidden after a search runs, until the text changes again. */
+    private var panelSuppressed = false
+
     private fun switchProviderIfNeeded(providerName: String?) {
         val targetName = providerName?.takeIf { it.isNotBlank() } ?: return
         if (targetName == UserPreferences.currentProvider?.name) return
@@ -97,6 +107,13 @@ class SearchTvFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initializeSearch()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.history.flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED).collect { renderPanel() }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.suggestions.flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED).collect { renderPanel() }
+        }
 
         // Text typed on the phone remote (DeviceCommand.Search).
         viewLifecycleOwner.lifecycleScope.launch {
@@ -183,6 +200,10 @@ class SearchTvFragment : Fragment() {
     private fun submitSearch(): Boolean {
         val query = binding.etSearch.text?.toString().orEmpty()
         hideKeyboard()
+        if (query.isNotBlank()) {
+            panelSuppressed = true
+            renderPanel()
+        }
 
         if (isGlobalSearchChecked) {
             if (query.isBlank()) {
@@ -251,6 +272,9 @@ class SearchTvFragment : Fragment() {
 
             addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
+                    panelSuppressed = false
+                    viewModel.onTextChanged(s?.toString().orEmpty())
+                    renderPanel()
                     if (s.isNullOrBlank()) {
                                 val isIptv = UserPreferences.currentProvider is IptvProvider
         val hintStringRes = if (isIptv) R.string.search_input_hint_iptv else R.string.search_input_hint
@@ -273,6 +297,8 @@ class SearchTvFragment : Fragment() {
             onResult = { query ->
                 binding.btnSearchVoice.clearAnimation()
                 binding.etSearch.setText(query)
+                panelSuppressed = true
+                renderPanel()
                 viewModel.search(query)
             },
             onError = { msg ->
@@ -312,6 +338,8 @@ class SearchTvFragment : Fragment() {
             viewModel.search("")
         }
 
+        binding.rvSearchPanel.adapter = panelAdapter
+
         binding.vgvSearch.apply {
             adapter = appAdapter.apply {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -339,6 +367,49 @@ class SearchTvFragment : Fragment() {
         }
 
         binding.root.requestFocus()
+    }
+
+    /** A recent search or suggestion was picked. */
+    private fun runQuery(query: String) {
+        val b = _binding ?: return
+        b.etSearch.setText(query)
+        b.etSearch.setSelection(query.length)
+        submitSearch()
+        focusSearchContent()
+    }
+
+    /**
+     * Recent searches (empty box) or matches and suggestions (while typing), between the search
+     * box and the global-search toggle so the D-pad reaches them from the box.
+     */
+    private fun renderPanel() {
+        val b = _binding ?: return
+        val text = b.etSearch.text?.toString().orEmpty()
+        val (suggestionsFor, suggestions) = viewModel.suggestions.value
+        val rows = SearchPanelRow.build(
+            text = text,
+            history = viewModel.history.value,
+            suggestions = suggestions,
+            suggestionsFor = suggestionsFor,
+            recentTitle = getString(R.string.search_recent),
+            suggestionsTitle = getString(R.string.search_suggestions),
+        )
+        val visible = !panelSuppressed && rows.isNotEmpty()
+        val wasFocused = b.rvSearchPanel.hasFocus()
+        panelAdapter.submitList(if (visible) rows else emptyList())
+        b.rvSearchPanel.visibility = if (visible) View.VISIBLE else View.GONE
+
+        val panelId = b.rvSearchPanel.id
+        val searchViews = listOf(b.etSearch, b.btnSearchClear, b.btnSearchVoice)
+        if (visible) {
+            searchViews.forEach { it.nextFocusDownId = panelId }
+            b.llGlobalSearch.nextFocusUpId = panelId
+        } else {
+            searchViews.forEach { if (it.nextFocusDownId == panelId) it.nextFocusDownId = b.llGlobalSearch.id }
+            b.llGlobalSearch.nextFocusUpId = b.etSearch.id
+            // Not the box itself: focusing it can open the keyboard.
+            if (wasFocused) b.llGlobalSearch.requestFocus()
+        }
     }
 
     private fun focusSearchContent(): Boolean {

@@ -20,6 +20,18 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
+import com.streamflixreborn.streamflix.BuildConfig
+import com.streamflixreborn.streamflix.utils.MetadataLanguage
+import com.streamflixreborn.streamflix.utils.TMDb3
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.stateIn
 
 // DEFINICIONES DE ESTADO Y RESULTADOS (Fuera de la clase para mejor acceso)
 sealed class State {
@@ -107,12 +119,68 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
     var query = ""
     private var page = 1
 
+    // --- Recent searches (per profile) and TMDb suggestions ---
+
+    private val _history = MutableStateFlow(loadHistory())
+    val history: StateFlow<List<String>> = _history.asStateFlow()
+
+    private val typed = MutableStateFlow("")
+
+    /** Suggestions and the text they were fetched for. */
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val suggestions: StateFlow<Pair<String, List<SearchSuggestion>>> = typed
+        .map { it.trim() }
+        .distinctUntilChanged()
+        .debounce(SearchSuggestion.DEBOUNCE_MS)
+        .mapLatest { text ->
+            if (text.length < SearchSuggestion.MIN_CHARS || !suggestionsEnabled()) {
+                text to emptyList()
+            } else {
+                text to try {
+                    SearchSuggestion.fromTmdb(
+                        TMDb3.Search.multi(text, includeAdult = false, language = MetadataLanguage.get()).results
+                    )
+                } catch (e: Exception) {
+                    Log.w("SearchViewModel", "suggestions: ", e)
+                    emptyList()
+                }
+            }
+        }
+        .flowOn(Dispatchers.IO)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "" to emptyList())
+
+    fun onTextChanged(text: String) {
+        typed.value = text
+    }
+
+    fun clearHistory() {
+        UserPreferences.searchHistory = null
+        _history.value = emptyList()
+    }
+
+    private fun recordSearch(query: String) {
+        if (query.isBlank()) return
+        val updated = SearchHistory.add(_history.value, query)
+        _history.value = updated
+        runCatching { UserPreferences.searchHistory = SearchHistory.toJson(updated) }
+    }
+
+    private fun loadHistory(): List<String> =
+        runCatching { SearchHistory.parse(UserPreferences.searchHistory) }.getOrDefault(emptyList())
+
+    /** TMDb is on, a key exists and the provider is not IPTV (channel names are not on TMDb). */
+    private fun suggestionsEnabled(): Boolean =
+        UserPreferences.enableTmdb &&
+            (UserPreferences.tmdbApiKey.isNotBlank() || BuildConfig.TMDB_API_KEY.let { it.isNotBlank() && it != "null" }) &&
+            UserPreferences.currentProvider !is IptvProvider
+
     init {
         search(query)
     }
 
     fun search(query: String) = viewModelScope.launch(Dispatchers.IO) {
         _state.emit(State.Searching)
+        recordSearch(query)
 
         try {
             val results = ParentalControlUtils.filterItems(UserPreferences.currentProvider!!.search(query))
@@ -155,6 +223,7 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
     // FUNCIÓN DE BÚSQUEDA GLOBAL AÑADIDA
     fun searchGlobal(query: String, currentLanguage: String) = viewModelScope.launch(Dispatchers.IO) {
         _state.emit(State.GlobalSearching)
+        recordSearch(query)
 
         val isCurrentProviderIptv = UserPreferences.currentProvider is IptvProvider
         val targetProviders = Provider.providers.keys

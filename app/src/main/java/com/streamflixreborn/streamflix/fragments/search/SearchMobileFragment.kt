@@ -48,6 +48,14 @@ class SearchMobileFragment : Fragment() {
 
     private lateinit var voiceHelper: VoiceRecognitionHelper
 
+    private val panelAdapter = SearchPanelAdapter(
+        onQuery = { query -> runQuery(query) },
+        onClearHistory = { viewModel.clearHistory() },
+    )
+
+    /** Hidden after a search runs, until the text changes again. */
+    private var panelSuppressed = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -61,6 +69,13 @@ class SearchMobileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initializeSearch()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.history.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { renderPanel() }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.suggestions.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { renderPanel() }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
@@ -139,28 +154,20 @@ class SearchMobileFragment : Fragment() {
             // ========= LÓGICA DE BÚSQUEDA MODIFICADA =========
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                    val query = binding.etSearch.text.toString()
-                    hideKeyboard()
-
-                    if (query.isBlank()) {
-                        Toast.makeText(requireContext(), getString(R.string.search_empty_query), Toast.LENGTH_SHORT).show()
-                        return@setOnEditorActionListener true
-                    }
-
-                    if (binding.swGlobalSearch.isChecked) {
-                        val currentLanguage = UserPreferences.currentProvider?.language ?: "es"
-                        viewModel.searchGlobal(query, currentLanguage)
-                    } else {
-                        viewModel.search(query)
-                    }
+                    submitSearch(binding.etSearch.text.toString())
                     return@setOnEditorActionListener true
                 }
                 return@setOnEditorActionListener false
             }
+
+            setOnFocusChangeListener { _, _ -> renderPanel() }
             // =================================================
 
             addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
+                    panelSuppressed = false
+                    viewModel.onTextChanged(s?.toString().orEmpty())
+                    renderPanel()
                     if(s.isNullOrBlank()){
                                 val isIptv = UserPreferences.currentProvider is IptvProvider
         val hintStringRes = if (isIptv) R.string.search_input_hint_iptv else R.string.search_input_hint
@@ -183,6 +190,8 @@ class SearchMobileFragment : Fragment() {
             onResult = { query ->
                 binding.btnSearchVoice.clearAnimation()
                 binding.etSearch.setText(query)
+                panelSuppressed = true
+                renderPanel()
                 viewModel.search(query)
             },
             onError = { msg ->
@@ -218,6 +227,8 @@ class SearchMobileFragment : Fragment() {
             viewModel.search("")
         }
 
+        binding.rvSearchPanel.adapter = panelAdapter
+
         binding.rvSearch.apply {
             adapter = appAdapter.apply {
                 stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -226,6 +237,51 @@ class SearchMobileFragment : Fragment() {
                 SpacingItemDecoration(10.dp(requireContext()))
             )
         }
+    }
+
+    private fun submitSearch(query: String) {
+        hideKeyboard()
+
+        if (query.isBlank()) {
+            Toast.makeText(requireContext(), getString(R.string.search_empty_query), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        panelSuppressed = true
+        renderPanel()
+        binding.etSearch.clearFocus()
+
+        if (binding.swGlobalSearch.isChecked) {
+            val currentLanguage = UserPreferences.currentProvider?.language ?: "es"
+            viewModel.searchGlobal(query, currentLanguage)
+        } else {
+            viewModel.search(query)
+        }
+    }
+
+    /** A recent search or suggestion was tapped. */
+    private fun runQuery(query: String) {
+        binding.etSearch.setText(query)
+        binding.etSearch.setSelection(query.length)
+        submitSearch(query)
+    }
+
+    /** Recent searches (box focused and empty) or matches and suggestions (while typing). */
+    private fun renderPanel() {
+        val b = _binding ?: return
+        val text = b.etSearch.text?.toString().orEmpty()
+        val (suggestionsFor, suggestions) = viewModel.suggestions.value
+        val rows = SearchPanelRow.build(
+            text = text,
+            history = viewModel.history.value,
+            suggestions = suggestions,
+            suggestionsFor = suggestionsFor,
+            recentTitle = getString(R.string.search_recent),
+            suggestionsTitle = getString(R.string.search_suggestions),
+        )
+        val visible = !panelSuppressed && rows.isNotEmpty() && (b.etSearch.hasFocus() || text.isNotBlank())
+        panelAdapter.submitList(if (visible) rows else emptyList())
+        b.rvSearchPanel.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
     private fun displaySearch(list: List<AppAdapter.Item>, hasMore: Boolean) {

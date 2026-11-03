@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tv_search_panel_row"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:background="@drawable/bg_item_option"
+    android:ellipsize="end"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:maxLines="1"
+    android:paddingStart="12dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="10dp"
+    android:textColor="@color/option_text"
+    android:textSize="15sp" />
