@@ -1,7 +1,6 @@
 package com.streamflixreborn.streamflix.ui
 
 import android.content.Context
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +20,7 @@ import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.sync.PlayOnTv
 import com.streamflixreborn.streamflix.sync.SyncProviders
+import com.streamflixreborn.streamflix.ui.details.GroupedList
 import com.streamflixreborn.streamflix.utils.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,9 +57,6 @@ class ShowOptionsMobileDialog(
 
     init {
         setContentView(binding.root)
-
-        findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-            ?.setBackgroundColor(Color.TRANSPARENT)
 
         binding.btnOptionEpisodeMarkSeasonWatched.visibility = View.GONE
 
@@ -123,6 +120,9 @@ class ShowOptionsMobileDialog(
         binding.btnOptionCancel.setOnClickListener {
             hide()
         }
+
+        // Grouped expressive list: shapes follow the rows that ended up visible.
+        GroupedList.apply(binding.llOptionsRows)
     }
 
 
@@ -131,7 +131,7 @@ class ShowOptionsMobileDialog(
 
         Glide.with(context)
             .load(episode.poster ?: episode.tvShow?.poster)
-            .fitCenter()
+            .centerCrop()
             .into(binding.ivOptionsShowPoster)
 
         binding.tvOptionsShowTitle.text = episode.tvShow?.title ?: ""
@@ -248,7 +248,7 @@ class ShowOptionsMobileDialog(
 
     private fun displayMovie(movie: Movie) {
         binding.ivOptionsShowPoster.loadMoviePoster(movie) {
-            fitCenter()
+            centerCrop()
         }
 
         binding.tvOptionsShowTitle.text = movie.title
@@ -325,7 +325,7 @@ class ShowOptionsMobileDialog(
 
     private fun displayTvShow(tvShow: TvShow) {
         binding.ivOptionsShowPoster.loadTvShowPoster(tvShow) {
-            fitCenter()
+            centerCrop()
         }
 
         binding.tvOptionsShowTitle.text = tvShow.title

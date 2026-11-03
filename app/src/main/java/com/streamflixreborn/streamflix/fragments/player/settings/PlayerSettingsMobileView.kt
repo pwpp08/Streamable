@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.ui.details.GroupedList
 import com.streamflixreborn.streamflix.databinding.ItemSettingMobileBinding
 import com.streamflixreborn.streamflix.databinding.ViewPlayerSettingsMobileBinding
 import com.streamflixreborn.streamflix.utils.dp
@@ -64,6 +65,11 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
     }
 
     fun onBackPressed(): Boolean {
+        if (shortcutPage != null && currentSettings == shortcutPage) {
+            shortcutPage = null
+            hide()
+            return true
+        }
         when (currentSettings) {
             Setting.MAIN -> hide()
             Setting.QUALITY,
@@ -93,8 +99,25 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
         return true
     }
 
+    /** Page opened straight from a player toolbar button; Back from it closes the panel. */
+    private var shortcutPage: Setting? = null
+
+    /** Player toolbar shortcuts (subtitles, audio, quality, speed, servers). */
+    fun showSubtitles() = showShortcut(Setting.SUBTITLES)
+    fun showAudio() = showShortcut(Setting.AUDIO)
+    fun showQuality() = showShortcut(Setting.QUALITY)
+    fun showSpeed() = showShortcut(Setting.SPEED)
+    fun showServers() = showShortcut(Setting.SERVERS)
+
+    private fun showShortcut(setting: Setting) {
+        this.visibility = View.VISIBLE
+        shortcutPage = setting
+        displaySettings(setting)
+    }
+
     fun show() {
         this.visibility = View.VISIBLE
+        shortcutPage = null
 
         displaySettings(Setting.MAIN)
     }
@@ -205,6 +228,19 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
 
         override fun onBindViewHolder(holder: SettingViewHolder, position: Int) {
             holder.displaySettings(items[position])
+            // Grouped expressive list; the existing 6dp gaps (caption style, local subtitles)
+            // split the groups.
+            val start = position == 0 || isGroupEnd(position - 1)
+            val end = position == items.lastIndex || isGroupEnd(position)
+            GroupedList.applyRow(holder.itemView, start, end)
+        }
+
+        private fun isGroupEnd(position: Int): Boolean {
+            val item = items[position]
+            val next = items.getOrNull(position + 1)
+            return item == Settings.Subtitle.Style ||
+                item == Settings.Subtitle.Style.ResetStyle ||
+                next == Settings.Subtitle.LocalSubtitles
         }
 
         override fun getItemCount() = items.size

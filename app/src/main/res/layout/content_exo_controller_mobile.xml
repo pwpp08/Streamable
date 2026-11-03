@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phone player controls (Media3 custom controller). Title top-left; the morphing play/pause
+    between ±10 s; a thick themed time bar; times on the left and a floating toolbar of actions
+    on the right. Media3 ids (exo_*) and the ids the fragment binds are kept.
+    Over video, so only alpha/translation/scale animate (Media3 fades and slides the bars).
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -10,36 +16,35 @@
         android:id="@+id/exo_controls_background"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#98000000"
+        android:background="@drawable/ud_player_scrim"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:visibility="gone" />
 
+    <!-- ============================================================ top -->
     <ImageView
         android:id="@+id/btn_exo_back"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:padding="8dp"
-        android:src="@drawable/ic_player_back"
-        android:tint="#FFFFFF"
-        app:layout_constraintBottom_toBottomOf="@id/tv_exo_subtitle"
+        style="@style/Widget.StreamFlix.Player.IconButton"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:contentDescription="@string/player_back"
+        android:src="@drawable/ic_ud_arrow_back"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/tv_exo_title"
-        tools:ignore="ContentDescription,UseAppTint" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tv_exo_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginEnd="12dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceTitleLargeEmphasized"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintEnd_toStartOf="@id/btn_exo_external_player"
         app:layout_constraintStart_toEndOf="@id/btn_exo_back"
         app:layout_constraintTop_toTopOf="parent"
@@ -49,110 +54,120 @@
         android:id="@+id/tv_exo_subtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="16dp"
-        android:textSize="12sp"
-        android:textStyle="bold"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="12dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toStartOf="@id/btn_exo_external_player"
         app:layout_constraintStart_toEndOf="@id/btn_exo_back"
         app:layout_constraintTop_toBottomOf="@id/tv_exo_title"
-        tools:text="Description" />
+        tools:text="S1 E2  •  Description" />
 
     <ImageView
         android:id="@+id/btn_exo_external_player"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:padding="8dp"
+        style="@style/Widget.StreamFlix.Player.IconButton"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp"
+        android:contentDescription="@string/player_external_player"
         android:src="@drawable/exo_styled_controls_external_player"
-        android:tint="#FFFFFF"
-        app:layout_constraintBottom_toBottomOf="@id/tv_exo_subtitle"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/tv_exo_title"
-        tools:ignore="ContentDescription,UseAppTint" />
+        app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- ============================================================ centre -->
     <LinearLayout
         android:id="@+id/exo_center_controls"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
             android:id="@+id/btn_custom_prev"
-            android:layout_width="60dp"
-            android:layout_height="match_parent"
-            android:padding="10dp"
-            android:src="@drawable/ic_previous"
-            app:tint="#FFFFFF" />
+            style="@style/Widget.StreamFlix.Player.IconButton"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@string/player_previous_episode"
+            android:src="@drawable/ic_ud_skip_previous" />
 
-        <ImageView
-            android:id="@+id/exo_rew"
-            android:layout_width="60dp"
-            android:layout_height="match_parent"
-            android:padding="10dp"
-            android:src="@drawable/exo_styled_controls_rewind"
-            android:tint="#FFFFFF"
-            tools:ignore="ContentDescription,PrivateResource,UseAppTint" />
+        <!-- Media3 writes the seek increment ("10") into these. -->
+        <TextView
+            android:id="@+id/exo_rew_with_amount"
+            style="@style/Widget.StreamFlix.Player.SeekButton"
+            android:contentDescription="@string/player_rewind"
+            tools:text="10" />
 
-        <ImageView
-            android:id="@+id/exo_replay"
-            android:layout_width="60dp"
-            android:layout_height="match_parent"
-            android:padding="10dp"
-            android:src="@drawable/ic_refresh"
-            app:tint="#FFFFFF"
-            tools:ignore="ContentDescription" />
-
-        <ImageView
+        <com.streamflixreborn.streamflix.ui.player.PlayPauseMorphButton
             android:id="@+id/exo_play_pause"
-            android:layout_width="90dp"
-            android:layout_height="match_parent"
-            android:padding="15dp"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:contentDescription="@string/player_play_pause"
+            android:padding="24dp"
+            android:scaleType="fitCenter"
             android:src="@drawable/exo_styled_controls_play"
-            android:tint="#FFFFFF"
-            tools:ignore="ContentDescription,PrivateResource,UseAppTint" />
+            app:morphFillColor="@color/ud_tv_hero_bg"
+            app:tint="@color/ud_tv_hero_fg" />
 
-        <ImageView
-            android:id="@+id/exo_ffwd"
-            android:layout_width="60dp"
-            android:layout_height="match_parent"
-            android:padding="10dp"
-            android:src="@drawable/exo_styled_controls_fastforward"
-            android:tint="#FFFFFF"
-            tools:ignore="ContentDescription,PrivateResource,UseAppTint" />
+        <TextView
+            android:id="@+id/exo_ffwd_with_amount"
+            style="@style/Widget.StreamFlix.Player.SeekButton.Forward"
+            android:contentDescription="@string/player_fast_forward"
+            tools:text="10" />
 
         <ImageView
             android:id="@+id/btn_custom_next"
-            android:layout_width="60dp"
-            android:layout_height="match_parent"
-            android:padding="10dp"
-            android:src="@drawable/ic_next"
-            app:tint="#FFFFFF" />
+            style="@style/Widget.StreamFlix.Player.IconButton"
+            android:layout_marginStart="8dp"
+            android:contentDescription="@string/player_next_episode"
+            android:src="@drawable/ic_ud_skip_next" />
 
     </LinearLayout>
+
+    <!-- ============================================================ bottom -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_skip_intro"
+        style="@style/Widget.StreamFlix.Player.SkipPill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="12dp"
+        android:text="@string/player_skip_intro"
+        android:visibility="gone"
+        app:icon="@drawable/exo_styled_controls_fastforward"
+        app:layout_constraintBottom_toTopOf="@id/exo_progress"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="visible" />
 
     <androidx.media3.ui.DefaultTimeBar
         android:id="@+id/exo_progress"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="4dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        app:bar_height="6dp"
         app:layout_constraintBottom_toTopOf="@id/exo_bottom_bar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:scrubber_disabled_size="0dp"
+        app:scrubber_dragged_size="26dp"
+        app:scrubber_enabled_size="16dp"
+        app:touch_target_height="40dp" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/exo_bottom_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="20dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginBottom="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -161,8 +176,8 @@
             android:id="@+id/exo_position"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#FFFFFFFF"
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
+            android:textColor="?attr/colorOnSurface"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -172,11 +187,11 @@
             android:id="@+id/tv_time_separator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:text="·"
-            android:textColor="#B3FFFFFF"
-            android:textSize="12sp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:text="/"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorOnSurfaceVariant"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@id/exo_position"
             app:layout_constraintTop_toTopOf="parent"
@@ -186,101 +201,134 @@
             android:id="@+id/exo_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#B3FFFFFF"
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorOnSurfaceVariant"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@id/tv_time_separator"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="00:00:00" />
 
-        <ImageView
-            android:id="@+id/btn_exo_lock"
+        <LinearLayout
+            android:id="@+id/ll_exo_actions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:padding="12dp"
-            android:src="@drawable/exo_styled_controls_lock"
-            android:tint="#FFFFFF"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btn_exo_picture_in_picture"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="ContentDescription,PrivateResource,UseAppTint" />
-
-        <ImageView
-            android:id="@+id/btn_exo_picture_in_picture"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:padding="12dp"
-            android:src="@drawable/exo_styled_controls_picture_in_picture"
-            android:tint="#FFFFFF"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btn_exo_aspect_ratio"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="ContentDescription,PrivateResource,UseAppTint" />
-
-        <ImageView
-            android:id="@+id/btn_exo_aspect_ratio"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:padding="12dp"
-            android:src="@drawable/exo_styled_controls_aspect_ratio"
-            android:tint="#FFFFFF"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/exo_settings"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="ContentDescription,PrivateResource,UseAppTint" />
-
-        <ImageView
-            android:id="@+id/exo_settings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:src="@drawable/exo_styled_controls_settings"
-            android:tint="#FFFFFF"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="ContentDescription,PrivateResource,UseAppTint" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/btn_exo_lock"
+                style="@style/Widget.StreamFlix.Player.IconButton"
+                android:contentDescription="@string/player_lock_controls"
+                android:src="@drawable/exo_styled_controls_lock" />
+
+            <ImageView
+                android:id="@+id/btn_exo_picture_in_picture"
+                style="@style/Widget.StreamFlix.Player.IconButton"
+                android:contentDescription="@string/player_picture_in_picture"
+                android:src="@drawable/exo_styled_controls_picture_in_picture" />
+
+            <ImageView
+                android:id="@+id/btn_exo_aspect_ratio"
+                style="@style/Widget.StreamFlix.Player.IconButton"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@string/player_aspect_ratio"
+                android:src="@drawable/exo_styled_controls_aspect_ratio" />
+
+            <!-- Floating toolbar: restart, subtitles, audio, quality, speed, servers, more. -->
+            <LinearLayout
+                android:id="@+id/ll_exo_toolbar"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:background="@drawable/ud_player_toolbar"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/exo_replay"
+                    style="@style/Widget.StreamFlix.Player.IconButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="11dp"
+                    android:contentDescription="@string/player_restart"
+                    android:src="@drawable/ic_ud_restart" />
+
+                <ImageView
+                    android:id="@+id/btn_exo_subtitles"
+                    style="@style/Widget.StreamFlix.Player.IconButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="11dp"
+                    android:contentDescription="@string/player_settings_subtitles_title"
+                    android:src="@drawable/ic_ud_subtitles" />
+
+                <ImageView
+                    android:id="@+id/btn_exo_audio"
+                    style="@style/Widget.StreamFlix.Player.IconButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="11dp"
+                    android:contentDescription="@string/player_settings_audio_title"
+                    android:src="@drawable/ic_player_settings_audio" />
+
+                <ImageView
+                    android:id="@+id/btn_exo_quality"
+                    style="@style/Widget.StreamFlix.Player.IconButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="11dp"
+                    android:contentDescription="@string/player_settings_quality_title"
+                    android:src="@drawable/ic_player_settings_quality" />
+
+                <ImageView
+                    android:id="@+id/btn_exo_speed"
+                    style="@style/Widget.StreamFlix.Player.IconButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="11dp"
+                    android:contentDescription="@string/player_settings_speed_title"
+                    android:src="@drawable/ic_player_settings_playback_speed" />
+
+                <ImageView
+                    android:id="@+id/btn_exo_servers"
+                    style="@style/Widget.StreamFlix.Player.IconButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="11dp"
+                    android:contentDescription="@string/player_settings_servers_title"
+                    android:src="@drawable/ic_player_settings_servers" />
+
+                <ImageView
+                    android:id="@+id/exo_settings"
+                    style="@style/Widget.StreamFlix.Player.IconButton"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="11dp"
+                    android:contentDescription="@string/player_settings"
+                    android:src="@drawable/exo_styled_controls_settings" />
+            </LinearLayout>
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <TextView
-        android:id="@+id/btn_skip_intro"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:background="@drawable/bg_skip_intro_button"
-        android:drawableStart="@drawable/exo_styled_controls_fastforward"
-        android:drawablePadding="8dp"
-        android:gravity="center"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="8dp"
-        android:text="@string/player_skip_intro"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@id/exo_progress"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:visibility="visible" />
-
     <ImageView
         android:id="@+id/btn_exo_unlock"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        style="@style/Widget.StreamFlix.Player.IconButton"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:layout_marginBottom="24dp"
-        android:padding="12dp"
+        android:background="@drawable/ud_player_toolbar"
+        android:contentDescription="@string/player_unlock_controls"
+        android:padding="16dp"
         android:src="@drawable/exo_styled_controls_unlock"
-        android:tint="#FFFFFF"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:ignore="ContentDescription,PrivateResource,UseAppTint"
         tools:visibility="visible" />
 
     <androidx.constraintlayout.widget.Group
