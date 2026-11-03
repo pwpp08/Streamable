@@ -25,7 +25,8 @@ android {
     ndkVersion "26.1.10909125"
 
     def properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    def localProps = project.rootProject.file('local.properties')
+    if (localProps.exists()) properties.load(localProps.newDataInputStream())
 
     defaultConfig {
         applicationId "com.streamflixreborn.streamflix"
@@ -35,8 +36,11 @@ android {
         versionName "1.7.243"
 
         buildConfigField "String", "APP_LAYOUT", "\"${properties.getProperty("APP_LAYOUT")}\""
-        buildConfigField "String", "TMDB_API_KEY", "\"${properties.getProperty("TMDB_API_KEY")}\""
+        buildConfigField "String", "TMDB_API_KEY", "\"${properties.getProperty("TMDB_API_KEY", "9b4396c90d4c866105c05677002f6a15")}\""
         buildConfigField "String", "SUBDL_API_KEY", "\"${properties.getProperty("SUBDL_API_KEY")}\""
+        // Built-in sync backend (shared by the group); users can still override it in Settings.
+        buildConfigField "String", "SUPABASE_URL", "\"${properties.getProperty("SUPABASE_URL", "https://adxcjzotlwrrpcllabox.supabase.co")}\""
+        buildConfigField "String", "SUPABASE_KEY", "\"${properties.getProperty("SUPABASE_KEY", "sb_publishable_-joQB1UYwiQs4nlvaL_Pnw_s1-xF6J4")}\""
         buildConfigField "String", "RABBITSTREAM_SOURCE_API", "\"${properties.getProperty("RABBITSTREAM_SOURCE_API")}\""
 
         if (file("src/main/cpp/native-lib.cpp").exists()) {

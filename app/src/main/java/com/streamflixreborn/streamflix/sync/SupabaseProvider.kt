@@ -2,6 +2,7 @@ package com.streamflixreborn.streamflix.sync
 
 import android.content.Context
 import android.net.Uri
+import com.streamflixreborn.streamflix.BuildConfig
 import com.streamflixreborn.streamflix.StreamFlixApp
 import com.streamflixreborn.streamflix.utils.ProfileManager
 import io.github.jan.supabase.SupabaseClient
@@ -36,11 +37,11 @@ object SupabaseProvider {
 
     fun getUrl(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(URL_KEY, "").orEmpty()
+            .getString(URL_KEY, null).orEmpty().ifEmpty { BuildConfig.SUPABASE_URL }
 
     fun getPublicKey(context: Context): String =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(PUBLIC_KEY, "").orEmpty()
+            .getString(PUBLIC_KEY, null).orEmpty().ifEmpty { BuildConfig.SUPABASE_KEY }
 
     fun saveConfig(context: Context, url: String, publicKey: String) {
         val normalizedUrl = normalizeUrl(url)
@@ -116,9 +117,9 @@ object SupabaseProvider {
     }
 
     private fun readConfig(context: Context): Pair<String, String>? {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val url = normalizeUrl(prefs.getString(URL_KEY, null)) ?: return null
-        val key = prefs.getString(PUBLIC_KEY, null)?.trim().orEmpty()
+        // Saved settings win; otherwise fall back to the backend baked in at build time.
+        val url = normalizeUrl(getUrl(context)) ?: return null
+        val key = getPublicKey(context).trim()
         if (key.isEmpty()) return null
         return url to key
     }
