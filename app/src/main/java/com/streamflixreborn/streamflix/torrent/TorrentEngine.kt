@@ -38,7 +38,7 @@ object TorrentEngine {
     private const val METADATA_TIMEOUT_S = 50
     private const val STALL_TIMEOUT_MS = 75_000L
     private const val IDLE_STOP_MS = 30_000L
-    private const val WINDOW_AHEAD_BYTES = 96L shl 20
+    private const val WINDOW_AHEAD_BYTES = 40L shl 20
     private const val URGENT_BYTES = 8L shl 20
     private const val TAIL_BYTES = 3L shl 20
     private const val STATS_INTERVAL_MS = 4_000L
@@ -260,6 +260,8 @@ object TorrentEngine {
         private val lastPiece = ((fileOffset + fileSize - 1) / pieceLen).toInt()
         private val aheadPieces = maxOf(8, (WINDOW_AHEAD_BYTES / pieceLen).toInt())
         private val urgentPieces = maxOf(3, (URGENT_BYTES / pieceLen).toInt())
+        private val tailStart = maxOf(firstPiece, ((fileOffset + fileSize - TAIL_BYTES) / pieceLen).toInt())
+        private var tailRequested = false
         private var winStart = -1
         private var winEnd = -2
         private var lastUrgentPiece = -1
@@ -269,13 +271,14 @@ object TorrentEngine {
         init {
             // Nothing downloads except what the player asks for.
             handle.prioritizePieces(Array(info.numPieces()) { Priority.IGNORE })
-            val tailStart = maxOf(firstPiece, ((fileOffset + fileSize - TAIL_BYTES) / pieceLen).toInt())
-            for (p in tailStart..lastPiece) handle.piecePriority(p, Priority.DEFAULT)
-            for (k in 0 until urgentPieces) {
-                // Headers (and mkv cues / mp4 moov at the tail) are needed before the first frame.
-                if (firstPiece + k <= lastPiece) handle.setPieceDeadline(firstPiece + k, 300 * (k + 1))
+            // The head is needed before the first frame; the tail (mkv cues / mp4 moov) only after
+            // the head arrived, so the first piece gets every peer's bandwidth.
+            for (k in 0 until 2) {
+                if (firstPiece + k <= lastPiece) {
+                    handle.piecePriority(firstPiece + k, Priority.DEFAULT)
+                    handle.setPieceDeadline(firstPiece + k, 300 * (k + 1))
+                }
             }
-            for (p in tailStart..lastPiece) handle.setPieceDeadline(p, 3_000 + 300 * (p - tailStart))
             Log.i(TAG, "pieces ${info.numPieces()}, file pieces $firstPiece..$lastPiece, window ${aheadPieces} pieces")
         }
 
@@ -304,8 +307,15 @@ object TorrentEngine {
                 runCatching { handle.setSequentialRange(piece) }
             }
             if (desiredEnd > winEnd) {
-                for (p in (winEnd + 1)..desiredEnd) if (!handle.havePiece(p)) handle.piecePriority(p, Priority.DEFAULT)
+                for (p in (winEnd + 1)..desiredEnd) if (!handle.havePiece(p)) handle.piecePriority(p, Priority.LOW)
                 winEnd = desiredEnd
+            }
+            if (!tailRequested && handle.havePiece(firstPiece)) {
+                tailRequested = true
+                for (p in tailStart..lastPiece) {
+                    handle.piecePriority(p, Priority.DEFAULT)
+                    handle.setPieceDeadline(p, 1_500 + 300 * (p - tailStart))
+                }
             }
             val now = System.currentTimeMillis()
             if (piece != lastUrgentPiece || (waiting && now - lastUrgentAt > 2_500)) {
@@ -313,7 +323,10 @@ object TorrentEngine {
                 lastUrgentAt = now
                 for (k in 0 until urgentPieces) {
                     val p = piece + k
-                    if (p <= lastPiece && !handle.havePiece(p)) handle.setPieceDeadline(p, 250 * (k + 1))
+                    if (p <= lastPiece && !handle.havePiece(p)) {
+                        handle.piecePriority(p, Priority.DEFAULT)
+                        handle.setPieceDeadline(p, 250 * (k + 1))
+                    }
                 }
             }
         }

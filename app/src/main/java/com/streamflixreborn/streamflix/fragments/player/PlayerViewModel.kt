@@ -224,6 +224,8 @@ class PlayerViewModel(
     /** [server] is playing fine; remember it for this title. */
     fun onPlaybackStarted(server: Video.Server) {
         if (server.id == offlineServer?.id) return
+        // A torrent takes ~30 s to start, so it is never the "sticky" first choice; the quality upgrade finds it.
+        if (ServerRanker.isTorrentServer(server.name)) return
         StickyServers.put(StreamFlixApp.instance, stickyKey, server.name)
     }
 
