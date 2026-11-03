@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="4dp"
         android:src="@drawable/ic_providers_language"
-        android:tint="#FFFFFF"
+        android:tint="?attr/colorOnSurface"
         app:layout_constraintBottom_toBottomOf="@id/s_providers_language"
         app:layout_constraintEnd_toStartOf="@id/s_providers_language"
         app:layout_constraintTop_toTopOf="@id/s_providers_language"
@@ -51,7 +51,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:textColor="#FFFFFF"
+                android:textColor="?attr/colorOnSurface"
             android:textSize="21sp"
                 android:textStyle="bold"
                 tools:text="D" />
@@ -67,7 +67,7 @@
                 android:id="@+id/tv_profile_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="18sp"
                 tools:text="Default" />
 
@@ -76,7 +76,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/main_menu_change_profile"
-                android:textColor="#B3FFFFFF"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
@@ -98,7 +98,7 @@
         android:layout_marginEnd="70dp"
         android:gravity="center"
         android:text="@string/providers_choose_title"
-        android:textColor="#FFFFFF"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="30sp"
         app:layout_constraintBottom_toTopOf="@id/rv_providers"
         app:layout_constraintEnd_toEndOf="parent"

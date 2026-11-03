@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    StreamFlix UI typeface: Google Sans Flex (SIL OFL 1.1, github.com/google/fonts ofl/googlesansflex),
+    bundled as ONE variable file instanced to the wght axis (300..800, ROND=0, slnt=0, wdth=100,
+    opsz=18) and subset to Latin / Latin-ext / Vietnamese to keep the APK lean (~230 KB).
+    Glyphs outside the subset (Arabic, Cyrillic, ...) fall back to the system font.
+    Licence: assets/licenses/GoogleSansFlex-OFL.txt.
+
+    Each entry selects a weight instance of the same file, so android:textFontWeight (API 28+)
+    and android:textStyle="bold" pick real weights instead of synthetic bold.
+-->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font
+        android:font="@font/google_sans_flex"
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        android:fontVariationSettings="'wght' 400"
+        app:font="@font/google_sans_flex"
+        app:fontStyle="normal"
+        app:fontWeight="400"
+        app:fontVariationSettings="'wght' 400" />
+    <font
+        android:font="@font/google_sans_flex"
+        android:fontStyle="normal"
+        android:fontWeight="500"
+        android:fontVariationSettings="'wght' 500"
+        app:font="@font/google_sans_flex"
+        app:fontStyle="normal"
+        app:fontWeight="500"
+        app:fontVariationSettings="'wght' 500" />
+    <font
+        android:font="@font/google_sans_flex"
+        android:fontStyle="normal"
+        android:fontWeight="600"
+        android:fontVariationSettings="'wght' 600"
+        app:font="@font/google_sans_flex"
+        app:fontStyle="normal"
+        app:fontWeight="600"
+        app:fontVariationSettings="'wght' 600" />
+    <font
+        android:font="@font/google_sans_flex"
+        android:fontStyle="normal"
+        android:fontWeight="700"
+        android:fontVariationSettings="'wght' 700"
+        app:font="@font/google_sans_flex"
+        app:fontStyle="normal"
+        app:fontWeight="700"
+        app:fontVariationSettings="'wght' 700" />
+</font-family>

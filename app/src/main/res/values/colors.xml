@@ -4,8 +4,7 @@
     <color name="ic_launcher_background">#1E2129</color>
     <color name="ic_banner_background">#1E2129</color>
 
-    <!-- Colore di sfondo dinamico per TV -->
-    <color name="app_background">#181818</color>
+    <!-- Palette colours live in colors_m3.xml (generated); use theme attrs, not these. -->
     <color name="favorite_selected">#00E5FF</color>
 
     <array name="genres">

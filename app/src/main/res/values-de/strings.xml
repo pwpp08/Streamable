@@ -71,16 +71,6 @@
     <string name="main_menu_settings">Einstellungen</string>
     <string name="main_menu_favorites">Favoriten</string>
     <string name="main_menu_theme_change">Design ändern</string>
-    <string name="theme_default">Standard</string>
-    <string name="theme_nero_amoled_oled">Nero Amoled/Oled</string>
-    <string name="theme_sunset_cinema">Sunset Cinema</string>
-    <string name="theme_steel_blue">Steel Blue</string>
-    <string name="theme_forest_night">Forest Night</string>
-    <string name="theme_crimson_noir">Crimson Noir</string>
-    <string name="theme_midnight_violet">Midnight Violet</string>
-    <string name="theme_nord_frost">Nord Frost</string>
-    <string name="theme_emerald_luxe">Emerald Luxe</string>
-    <string name="theme_retro_neon">Retro Neon</string>
 
     <string name="search_input_hint">Filme / Serien suchen</string>
     <string name="search_input_hint_iptv">Kanäle suchen</string>

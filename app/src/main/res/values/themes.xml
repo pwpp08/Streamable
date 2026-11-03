@@ -1,347 +1,213 @@
-<resources>
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    StreamFlix Material 3 Expressive theme system (MDC 1.14). See docs/DESIGN_SYSTEM.md.
 
-    <style name="AppTheme.Mobile" parent="Theme.AppCompat">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="app_background_color">#181818</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_default</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_default</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_default</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_default</item>
+    Theme.StreamFlix            phone base   (Theme.Material3Expressive.Dark.NoActionBar)
+    Theme.StreamFlix.Tv         TV base      (Theme.StreamFlix + the MDC ".FocusRings" items + Leanback attrs)
+    Theme.StreamFlix[.Tv].<P>   palettes     (values/themes_palettes.xml, generated from HCT seeds)
+
+    Palette colour roles live ONLY in themes_palettes.xml. Everything else (type, shape, motion,
+    component defaults) lives here so every palette and both form factors share it.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ===================================================================== phone base -->
+    <style name="Theme.StreamFlix" parent="Theme.Material3Expressive.Dark.NoActionBar">
+        <!-- Window / edge-to-edge. System bars are transparent; ThemeManager.applySystemBars()
+             sets icon contrast from colorSurface. -->
+        <item name="android:windowBackground">@drawable/bg_window</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
+        <item name="android:enforceStatusBarContrast" tools:targetApi="q">false</item>
+
+        <!-- App attrs (kept for existing layouts). All follow the palette's surface. -->
+        <item name="app_background_color">?attr/colorSurface</item>
+        <item name="home_gradient_drawable">@drawable/bg_home_gradient</item>
+        <item name="movie_banner_gradient_drawable">@drawable/bg_banner_gradient</item>
+        <item name="tv_show_banner_gradient_drawable">@drawable/bg_banner_gradient</item>
+        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper</item>
+
+        <!-- Typography: Google Sans Flex everywhere. android:fontFamily at theme level also reaches
+             framework TextViews/Buttons (the main activities are FragmentActivity, no AppCompat
+             view substitution). -->
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="fontFamily">@font/sf_sans</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.StreamFlix.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.StreamFlix.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.StreamFlix.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.StreamFlix.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.StreamFlix.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.StreamFlix.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.StreamFlix.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.StreamFlix.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.StreamFlix.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.StreamFlix.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.StreamFlix.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.StreamFlix.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.StreamFlix.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.StreamFlix.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.StreamFlix.LabelSmall</item>
+        <item name="textAppearanceDisplayLargeEmphasized">@style/TextAppearance.StreamFlix.DisplayLarge.Emphasized</item>
+        <item name="textAppearanceDisplayMediumEmphasized">@style/TextAppearance.StreamFlix.DisplayMedium.Emphasized</item>
+        <item name="textAppearanceDisplaySmallEmphasized">@style/TextAppearance.StreamFlix.DisplaySmall.Emphasized</item>
+        <item name="textAppearanceHeadlineLargeEmphasized">@style/TextAppearance.StreamFlix.HeadlineLarge.Emphasized</item>
+        <item name="textAppearanceHeadlineMediumEmphasized">@style/TextAppearance.StreamFlix.HeadlineMedium.Emphasized</item>
+        <item name="textAppearanceHeadlineSmallEmphasized">@style/TextAppearance.StreamFlix.HeadlineSmall.Emphasized</item>
+        <item name="textAppearanceTitleLargeEmphasized">@style/TextAppearance.StreamFlix.TitleLarge.Emphasized</item>
+        <item name="textAppearanceTitleMediumEmphasized">@style/TextAppearance.StreamFlix.TitleMedium.Emphasized</item>
+        <item name="textAppearanceTitleSmallEmphasized">@style/TextAppearance.StreamFlix.TitleSmall.Emphasized</item>
+        <item name="textAppearanceBodyLargeEmphasized">@style/TextAppearance.StreamFlix.BodyLarge.Emphasized</item>
+        <item name="textAppearanceBodyMediumEmphasized">@style/TextAppearance.StreamFlix.BodyMedium.Emphasized</item>
+        <item name="textAppearanceBodySmallEmphasized">@style/TextAppearance.StreamFlix.BodySmall.Emphasized</item>
+        <item name="textAppearanceLabelLargeEmphasized">@style/TextAppearance.StreamFlix.LabelLarge.Emphasized</item>
+        <item name="textAppearanceLabelMediumEmphasized">@style/TextAppearance.StreamFlix.LabelMedium.Emphasized</item>
+        <item name="textAppearanceLabelSmallEmphasized">@style/TextAppearance.StreamFlix.LabelSmall.Emphasized</item>
+        <!-- Legacy MDC2 names still used by existing layouts, mapped onto the M3 scale. -->
+        <item name="textAppearanceHeadline3">@style/TextAppearance.StreamFlix.DisplaySmall</item>
+        <item name="textAppearanceHeadline4">@style/TextAppearance.StreamFlix.HeadlineMedium</item>
+        <item name="textAppearanceHeadline5">@style/TextAppearance.StreamFlix.HeadlineSmall</item>
+        <item name="textAppearanceHeadline6">@style/TextAppearance.StreamFlix.TitleLarge</item>
+        <item name="textAppearanceSubtitle1">@style/TextAppearance.StreamFlix.TitleMedium</item>
+        <item name="textAppearanceSubtitle2">@style/TextAppearance.StreamFlix.TitleSmall</item>
+        <item name="textAppearanceBody1">@style/TextAppearance.StreamFlix.BodyLarge</item>
+        <item name="textAppearanceBody2">@style/TextAppearance.StreamFlix.BodyMedium</item>
+        <item name="textAppearanceCaption">@style/TextAppearance.StreamFlix.BodySmall</item>
+        <item name="textAppearanceButton">@style/TextAppearance.StreamFlix.LabelLarge</item>
+        <item name="textAppearanceOverline">@style/TextAppearance.StreamFlix.LabelSmall</item>
+
+        <!-- Shape: M3 Expressive corner scale (MDC 1.14 shapeCornerSize* tokens). -->
+        <item name="shapeCornerSizeExtraSmall">4dp</item>
+        <item name="shapeCornerSizeSmall">8dp</item>
+        <item name="shapeCornerSizeMedium">12dp</item>
+        <item name="shapeCornerSizeLarge">16dp</item>
+        <item name="shapeCornerSizeLargeIncreased">20dp</item>
+        <item name="shapeCornerSizeExtraLarge">28dp</item>
+        <item name="shapeCornerSizeExtraLargeIncreased">32dp</item>
+        <item name="shapeCornerSizeExtraExtraLarge">48dp</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.Material3.Corner.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Material3.Corner.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Material3.Corner.Large</item>
+
+        <!-- Motion: MDC 1.14 spring tokens, tuned (see values/motion.xml). Read by ui/motion/Springs.kt. -->
+        <item name="motionSpringFastSpatial">@style/Motion.StreamFlix.Spring.Fast.Spatial</item>
+        <item name="motionSpringDefaultSpatial">@style/Motion.StreamFlix.Spring.Default.Spatial</item>
+        <item name="motionSpringSlowSpatial">@style/Motion.StreamFlix.Spring.Slow.Spatial</item>
+        <item name="motionSpringFastEffects">@style/Motion.StreamFlix.Spring.Fast.Effects</item>
+        <item name="motionSpringDefaultEffects">@style/Motion.StreamFlix.Spring.Default.Effects</item>
+        <item name="motionSpringSlowEffects">@style/Motion.StreamFlix.Spring.Slow.Effects</item>
+
+        <!-- Component defaults (values/styles_components.xml). -->
+        <item name="materialButtonStyle">@style/Widget.StreamFlix.Button</item>
+        <item name="materialButtonTonalStyle">@style/Widget.StreamFlix.Button.Tonal</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.StreamFlix.Button.Outlined</item>
+        <item name="materialCardViewStyle">@style/Widget.StreamFlix.Card</item>
+        <item name="materialCardViewFilledStyle">@style/Widget.StreamFlix.Card</item>
+        <item name="materialCardViewElevatedStyle">@style/Widget.StreamFlix.Card.Elevated</item>
+        <item name="bottomNavigationStyle">@style/Widget.StreamFlix.BottomNavigation</item>
+        <item name="navigationRailStyle">@style/Widget.StreamFlix.NavigationRail</item>
+        <item name="circularProgressIndicatorStyle">@style/Widget.StreamFlix.CircularProgressIndicator</item>
+        <item name="linearProgressIndicatorStyle">@style/Widget.StreamFlix.LinearProgressIndicator</item>
+        <item name="loadingIndicatorStyle">@style/Widget.StreamFlix.LoadingIndicator</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.StreamFlix.MaterialAlertDialog</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.Material3Expressive.Dialog.Alert</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.StreamFlix.BottomSheetDialog</item>
+        <item name="chipStyle">@style/Widget.StreamFlix.Chip</item>
+        <item name="sliderStyle">@style/Widget.StreamFlix.Slider</item>
+        <item name="materialSearchBarStyle">@style/Widget.StreamFlix.SearchBar</item>
+        <item name="materialSearchViewStyle">@style/Widget.Material3Expressive.SearchView</item>
+        <item name="snackbarStyle">@style/Widget.Material3.Snackbar</item>
     </style>
 
-    <style name="BottomNavLabelStyle" parent="Widget.Design.BottomNavigationView">
-        <item name="android:textSize">11sp</item>
+    <!-- Light phone base. Generated Light palettes hang off it; unused until screens are light-safe. -->
+    <style name="Theme.StreamFlix.Light" parent="Theme.Material3Expressive.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/bg_window</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="app_background_color">?attr/colorSurface</item>
+        <item name="home_gradient_drawable">@drawable/bg_home_gradient</item>
+        <item name="movie_banner_gradient_drawable">@drawable/bg_banner_gradient</item>
+        <item name="tv_show_banner_gradient_drawable">@drawable/bg_banner_gradient</item>
+        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper</item>
+        <item name="android:fontFamily">@font/sf_sans</item>
+        <item name="fontFamily">@font/sf_sans</item>
     </style>
 
-    <!-- Tema Nero Amoled/Oled per Mobile -->
-    <style name="AppTheme.Mobile.NeroAmoledOled" parent="AppTheme.Mobile">
-        <item name="app_background_color">#000000</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_amoled</item>
-        <item name="android:colorBackground">#000000</item>
-        <item name="colorAccent">#FFFFFF</item>
-        <item name="android:textColorPrimary">#FFFFFF</item>
-        <item name="android:textColorSecondary">#BDBDBD</item>
-        <item name="alertDialogTheme">@style/Theme.Amoled.Dialog.Alert</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_amoled</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_amoled</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_amoled</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_amoled</item>
+    <!-- ===================================================================== TV base -->
+    <!--
+        Everything from Theme.StreamFlix plus the items MDC 1.14 defines in
+        Theme.Material3Expressive.Dark.NoActionBar.FocusRings (copied verbatim, so TV gets the
+        M3 focus-ring drawables for D-pad), plus the Leanback attributes our Leanback widgets and
+        LeanbackPreferenceFragmentCompat read (defaultBrandColor, preferenceTheme, ...).
+        Dark only.
+    -->
+    <style name="Theme.StreamFlix.Tv" parent="Theme.StreamFlix">
+        <!-- = Theme.Material3Expressive.Dark.NoActionBar.FocusRings -->
+        <item name="focusRingsEnabled">true</item>
+        <item name="android:selectableItemBackground">@drawable/m3_focus_ring_item_background</item>
+        <item name="selectableItemBackground">@drawable/m3_focus_ring_item_background</item>
+        <item name="android:selectableItemBackgroundBorderless">@drawable/m3_focus_ring_item_background_borderless</item>
+        <item name="selectableItemBackgroundBorderless">@drawable/m3_focus_ring_item_background_borderless</item>
+        <item name="android:actionBarItemBackground">@drawable/m3_focus_ring_action_bar_item_background</item>
+        <item name="actionBarItemBackground">@drawable/m3_focus_ring_action_bar_item_background</item>
+        <item name="controlBackground">@drawable/m3_focus_ring_control_background</item>
+        <item name="android:listChoiceBackgroundIndicator">@drawable/m3_focus_ring_list_selector_background</item>
+        <item name="listChoiceBackgroundIndicator">@drawable/m3_focus_ring_list_selector_background</item>
+        <item name="toolbarNavigationButtonBackground">@drawable/m3_focus_ring_control_background</item>
+        <item name="materialToolbarSelectableItemBackground">@drawable/m3_focus_ring_toolbar_selectable_item_background</item>
+        <item name="materialToolbarSelectableItemBackgroundBorderless">@drawable/m3_focus_ring_toolbar_selectable_item_background_borderless</item>
+        <item name="materialToolbarActionBarItemBackground">@drawable/m3_focus_ring_toolbar_action_bar_item_background</item>
+        <item name="android:buttonStyle">@style/Widget.Material.Button.FocusRing</item>
+        <item name="buttonStyle">@style/Widget.Material.Button.FocusRing</item>
+        <item name="android:buttonStyleSmall">@style/Widget.Material.Button.Small.FocusRing</item>
+        <item name="buttonStyleSmall">@style/Widget.Material.Button.Small.FocusRing</item>
+        <item name="android:borderlessButtonStyle">@style/Widget.Material.Button.Borderless.FocusRing</item>
+        <item name="android:imageButtonStyle">@style/Widget.Material.ImageButton.FocusRing</item>
+        <item name="imageButtonStyle">@style/Widget.Material.ImageButton.FocusRing</item>
+        <item name="android:checkboxStyle">@style/Widget.Material.CompoundButton.CheckBox.FocusRing</item>
+        <item name="android:radioButtonStyle">@style/Widget.Material.CompoundButton.RadioButton.FocusRing</item>
+        <!-- Focus ring colour follows the palette. -->
+        <item name="focusRingsOuterStrokeColor">?attr/colorPrimary</item>
+
+        <!-- Leanback (previously inherited from Theme.Leanback). -->
+        <item name="android:windowOverscan">true</item>
+        <item name="defaultBrandColor">?attr/colorSurfaceContainer</item>
+        <item name="defaultBrandColorDark">?attr/colorSurfaceContainerLow</item>
+        <item name="defaultSearchColor">?attr/colorSurfaceContainerHigh</item>
+        <item name="defaultSearchBrightColor">?attr/colorSurfaceContainerHighest</item>
+        <item name="defaultSearchIconColor">?attr/colorOnSurface</item>
+        <item name="playbackProgressPrimaryColor">?attr/colorPrimary</item>
+        <item name="playbackControlsIconHighlightColor">?attr/colorPrimary</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.StreamFlix.Leanback</item>
+
+        <!-- TV component tweaks: chunkier slider for 10-foot use. -->
+        <item name="sliderStyle">@style/Widget.StreamFlix.Slider.Tv</item>
     </style>
 
-    <style name="AppTheme.Mobile.SunsetCinema" parent="AppTheme.Mobile">
-        <item name="app_background_color">#201410</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_sunset</item>
-        <item name="android:colorBackground">#201410</item>
-        <item name="colorAccent">#F39A5B</item>
-        <item name="android:textColorPrimary">#FFF0E5</item>
-        <item name="android:textColorSecondary">#D7B7A4</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_sunset</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_sunset</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_sunset</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_sunset</item>
+    <!-- Leanback preferences on the palette surface (replaces PreferenceThemeOverlay.Leanback.Amoled). -->
+    <style name="PreferenceThemeOverlay.StreamFlix.Leanback" parent="PreferenceThemeOverlayLeanback">
+        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="android:colorBackground">?attr/colorSurface</item>
     </style>
 
-    <style name="AppTheme.Mobile.SteelBlue" parent="AppTheme.Mobile">
-        <item name="app_background_color">#141C25</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_steel</item>
-        <item name="android:colorBackground">#141C25</item>
-        <item name="colorAccent">#7DB3E8</item>
-        <item name="android:textColorPrimary">#EAF4FF</item>
-        <item name="android:textColorSecondary">#ADC5DA</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_steel</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_steel</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_steel</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_steel</item>
-    </style>
+    <!-- ===================================================================== aliases -->
+    <!-- Manifest defaults; activities replace them via ThemeManager in onCreate. -->
+    <style name="AppTheme.Mobile" parent="Theme.StreamFlix.Crimson" />
+    <style name="AppTheme.Tv" parent="Theme.StreamFlix.Tv.Crimson" />
 
-    <style name="AppTheme.Mobile.ForestNight" parent="AppTheme.Mobile">
-        <item name="app_background_color">#101816</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_forest</item>
-        <item name="android:colorBackground">#101816</item>
-        <item name="colorAccent">#65D7C2</item>
-        <item name="android:textColorPrimary">#E6FFF8</item>
-        <item name="android:textColorSecondary">#A8D1C7</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_forest</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_forest</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_forest</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_forest</item>
-    </style>
-
-    <style name="AppTheme.Mobile.CrimsonNoir" parent="AppTheme.Mobile">
-        <item name="app_background_color">#1C1014</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_crimson</item>
-        <item name="android:colorBackground">#1C1014</item>
-        <item name="colorAccent">#D86A7A</item>
-        <item name="android:textColorPrimary">#FFECEF</item>
-        <item name="android:textColorSecondary">#D6B2BA</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_crimson</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_crimson</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_crimson</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_crimson</item>
-    </style>
-
-    <style name="AppTheme.Mobile.MidnightViolet" parent="AppTheme.Mobile">
-        <item name="app_background_color">#151523</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_violet</item>
-        <item name="android:colorBackground">#151523</item>
-        <item name="colorAccent">#AFA3FF</item>
-        <item name="android:textColorPrimary">#F1EEFF</item>
-        <item name="android:textColorSecondary">#BFB9DD</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_violet</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_violet</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_violet</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_violet</item>
-    </style>
-
-    <style name="AppTheme.Mobile.NordFrost" parent="AppTheme.Mobile">
-        <item name="app_background_color">#182029</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_nord</item>
-        <item name="android:colorBackground">#182029</item>
-        <item name="colorAccent">#8ED0E8</item>
-        <item name="android:textColorPrimary">#EAF7FD</item>
-        <item name="android:textColorSecondary">#B1C9D6</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_nord</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_nord</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_nord</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_nord</item>
-    </style>
-
-    <style name="AppTheme.Mobile.EmeraldLuxe" parent="AppTheme.Mobile">
-        <item name="app_background_color">#11201B</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_emerald</item>
-        <item name="android:colorBackground">#11201B</item>
-        <item name="colorAccent">#7ED6A3</item>
-        <item name="android:textColorPrimary">#EDF9F2</item>
-        <item name="android:textColorSecondary">#B6D0C0</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_emerald</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_emerald</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_emerald</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_emerald</item>
-    </style>
-
-    <style name="AppTheme.Mobile.RetroNeon" parent="AppTheme.Mobile">
-        <item name="app_background_color">#16161D</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_neon</item>
-        <item name="android:colorBackground">#16161D</item>
-        <item name="colorAccent">#4DE0D7</item>
-        <item name="android:textColorPrimary">#F4F7FF</item>
-        <item name="android:textColorSecondary">#CFB7DA</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_neon</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_neon</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_neon</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_neon</item>
-    </style>
-
-    <!-- Tema di Default per TV -->
-    <style name="AppTheme.Tv" parent="Theme.Leanback">
-        <item name="app_background_color">#181818</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#FFFFFF</item>
-        <item name="colorControlActivated">#FFFFFF</item>
-        <item name="colorControlNormal">#BDBDBD</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_default</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_default</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_default</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_default</item>
-    </style>
-
-    <!-- Tema Nero Amoled/Oled per TV (Nero Puro #000000) -->
-    <style name="AppTheme.NeroAmoledOled" parent="Theme.Leanback">
-        <item name="app_background_color">#000000</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_amoled</item>
-        <item name="android:colorBackground">#000000</item>
-        <item name="android:windowShowWallpaper">false</item>
-        <item name="android:windowBackgroundFallback">#000000</item>
-        <item name="colorAccent">#FFFFFF</item>
-        <item name="colorControlActivated">#FFFFFF</item>
-        <item name="colorControlNormal">#BDBDBD</item>
-        <item name="android:textColorPrimary">#FFFFFF</item>
-        <item name="android:textColorSecondary">#BDBDBD</item>
-        <item name="defaultBrandColor">#000000</item>
-        <item name="defaultSearchColor">#000000</item>
-        <item name="defaultSearchBrightColor">#000000</item>
-        <item name="defaultSearchIconColor">#FFFFFF</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlay.Leanback.Amoled</item>
-        <item name="alertDialogTheme">@style/Theme.Amoled.Dialog.Alert</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_amoled</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_amoled</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_amoled</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_amoled</item>
-    </style>
-
-    <style name="AppTheme.SunsetCinema" parent="Theme.Leanback">
-        <item name="app_background_color">#201410</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#F39A5B</item>
-        <item name="colorControlActivated">#F39A5B</item>
-        <item name="colorControlNormal">#D7B7A4</item>
-        <item name="android:textColorPrimary">#FFF0E5</item>
-        <item name="android:textColorSecondary">#D7B7A4</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_sunset</item>
-        <item name="defaultBrandColor">#2B1812</item>
-        <item name="defaultSearchColor">#2B1812</item>
-        <item name="defaultSearchBrightColor">#41231A</item>
-        <item name="defaultSearchIconColor">#FFF0E5</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_sunset</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_sunset</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_sunset</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_sunset</item>
-    </style>
-
-    <style name="AppTheme.SteelBlue" parent="Theme.Leanback">
-        <item name="app_background_color">#141C25</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#7DB3E8</item>
-        <item name="colorControlActivated">#7DB3E8</item>
-        <item name="colorControlNormal">#ADC5DA</item>
-        <item name="android:textColorPrimary">#EAF4FF</item>
-        <item name="android:textColorSecondary">#ADC5DA</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_steel</item>
-        <item name="defaultBrandColor">#1A2430</item>
-        <item name="defaultSearchColor">#1A2430</item>
-        <item name="defaultSearchBrightColor">#243243</item>
-        <item name="defaultSearchIconColor">#EAF4FF</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_steel</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_steel</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_steel</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_steel</item>
-    </style>
-
-    <style name="AppTheme.ForestNight" parent="Theme.Leanback">
-        <item name="app_background_color">#101816</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#65D7C2</item>
-        <item name="colorControlActivated">#65D7C2</item>
-        <item name="colorControlNormal">#A8D1C7</item>
-        <item name="android:textColorPrimary">#E6FFF8</item>
-        <item name="android:textColorSecondary">#A8D1C7</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_forest</item>
-        <item name="defaultBrandColor">#13221E</item>
-        <item name="defaultSearchColor">#13221E</item>
-        <item name="defaultSearchBrightColor">#1C322C</item>
-        <item name="defaultSearchIconColor">#E6FFF8</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_forest</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_forest</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_forest</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_forest</item>
-    </style>
-
-    <style name="AppTheme.CrimsonNoir" parent="Theme.Leanback">
-        <item name="app_background_color">#1C1014</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#D86A7A</item>
-        <item name="colorControlActivated">#D86A7A</item>
-        <item name="colorControlNormal">#A88891</item>
-        <item name="android:textColorPrimary">#FFECEF</item>
-        <item name="android:textColorSecondary">#D6B2BA</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_crimson</item>
-        <item name="defaultBrandColor">#241015</item>
-        <item name="defaultSearchColor">#241015</item>
-        <item name="defaultSearchBrightColor">#361A22</item>
-        <item name="defaultSearchIconColor">#FFECEF</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_crimson</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_crimson</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_crimson</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_crimson</item>
-    </style>
-
-    <style name="AppTheme.MidnightViolet" parent="Theme.Leanback">
-        <item name="app_background_color">#151523</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#AFA3FF</item>
-        <item name="colorControlActivated">#AFA3FF</item>
-        <item name="colorControlNormal">#8F8AAE</item>
-        <item name="android:textColorPrimary">#F1EEFF</item>
-        <item name="android:textColorSecondary">#BFB9DD</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_violet</item>
-        <item name="defaultBrandColor">#181726</item>
-        <item name="defaultSearchColor">#181726</item>
-        <item name="defaultSearchBrightColor">#27263C</item>
-        <item name="defaultSearchIconColor">#F1EEFF</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_violet</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_violet</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_violet</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_violet</item>
-    </style>
-
-    <style name="AppTheme.NordFrost" parent="Theme.Leanback">
-        <item name="app_background_color">#182029</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#8ED0E8</item>
-        <item name="colorControlActivated">#8ED0E8</item>
-        <item name="colorControlNormal">#8EA2B0</item>
-        <item name="android:textColorPrimary">#EAF7FD</item>
-        <item name="android:textColorSecondary">#B1C9D6</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_nord</item>
-        <item name="defaultBrandColor">#18212A</item>
-        <item name="defaultSearchColor">#18212A</item>
-        <item name="defaultSearchBrightColor">#24303A</item>
-        <item name="defaultSearchIconColor">#EAF7FD</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_nord</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_nord</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_nord</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_nord</item>
-    </style>
-
-    <style name="AppTheme.EmeraldLuxe" parent="Theme.Leanback">
-        <item name="app_background_color">#11201B</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#7ED6A3</item>
-        <item name="colorControlActivated">#7ED6A3</item>
-        <item name="colorControlNormal">#98AE9F</item>
-        <item name="android:textColorPrimary">#EDF9F2</item>
-        <item name="android:textColorSecondary">#B6D0C0</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_emerald</item>
-        <item name="defaultBrandColor">#13211B</item>
-        <item name="defaultSearchColor">#13211B</item>
-        <item name="defaultSearchBrightColor">#203128</item>
-        <item name="defaultSearchIconColor">#EDF9F2</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_emerald</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_emerald</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_emerald</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_emerald</item>
-    </style>
-
-    <style name="AppTheme.RetroNeon" parent="Theme.Leanback">
-        <item name="app_background_color">#16161D</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlayLeanback</item>
-        <item name="alertDialogTheme">@style/Theme.AppCompat.Dialog.Alert</item>
-        <item name="colorAccent">#4DE0D7</item>
-        <item name="colorControlActivated">#4DE0D7</item>
-        <item name="colorControlNormal">#A56FBD</item>
-        <item name="android:textColorPrimary">#F4F7FF</item>
-        <item name="android:textColorSecondary">#CFB7DA</item>
-        <item name="android:windowBackground">@drawable/bg_splash_screen_neon</item>
-        <item name="defaultBrandColor">#18181E</item>
-        <item name="defaultSearchColor">#18181E</item>
-        <item name="defaultSearchBrightColor">#24242D</item>
-        <item name="defaultSearchIconColor">#F4F7FF</item>
-        <item name="home_gradient_drawable">@drawable/bg_home_gradient_neon</item>
-        <item name="movie_banner_gradient_drawable">@drawable/bg_movie_banner_gradient_neon</item>
-        <item name="tv_show_banner_gradient_drawable">@drawable/bg_tv_show_banner_gradient_neon</item>
-        <item name="category_swiper_gradient_drawable">@drawable/fg_category_swiper_neon</item>
-    </style>
-
-    <!-- Stile Dialogo Nero Amoled/Oled -->
-    <style name="Theme.Amoled.Dialog.Alert" parent="Theme.AppCompat.Dialog.Alert">
-        <item name="android:colorBackground">#000000</item>
-        <item name="android:textColorPrimary">#FFFFFF</item>
-        <item name="android:textColorSecondary">#BDBDBD</item>
-        <item name="colorAccent">#FFFFFF</item>
-    </style>
-
-    <style name="AppTheme.SplashScreen" parent="Theme.AppCompat">
+    <!-- Launch window (logo on the brand surface) before the activity theme is applied. -->
+    <style name="AppTheme.SplashScreen" parent="Theme.StreamFlix.Crimson">
         <item name="android:windowBackground">@drawable/bg_splash_screen</item>
     </style>
+
+    <!--
+        Former local MaterialComponents wrappers. The activity themes are Material3 now, so these
+        are EMPTY overlays: wrapping a context with them keeps the active palette. Kept so existing
+        ContextThemeWrapper / android:theme references stay valid; new code should not use them.
+    -->
+    <style name="Theme.StreamFlix.Sync" parent="" />
+    <style name="Theme.StreamFlix.Health" parent="" />
+    <style name="Theme.StreamFlix.PlayerOverlay" parent="" />
 
 </resources>

@@ -1,39 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--
-        Material Components theme used only for the sync / pairing / remote
-        screens and their dialogs. The app themes are AppCompat (phone) and
-        Leanback (TV), which Material widgets and MaterialAlertDialogBuilder
-        do not accept, so SyncUi wraps contexts with this theme.
-    -->
-    <style name="Theme.StreamFlix.Sync" parent="Theme.MaterialComponents.NoActionBar">
-        <item name="colorPrimary">#FFFFFF</item>
-        <item name="colorPrimaryVariant">#BDBDBD</item>
-        <item name="colorOnPrimary">#000000</item>
-        <item name="colorSecondary">#FFFFFF</item>
-        <item name="colorOnSecondary">#000000</item>
-        <item name="colorSurface">#242424</item>
-        <item name="colorOnSurface">#FFFFFF</item>
-        <item name="android:colorBackground">#181818</item>
-        <item name="colorControlActivated">#FFFFFF</item>
-        <item name="android:textColorPrimary">#FFFFFF</item>
-        <item name="android:textColorSecondary">#B3FFFFFF</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.StreamFlix.Sync.Dialog</item>
-    </style>
-
-    <style name="ThemeOverlay.StreamFlix.Sync.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
-        <item name="colorPrimary">#FFFFFF</item>
-        <item name="colorSurface">#242424</item>
-        <item name="colorOnSurface">#FFFFFF</item>
-    </style>
-
-    <style name="Widget.StreamFlix.Sync.RemoteButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+    <!-- Theme.StreamFlix.Sync is now an empty overlay in themes.xml (the app theme is Material3). -->
+    <style name="Widget.StreamFlix.Sync.RemoteButton" parent="Widget.Material3Expressive.Button.OutlinedButton">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">64dp</item>
         <item name="android:layout_weight">1</item>
         <item name="android:layout_marginStart">4dp</item>
         <item name="android:layout_marginEnd">4dp</item>
-        <item name="android:textColor">#FFFFFF</item>
-        <item name="strokeColor">#66FFFFFF</item>
     </style>
 </resources>

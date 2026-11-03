@@ -12,10 +12,16 @@ class AppearanceController(private val host: SettingsHost) : SettingsController 
 
     override fun bind() {
         host.find<ListPreference>(KEY_THEME)?.apply {
-            summaryProvider = Preference.SummaryProvider<ListPreference> { pref ->
-                host.string(ThemeManager.titleRes(pref.value ?: ThemeManager.DEFAULT))
+            // "Wallpaper colours" only where Material You is available (Android 12+ phones).
+            if (!ThemeManager.supportsWallpaperColors(host.isTv)) {
+                val keep = entryValues.indices.filter { entryValues[it] != ThemeManager.WALLPAPER }
+                entries = keep.map { entries[it] }.toTypedArray()
+                entryValues = keep.map { entryValues[it] }.toTypedArray()
             }
-            value = UserPreferences.selectedTheme
+            summaryProvider = Preference.SummaryProvider<ListPreference> { pref ->
+                host.string(ThemeManager.titleRes(ThemeManager.resolve(pref.value, host.isTv)))
+            }
+            value = ThemeManager.current(host.isTv)
             setOnPreferenceChangeListener { _, newValue ->
                 UserPreferences.selectedTheme = newValue as String
                 host.restartActivity()

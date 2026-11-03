@@ -50,7 +50,7 @@ class MainTvActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Il setup delle preferenze è già avvenuto in StreamFlixApp
-        setTheme(ThemeManager.tvThemeRes(UserPreferences.selectedTheme))
+        ThemeManager.applyTvTheme(this)
         
         super.onCreate(savedInstanceState)
         
@@ -224,7 +224,7 @@ class MainTvActivity : FragmentActivity() {
     }
 
     private fun applyThemeNavigationChrome() {
-        val palette = ThemeManager.palette(UserPreferences.selectedTheme)
+        val palette = ThemeManager.palette(this)
         window.statusBarColor = palette.systemBar
         window.navigationBarColor = palette.systemBar
         binding.navMain.setBackgroundColor(palette.tvNavBackground)

@@ -22,7 +22,7 @@
         android:paddingEnd="16dp"
         android:paddingBottom="12dp"
         android:text="@string/bypass_status_complete_in_page"
-        android:textColor="#FFFFFFFF"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="14sp" />
 
     <WebView

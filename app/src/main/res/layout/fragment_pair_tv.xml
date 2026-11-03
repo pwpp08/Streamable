@@ -21,7 +21,7 @@
             android:contentDescription="@string/pair_tv_title"
             android:scaleType="fitCenter" />
 
-        <ProgressBar
+        <com.google.android.material.loadingindicator.LoadingIndicator
             android:id="@+id/pb_pair_qr"
             android:layout_width="48dp"
             android:layout_height="48dp"

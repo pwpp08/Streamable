@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    App shape styles on top of the M3 Expressive corner scale set in Theme.StreamFlix
+    (extra-small 4, small 8, medium 12, large 16, large-increased 20, extra-large 28,
+    extra-large-increased 32, extra-extra-large 48 dp). Use with app:shapeAppearance
+    (MaterialCardView, ShapeableImageView, MaterialButton, ...).
+-->
+<resources>
+    <!-- Poster / card artwork: large (16dp). -->
+    <style name="ShapeAppearance.StreamFlix.Poster" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">?attr/shapeCornerSizeLarge</item>
+    </style>
+
+    <!-- Hero / banner / backdrop: extra-large (28dp). -->
+    <style name="ShapeAppearance.StreamFlix.HeroBanner" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">?attr/shapeCornerSizeExtraLarge</item>
+    </style>
+
+    <!-- Bottom sheet: extra-large top corners, square bottom. -->
+    <style name="ShapeAppearance.StreamFlix.Sheet" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">?attr/shapeCornerSizeExtraLarge</item>
+        <item name="cornerSizeTopRight">?attr/shapeCornerSizeExtraLarge</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <!-- Fully rounded (chips, pills, the TV focus pill). -->
+    <style name="ShapeAppearance.StreamFlix.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+</resources>
