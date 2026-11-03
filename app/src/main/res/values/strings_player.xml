@@ -2,6 +2,7 @@
 <resources>
     <!-- Player settings menu -->
     <string name="player_settings_show_all_languages">Show all languages</string>
+    <string name="player_settings_subtitle_offset_seconds_fine">%+.2f s</string>
 
     <!-- Seamless server failover -->
     <string name="player_switched_server">Switched to %1$s</string>

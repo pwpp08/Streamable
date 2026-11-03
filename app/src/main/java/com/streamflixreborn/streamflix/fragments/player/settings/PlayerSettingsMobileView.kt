@@ -516,7 +516,7 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
                     }
 
                     is Settings.Subtitle.Offset.Value -> context.getString(
-                        R.string.player_settings_subtitle_offset_seconds,
+                        R.string.player_settings_subtitle_offset_seconds_fine,
                         item.milliseconds / 1_000.0,
                     )
 
@@ -603,7 +603,7 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
                     is Settings.Subtitle -> when (item) {
                         Settings.Subtitle.Style -> context.getString(R.string.player_settings_caption_style_sub_label)
                         Settings.Subtitle.Offset -> context.getString(
-                            R.string.player_settings_subtitle_offset_seconds,
+                            R.string.player_settings_subtitle_offset_seconds_fine,
                             Settings.Subtitle.Offset.selected.milliseconds / 1_000.0,
                         )
                         is Settings.Subtitle.TextTrackInformation -> item.language ?: ""

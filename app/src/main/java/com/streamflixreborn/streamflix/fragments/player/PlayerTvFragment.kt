@@ -587,7 +587,7 @@ class PlayerTvFragment : Fragment() {
         override fun playNext() {
             // Pausing first saves the progress through the normal pause path.
             if (::player.isInitialized && player.isPlaying) player.pause()
-            playNextEpisodeAcrossSeasons(autoplay = true)
+            playNextEpisodeAcrossSeasons()
         }
 
         override fun prepareNext() {
