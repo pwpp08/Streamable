@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Player settings menu -->
+    <string name="player_settings_show_all_languages">Show all languages</string>
+
+    <!-- Seamless server failover -->
+    <string name="player_switched_server">Switched to %1$s</string>
+    <string name="player_all_servers_failed">All servers failed to load the video.</string>
+
+    <!-- Skip segments (TheIntroDB) -->
+    <string name="player_skip_recap">Skip recap</string>
+    <string name="player_skipped_intro">Skipped intro</string>
+    <string name="player_skipped_recap">Skipped recap</string>
+</resources>

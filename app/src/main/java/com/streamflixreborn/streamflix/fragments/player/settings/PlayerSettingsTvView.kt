@@ -258,8 +258,13 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                         }
 
                         is Settings.Audio -> {
-                            settingsView.onAudioSelected.invoke(item)
-                            settingsView.hide()
+                            if (item == Settings.Audio.ShowAllLanguages) {
+                                settingsView.toggleShowAllLanguages()
+                                settingsView.displaySettings(Setting.AUDIO)
+                            } else {
+                                settingsView.onAudioSelected.invoke(item)
+                                settingsView.hide()
+                            }
                         }
 
                         is Settings.Subtitle -> {
@@ -276,6 +281,11 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                                 is Settings.Subtitle.TextTrackInformation -> {
                                     settingsView.onSubtitleSelected.invoke(item)
                                     settingsView.hide()
+                                }
+
+                                Settings.Subtitle.ShowAllLanguages -> {
+                                    settingsView.toggleShowAllLanguages()
+                                    settingsView.displaySettings(Setting.SUBTITLES)
                                 }
 
                                 Settings.Subtitle.LocalSubtitles -> {
@@ -518,6 +528,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
 
                     is Settings.Audio -> when (item) {
                         is Settings.Audio.AudioTrackInformation -> item.name
+                        Settings.Audio.ShowAllLanguages -> context.getString(R.string.player_settings_show_all_languages)
                     }
 
                     is Settings.Quality -> when (item) {
@@ -543,6 +554,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                         Settings.Subtitle.Offset -> context.getString(R.string.player_settings_subtitle_offset_label)
                         is Settings.Subtitle.None -> context.getString(R.string.player_settings_subtitles_off)
                         is Settings.Subtitle.TextTrackInformation -> item.label.ifEmpty { item.name }
+                        Settings.Subtitle.ShowAllLanguages -> context.getString(R.string.player_settings_show_all_languages)
                         Settings.Subtitle.LocalSubtitles -> context.getString(R.string.player_settings_local_subtitles_label)
                         Settings.Subtitle.OpenSubtitles -> context.getString(R.string.player_settings_open_subtitles_label)
                         Settings.Subtitle.SubDLSubtitles -> context.getString(R.string.player_settings_subdl_label)
@@ -683,6 +695,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                             item.isSelected -> View.VISIBLE
                             else -> View.GONE
                         }
+                        is Settings.Subtitle.ShowAllLanguages -> if (item.isSelected) View.VISIBLE else View.GONE
                         else -> View.GONE
                     }
 
@@ -780,6 +793,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                         Settings.Subtitle.Offset -> View.VISIBLE
                         is Settings.Subtitle.None -> View.GONE
                         is Settings.Subtitle.TextTrackInformation -> View.GONE
+                        Settings.Subtitle.ShowAllLanguages -> View.GONE
                         Settings.Subtitle.LocalSubtitles -> View.VISIBLE
                         Settings.Subtitle.OpenSubtitles -> View.VISIBLE
                         Settings.Subtitle.SubDLSubtitles -> View.VISIBLE
