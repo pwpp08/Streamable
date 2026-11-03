@@ -1,36 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Non-blocking player overlays: skip intro/recap pill and the short failover message. -->
+<!--
+    Non-blocking player overlays: the Skip intro / recap extended pill (secondaryContainer;
+    tap to skip) and the short "switched server" message pill.
+    Both only fade (OverlayUi), so they cost nothing over video.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clickable="false"
-    android:focusable="false"
-    android:theme="@style/Theme.StreamFlix.PlayerOverlay">
+    android:focusable="false">
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_skip_segment"
-        style="@style/Widget.MaterialComponents.Button"
+        style="@style/Widget.StreamFlix.Player.SkipPill"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="72dp"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
-        android:textAllCaps="false"
-        android:textSize="14sp"
-        android:visibility="gone"
+        android:layout_marginBottom="84dp"
         android:focusable="false"
-        app:backgroundTint="@color/player_skip_button_background"
-        app:cornerRadius="24dp"
+        android:visibility="gone"
         app:icon="@drawable/exo_styled_controls_fastforward"
-        app:iconTint="?attr/colorOnPrimary"
-        app:strokeColor="@color/player_skip_button_stroke"
-        app:strokeWidth="3dp"
         tools:text="Skip intro"
         tools:visibility="visible" />
 
@@ -39,24 +31,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="20dp"
         android:clickable="false"
         android:focusable="false"
         android:visibility="gone"
-        app:cardBackgroundColor="?attr/colorSurface"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="6dp"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerHighest"
+        app:cardElevation="0dp"
+        app:shapeAppearance="@style/ShapeAppearance.StreamFlix.Pill"
+        app:strokeWidth="0dp"
         tools:visibility="visible">
 
         <TextView
             android:id="@+id/tv_player_message"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingStart="18dp"
+            android:paddingStart="20dp"
             android:paddingTop="10dp"
-            android:paddingEnd="18dp"
+            android:paddingEnd="20dp"
             android:paddingBottom="10dp"
-            android:textAppearance="?attr/textAppearanceBody2"
+            android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
             android:textColor="?attr/colorOnSurface"
             tools:text="Switched to VixSrc" />
     </com.google.android.material.card.MaterialCardView>

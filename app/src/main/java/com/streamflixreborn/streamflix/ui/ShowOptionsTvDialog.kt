@@ -2,6 +2,8 @@ package com.streamflixreborn.streamflix.ui
 
 import android.app.Dialog
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -25,6 +27,7 @@ import com.streamflixreborn.streamflix.utils.UserDataCache
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.WatchStateActions
 import com.streamflixreborn.streamflix.sync.SyncProviders
+import com.streamflixreborn.streamflix.ui.details.GroupedList
 import com.streamflixreborn.streamflix.utils.format
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.toActivity
@@ -114,12 +117,18 @@ class ShowOptionsTvDialog(
             binding.btnOptionProgramClear.requestFocus()
         }
 
+        // Grouped expressive list: shapes follow the rows that ended up visible.
+        GroupedList.apply(binding.llOptionsRows)
+
+        // Floating expressive dialog, centred; the card shape is the layout's background.
+        window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         window?.attributes = window?.attributes?.also { param ->
-            param.gravity = Gravity.END
+            param.gravity = Gravity.CENTER
         }
         window?.setLayout(
-            (context.resources.displayMetrics.widthPixels * 0.35).toInt(),
-            context.resources.displayMetrics.heightPixels
+            (context.resources.displayMetrics.density * 640).toInt()
+                .coerceAtMost((context.resources.displayMetrics.widthPixels * 0.8).toInt()),
+            ViewGroup.LayoutParams.WRAP_CONTENT
         )
     }
 
@@ -130,7 +139,7 @@ class ShowOptionsTvDialog(
         Glide.with(context)
             .load(episode.poster ?: episode.tvShow?.poster)
             .fallback(R.drawable.glide_fallback_cover)
-            .fitCenter()
+            .centerCrop()
             .into(binding.ivOptionsShowPoster)
 
         binding.tvOptionsShowTitle.text = episode.tvShow?.title ?: ""
@@ -250,7 +259,7 @@ class ShowOptionsTvDialog(
     private fun displayMovie(movie: Movie) {
         binding.ivOptionsShowPoster.loadMoviePoster(movie) {
             fallback(R.drawable.glide_fallback_cover)
-            fitCenter()
+            centerCrop()
         }
 
         binding.tvOptionsShowTitle.text = movie.title
@@ -330,7 +339,7 @@ class ShowOptionsTvDialog(
     private fun displayTvShow(tvShow: TvShow) {
         binding.ivOptionsShowPoster.loadTvShowPoster(tvShow) {
             fallback(R.drawable.glide_fallback_cover)
-            fitCenter()
+            centerCrop()
         }
 
         binding.tvOptionsShowTitle.text = tvShow.title

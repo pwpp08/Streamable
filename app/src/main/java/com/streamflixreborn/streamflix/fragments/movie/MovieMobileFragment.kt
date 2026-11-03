@@ -17,6 +17,7 @@ import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentMovieMobileBinding
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
+import com.streamflixreborn.streamflix.ui.details.DetailsUi
 import com.streamflixreborn.streamflix.utils.CacheUtils
 import com.streamflixreborn.streamflix.utils.LoggingUtils
 import com.streamflixreborn.streamflix.utils.dp
@@ -102,6 +103,7 @@ class MovieMobileFragment : Fragment() {
                 SpacingItemDecoration(20.dp(requireContext()))
             )
         }
+        DetailsUi.attachBackdropParallax(binding.rvMovie, binding.ivMovieBanner)
     }
 
     private fun displayMovie(movie: Movie) {

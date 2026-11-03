@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Details, seasons/episodes and player screens (M3 Expressive redesign). -->
+<resources>
+    <!-- Details: primary actions -->
+    <string name="details_play">Play</string>
+    <string name="details_resume_at">Resume %s</string>
+    <string name="details_more_play_options">More play options</string>
+    <string name="details_more_options">More options</string>
+    <string name="details_action_favorite">Favorite</string>
+    <string name="details_action_watched">Watched</string>
+    <string name="details_action_trailer">Trailer</string>
+    <string name="details_action_play_on_tv">On TV</string>
+    <string name="details_rating_content_description">Rating %s</string>
+
+    <!-- Details: body -->
+    <string name="details_more_like_this">More like this</string>
+    <string name="details_overview_more">More</string>
+
+    <!-- Seasons / episodes -->
+    <string name="episode_card_title">E%1$d · %2$s</string>
+    <string name="episode_time_left">%d min left</string>
+    <string name="episode_watched">Watched</string>
+
+    <!-- Player -->
+    <string name="player_back">Back</string>
+    <string name="player_play_pause">Play or pause</string>
+    <string name="player_rewind">Rewind</string>
+    <string name="player_fast_forward">Fast forward</string>
+    <string name="player_previous_episode">Previous episode</string>
+    <string name="player_next_episode">Next episode</string>
+    <string name="player_restart">Restart</string>
+    <string name="player_lock_controls">Lock controls</string>
+    <string name="player_unlock_controls">Unlock controls</string>
+    <string name="player_picture_in_picture">Picture in picture</string>
+    <string name="player_aspect_ratio">Aspect ratio</string>
+    <string name="player_settings">Audio, subtitles and more</string>
+    <string name="player_external_player">Open in another player</string>
+    <string name="player_up_next_cancel">Cancel</string>
+</resources>

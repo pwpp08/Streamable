@@ -14,6 +14,8 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.R
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.databinding.FragmentSeasonTvBinding
@@ -114,6 +116,12 @@ class SeasonTvFragment : Fragment() {
 
     private fun initializeSeason() {
         binding.tvSeasonTitle.text = args.seasonTitle
+        binding.tvSeasonShowTitle.text = args.tvShowTitle
+        Glide.with(this)
+            .load(args.tvShowBanner ?: args.tvShowPoster)
+            .centerCrop()
+            .transition(DrawableTransitionOptions.withCrossFade())
+            .into(binding.ivSeasonBanner)
 
         binding.hgvEpisodes.apply {
             adapter = appAdapter.apply {

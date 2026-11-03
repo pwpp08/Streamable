@@ -10,6 +10,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.widget.Toast
+import android.widget.TextView
+import androidx.core.view.isVisible
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.streamflixreborn.streamflix.ui.details.DetailsUi
+import com.streamflixreborn.streamflix.ui.details.DetailsUi.setTextOrGone
+import com.streamflixreborn.streamflix.utils.WatchStateActions
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.findViewTreeLifecycleOwner
@@ -768,6 +775,86 @@ class MovieViewHolder(
     }
 
 
+    private fun movieVideoType() = Video.Type.Movie(
+        id = movie.id,
+        title = movie.title,
+        releaseDate = movie.released?.format("yyyy-MM-dd") ?: "",
+        poster = movie.poster ?: movie.banner ?: "",
+        imdbId = movie.imdbId,
+    )
+
+    /** Shared header metadata: title, year · runtime · rating · quality, overview. */
+    private fun bindMovieMeta(
+        title: TextView,
+        released: TextView,
+        runtime: TextView,
+        rating: TextView,
+        quality: TextView,
+        overview: TextView,
+    ) {
+        title.text = movie.title
+        released.setTextOrGone(movie.released?.format("yyyy"))
+        runtime.setTextOrGone(
+            DetailsUi.runtime(context, movie.runtime, R.string.movie_runtime_hours_minutes, R.string.movie_runtime_minutes)
+        )
+        rating.text = DetailsUi.rating(movie.rating)
+        (rating.parent as? View)?.contentDescription =
+            context.getString(R.string.details_rating_content_description, rating.text)
+        quality.setTextOrGone(movie.quality)
+        overview.text = movie.overview
+    }
+
+    private fun bindMovieProgress(progressBar: LinearProgressIndicator) {
+        progressBar.isVisible = movie.watchHistory != null
+        progressBar.progress = DetailsUi.progressPercent(movie.watchHistory) ?: 0
+    }
+
+    private fun bindMovieFavorite(button: MaterialButton) {
+        button.setOnClickListener {
+            // The coroutine below sets the real state; undo the button's own toggle meanwhile.
+            button.isChecked = movie.isFavorite
+            checkProviderAndRun {
+                itemView.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
+                    val dao = database.movieDao()
+                    val current = dao.getById(movie.id)?.isFavorite ?: false
+                    val newValue = !current
+                    val resolvedMovie = ArtworkRepair.resolveMovieForFavorite(context, movie, newValue)
+
+                    dao.upsertFavorite(resolvedMovie, newValue)
+
+                    withContext(Dispatchers.Main) {
+                        movie.poster = resolvedMovie.poster
+                        movie.banner = resolvedMovie.banner
+                        movie.isFavorite = newValue
+                        button.isChecked = newValue
+                    }
+                }
+            }
+        }
+        button.isChecked = movie.isFavorite
+    }
+
+    /** Same action as "Mark as (un)watched" in the options sheet. */
+    private fun bindMovieWatched(button: MaterialButton) {
+        button.isChecked = movie.isWatched
+        button.setOnClickListener {
+            val watched = !movie.isWatched
+            movie.isWatched = watched
+            button.isChecked = watched
+            WatchStateActions.launch(context) {
+                WatchStateActions.setWatched(context, movie, watched)
+            }
+        }
+    }
+
+    private fun bindMovieTrailer(button: View, logPrefix: String) {
+        val trailer = movie.trailer
+        button.setOnClickListener {
+            if (trailer != null) handleTrailerClick(trailer, logPrefix)
+        }
+        button.isVisible = trailer != null
+    }
+
     private fun displayMovieMobile(binding: ContentMovieMobileBinding) {
         binding.ivMoviePoster.run {
             loadMoviePoster(movie) {
@@ -779,56 +866,18 @@ class MovieViewHolder(
             }
         }
 
-        binding.tvMovieTitle.text = movie.title
-
-        binding.tvMovieRating.text = movie.rating?.let { String.format(Locale.ROOT, "%.1f", it) } ?: "N/A"
-
-        binding.tvMovieQuality.apply {
-            text = movie.quality
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieReleased.apply {
-            text = movie.released?.format("yyyy")
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieRuntime.apply {
-            text = movie.runtime?.let {
-                val hours = it / 60
-                val minutes = it % 60
-                when {
-                    hours > 0 -> context.getString(
-                        R.string.movie_runtime_hours_minutes,
-                        hours,
-                        minutes
-                    )
-                    else -> context.getString(R.string.movie_runtime_minutes, minutes)
-                }
-            }
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieGenres.apply {
-            text = movie.genres.joinToString(", ") { it.name }
-            visibility = when {
-                movie.genres.isEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieOverview.text = movie.overview
+        bindMovieMeta(
+            binding.tvMovieTitle,
+            binding.tvMovieReleased,
+            binding.tvMovieRuntime,
+            binding.tvMovieRating,
+            binding.tvMovieQuality,
+            binding.tvMovieOverview,
+        )
+        DetailsUi.bindGenreChips(binding.cgMovieGenres, binding.hsvMovieGenres, movie.genres)
 
         binding.btnMovieWatchNow.apply {
+            text = DetailsUi.playLabel(context, movie.watchHistory)
             setOnClickListener {
                 // Este botón ya navega al reproductor, no a otra página de detalles.
                 // Generalmente non necesita el cambio de proveedor, pero lo añadimos por seguridad.
@@ -837,36 +886,41 @@ class MovieViewHolder(
                         id = movie.id,
                         title = movie.title,
                         subtitle = movie.released?.format("yyyy") ?: "",
-                        videoType = Video.Type.Movie(id = movie.id, title = movie.title, releaseDate = movie.released?.format("yyyy-MM-dd") ?: "", poster = movie.poster ?: movie.banner ?: "", imdbId = movie.imdbId),
+                        videoType = movieVideoType(),
                     ))
                 }
             }
         }
+        bindMovieProgress(binding.pbMovieProgress)
 
-        binding.pbMovieProgress.apply {
-            val watchHistory = movie.watchHistory
+        val activity = context.toActivity() as? androidx.fragment.app.FragmentActivity
+        val canPlayOnTv = activity != null && PlayOnTv.isAvailable(activity)
 
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
+        binding.btnMoviePlayOptions.setOnClickListener {
+            val actions = buildList {
+                movie.trailer?.let { trailer ->
+                    add(DetailsUi.MenuAction(context.getString(R.string.movie_trailer)) {
+                        handleTrailerClick(trailer, "MovieMobile")
+                    })
+                }
+                if (canPlayOnTv) {
+                    add(DetailsUi.MenuAction(context.getString(R.string.sync_play_on_tv)) {
+                        activity?.let { PlayOnTv.play(it, movie) }
+                    })
+                }
+                add(DetailsUi.MenuAction(context.getString(R.string.details_more_options)) {
+                    ShowOptionsMobileDialog(context, movie).show()
+                })
             }
-            visibility = when {
-                watchHistory != null -> View.VISIBLE
-                else -> View.GONE
-            }
+            DetailsUi.showSplitMenu(binding.btnMoviePlayOptions, binding.sbMoviePlay, actions)
         }
 
-        binding.btnMovieTrailer.apply {
-            val trailer = movie.trailer
-            setOnClickListener {
-                if (trailer != null) handleTrailerClick(trailer, "MovieMobile")
-            }
-            visibility = if (trailer != null) View.VISIBLE else View.GONE
-        }
+        bindMovieFavorite(binding.btnMovieFavorite)
+        bindMovieWatched(binding.btnMovieWatched)
+        bindMovieTrailer(binding.btnMovieTrailer, "MovieMobile")
 
         binding.btnMoviePlayOnTv.apply {
-            val activity = context.toActivity() as? androidx.fragment.app.FragmentActivity
-            visibility = if (activity != null && PlayOnTv.isAvailable(activity)) View.VISIBLE else View.GONE
+            visibility = if (canPlayOnTv) View.VISIBLE else View.GONE
             setOnClickListener { activity?.let { PlayOnTv.play(it, movie) } }
         }
 
@@ -877,176 +931,52 @@ class MovieViewHolder(
             bind((movie.providerName ?: UserPreferences.currentProvider?.name)?.let { providerName ->
                 DownloadStarter.Target(
                     providerName = providerName,
-                    videoType = Video.Type.Movie(id = movie.id, title = movie.title, releaseDate = movie.released?.format("yyyy-MM-dd") ?: "", poster = movie.poster ?: movie.banner ?: "", imdbId = movie.imdbId),
+                    videoType = movieVideoType(),
                     title = movie.title,
                     subtitle = movie.released?.format("yyyy") ?: "",
                     poster = movie.poster ?: movie.banner,
                 )
             })
         }
-
-        binding.btnMovieFavorite.apply {
-
-            fun Boolean.drawable() = when (this) {
-                true -> R.drawable.ic_favorite_enable
-                false -> R.drawable.ic_favorite_disable
-            }
-
-            setOnClickListener {
-                checkProviderAndRun {
-                    itemView.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
-                        val dao = database.movieDao()
-                        val current = dao.getById(movie.id)?.isFavorite ?: false
-                        val newValue = !current
-                        val resolvedMovie = ArtworkRepair.resolveMovieForFavorite(context, movie, newValue)
-
-                        dao.upsertFavorite(resolvedMovie, newValue)
-
-                        withContext(Dispatchers.Main) {
-                            movie.poster = resolvedMovie.poster
-                            movie.banner = resolvedMovie.banner
-                            movie.isFavorite = newValue
-                            setImageDrawable(
-                                ContextCompat.getDrawable(context, newValue.drawable())
-                            )
-                        }
-                    }
-                }
-            }
-
-            setImageDrawable(
-                ContextCompat.getDrawable(context, movie.isFavorite.drawable())
-            )
-        }
+        binding.flMovieDownload.isVisible = binding.btnMovieDownload.isVisible
     }
 
     private fun displayMovieTv(binding: ContentMovieTvBinding) {
-        binding.ivMoviePoster.run {
-            loadMoviePoster(movie) {
-                transition(DrawableTransitionOptions.withCrossFade())
-            }
-            visibility = when {
-                movie.poster.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieTitle.text = movie.title
-
-        binding.tvMovieRating.text = movie.rating?.let { String.format(Locale.ROOT, "%.1f", it) } ?: "N/A"
-
-        binding.tvMovieQuality.apply {
-            text = movie.quality
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieReleased.apply {
-            text = movie.released?.format("yyyy")
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieRuntime.apply {
-            text = movie.runtime?.let {
-                val hours = it / 60
-                val minutes = it % 60
-                when {
-                    hours > 0 -> context.getString(
-                        R.string.movie_runtime_hours_minutes,
-                        hours,
-                        minutes
-                    )
-                    else -> context.getString(R.string.movie_runtime_minutes, minutes)
-                }
-            }
-            visibility = when {
-                text.isNullOrEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieGenres.apply {
-            text = movie.genres.joinToString(", ") { it.name }
-            visibility = when {
-                movie.genres.isEmpty() -> View.GONE
-                else -> View.VISIBLE
-            }
-        }
-
-        binding.tvMovieOverview.text = movie.overview
+        bindMovieMeta(
+            binding.tvMovieTitle,
+            binding.tvMovieReleased,
+            binding.tvMovieRuntime,
+            binding.tvMovieRating,
+            binding.tvMovieQuality,
+            binding.tvMovieOverview,
+        )
+        binding.tvMovieGenres.setTextOrGone(movie.genres.joinToString("  ·  ") { it.name })
 
         binding.btnMovieWatchNow.apply {
+            text = DetailsUi.playLabel(context, movie.watchHistory)
             setOnClickListener {
                 checkProviderAndRun {
                     findNavController().navigate(MovieTvFragmentDirections.actionMovieToPlayer(
                         id = movie.id,
                         title = movie.title,
                         subtitle = movie.released?.format("yyyy") ?: "",
-                        videoType = Video.Type.Movie(id = movie.id, title = movie.title, releaseDate = movie.released?.format("yyyy-MM-dd") ?: "", poster = movie.poster ?: movie.banner ?: "", imdbId = movie.imdbId),
+                        videoType = movieVideoType(),
                     ))
                 }
             }
         }
+        bindMovieProgress(binding.pbMovieProgress)
 
-        binding.pbMovieProgress.apply {
-            val watchHistory = movie.watchHistory
+        bindMovieTrailer(binding.btnMovieTrailer, "MovieTv")
+        bindMovieFavorite(binding.btnMovieFavorite)
+        bindMovieWatched(binding.btnMovieWatched)
 
-            progress = when {
-                watchHistory != null -> (watchHistory.lastPlaybackPositionMillis * 100 / watchHistory.durationMillis.toDouble()).toInt()
-                else -> 0
-            }
-            visibility = when {
-                watchHistory != null -> View.VISIBLE
-                else -> View.GONE
-            }
-        }
-
-        binding.btnMovieTrailer.apply {
-            val trailer = movie.trailer
-            setOnClickListener {
-                if (trailer != null) handleTrailerClick(trailer, "MovieTv")
-            }
-            visibility = if (trailer != null) View.VISIBLE else View.GONE
-        }
-
-        binding.btnMovieFavorite.apply {
-
-            fun Boolean.drawable() = when (this) {
-                true -> R.drawable.ic_favorite_enable
-                false -> R.drawable.ic_favorite_disable
-            }
-
-            setOnClickListener {
-                checkProviderAndRun {
-                    itemView.findViewTreeLifecycleOwner()?.lifecycleScope?.launch(Dispatchers.IO) {
-                        val dao = database.movieDao()
-                        val current = dao.getById(movie.id)?.isFavorite ?: false
-                        val newValue = !current
-                        val resolvedMovie = ArtworkRepair.resolveMovieForFavorite(context, movie, newValue)
-
-                        dao.upsertFavorite(resolvedMovie, newValue)
-
-                        withContext(Dispatchers.Main) {
-                            movie.poster = resolvedMovie.poster
-                            movie.banner = resolvedMovie.banner
-                            movie.isFavorite = newValue
-                            setImageDrawable(
-                                ContextCompat.getDrawable(context, newValue.drawable())
-                            )
-                        }
-                    }
-                }
-            }
-
-            setImageDrawable(
-                ContextCompat.getDrawable(context, movie.isFavorite.drawable())
-            )
-        }
+        DetailsUi.attachTvButtonFocus(
+            binding.btnMovieWatchNow,
+            binding.btnMovieTrailer,
+            binding.btnMovieFavorite,
+            binding.btnMovieWatched,
+        )
     }
 
     private fun displayCastMobile(binding: ContentMovieCastMobileBinding) {

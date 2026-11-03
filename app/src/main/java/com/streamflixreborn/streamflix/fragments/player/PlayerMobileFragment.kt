@@ -50,6 +50,7 @@ import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.models.WatchItem
+import com.streamflixreborn.streamflix.ui.player.PlayerChrome
 import com.streamflixreborn.streamflix.ui.PlayerMobileView
 import com.streamflixreborn.streamflix.utils.MediaServer
 import com.streamflixreborn.streamflix.utils.UserPreferences
@@ -568,6 +569,12 @@ class PlayerMobileFragment : Fragment() {
         }
     }
 
+    /** Toolbar shortcut into the settings panel; keeps the controller timeout like the gear. */
+    private inline fun openSettingsShortcut(open: () -> Unit) {
+        binding.pvPlayer.controllerShowTimeoutMs = binding.pvPlayer.controllerShowTimeoutMs
+        open()
+    }
+
     private fun showPlayerMessage(message: String) {
         if (_binding == null) return
         OverlayUi.showMessage(binding.overlays.cardPlayerMessage, binding.overlays.tvPlayerMessage, message)
@@ -687,6 +694,16 @@ class PlayerMobileFragment : Fragment() {
         binding.pvPlayer.controller.binding.exoSettings.setOnClickListener {
             binding.pvPlayer.controllerShowTimeoutMs = binding.pvPlayer.controllerShowTimeoutMs
             binding.settings.show()
+        }
+
+        // Floating toolbar: straight to one settings page (Back closes it again).
+        binding.pvPlayer.controller.binding.apply {
+            btnExoSubtitles.setOnClickListener { openSettingsShortcut { binding.settings.showSubtitles() } }
+            btnExoAudio.setOnClickListener { openSettingsShortcut { binding.settings.showAudio() } }
+            btnExoQuality.setOnClickListener { openSettingsShortcut { binding.settings.showQuality() } }
+            btnExoSpeed.setOnClickListener { openSettingsShortcut { binding.settings.showSpeed() } }
+            btnExoServers.setOnClickListener { openSettingsShortcut { binding.settings.showServers() } }
+            PlayerChrome.styleTimeBar(exoProgress)
         }
 
         binding.settings.setOnLocalSubtitlesClickedListener {
@@ -1236,6 +1253,16 @@ class PlayerMobileFragment : Fragment() {
             getString(R.string.player_next_episode_autoplay_in, secondsLeft)
         } else {
             getString(R.string.player_next_episode_ready)
+        }
+        binding.flNextEpisodeCountdown.isVisible = secondsLeft != null
+        if (secondsLeft != null) {
+            binding.tvNextEpisodeSeconds.text = secondsLeft.toString()
+            PlayerChrome.setCountdown(
+                binding.piNextEpisodeCountdown,
+                secondsLeft,
+                UserPreferences.upNextSeconds,
+                animate = binding.layoutNextEpisodeOverlay.isVisible,
+            )
         }
         if (binding.layoutNextEpisodeOverlay.isVisible) return
 

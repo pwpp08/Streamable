@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Styles for the details, seasons/episodes and player screens (M3 Expressive redesign).
+    Parents verified in the MDC 1.14 AAR. Colours come from theme roles via res/color/ud_*.
+-->
+<resources>
+
+    <declare-styleable name="PlayPauseMorphButton">
+        <!-- Fill of the morphing container (a colour state list; focus changes it on TV). -->
+        <attr name="morphFillColor" format="color|reference" />
+        <!-- false snaps between shapes instead of springing (weak TV devices). -->
+        <attr name="morphAnimated" format="boolean" />
+    </declare-styleable>
+
+    <!-- ============================================================ Details: text -->
+    <style name="Widget.StreamFlix.Details.SectionHeader" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceTitleLargeEmphasized</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+    <style name="Widget.StreamFlix.Details.SectionHeader.Tv">
+        <item name="android:textAppearance">?attr/textAppearanceHeadlineSmallEmphasized</item>
+    </style>
+
+    <style name="Widget.StreamFlix.Details.Meta" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
+    <!-- Genre assist chips (display only). -->
+    <style name="Widget.StreamFlix.Details.GenreChip" parent="Widget.Material3.Chip.Assist">
+        <item name="android:clickable">false</item>
+        <item name="android:focusable">false</item>
+        <item name="chipBackgroundColor">@android:color/transparent</item>
+        <item name="chipStrokeColor">?attr/colorOutlineVariant</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.StreamFlix.Pill</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+    </style>
+
+    <!-- ============================================================ Details: phone actions -->
+    <!-- Split button: Play / Resume + the chevron that opens the play options menu. -->
+    <style name="Widget.StreamFlix.SplitButton" parent="Widget.Material3.MaterialSplitButton" />
+    <style name="Widget.StreamFlix.SplitButton.Leading" parent="Widget.Material3.SplitButton.LeadingButton.Filled">
+        <item name="backgroundTint">@color/ud_hero_bg</item>
+        <item name="android:textColor">@color/ud_hero_fg</item>
+        <item name="iconTint">@color/ud_hero_fg</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="iconSize">24dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleMediumEmphasized</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+    </style>
+    <style name="Widget.StreamFlix.SplitButton.Trailing" parent="Widget.Material3.SplitButton.IconButton.Filled">
+        <item name="backgroundTint">@color/ud_hero_bg</item>
+        <item name="iconTint">@color/ud_hero_fg</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:minWidth">52dp</item>
+    </style>
+
+    <!-- Expressive button group of action tiles: icon over a short label. -->
+    <style name="Widget.StreamFlix.Details.ActionGroup" parent="Widget.Material3Expressive.MaterialButtonGroup" />
+    <style name="Widget.StreamFlix.Details.ActionTile" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="backgroundTint">@color/ud_tile_bg</item>
+        <item name="android:textColor">@color/ud_tile_fg</item>
+        <item name="iconTint">@color/ud_tile_fg</item>
+        <item name="iconGravity">top</item>
+        <item name="iconPadding">4dp</item>
+        <item name="iconSize">24dp</item>
+        <item name="android:minHeight">72dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelMediumEmphasized</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.StreamFlix.Poster</item>
+    </style>
+
+    <!-- ============================================================ Details: TV actions -->
+    <!-- D-pad buttons: focus = primary fill (design-system TV focus colour) + spring scale. -->
+    <style name="Widget.StreamFlix.Details.Tv.Button" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="backgroundTint">@color/ud_tv_button_bg</item>
+        <item name="android:textColor">@color/ud_tv_button_fg</item>
+        <item name="iconTint">@color/ud_tv_button_fg</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="iconSize">22dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmallEmphasized</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+    </style>
+    <style name="Widget.StreamFlix.Details.Tv.Button.Hero">
+        <item name="backgroundTint">@color/ud_tv_hero_bg</item>
+        <item name="android:textColor">@color/ud_tv_hero_fg</item>
+        <item name="iconTint">@color/ud_tv_hero_fg</item>
+        <item name="android:paddingStart">28dp</item>
+        <item name="android:paddingEnd">32dp</item>
+    </style>
+    <style name="Widget.StreamFlix.Details.Tv.Button.Icon">
+        <item name="android:minWidth">52dp</item>
+        <item name="android:paddingStart">15dp</item>
+        <item name="android:paddingEnd">15dp</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconGravity">textStart</item>
+    </style>
+
+    <!-- Phone season selector pill. -->
+    <style name="Widget.StreamFlix.Details.SeasonPill" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="backgroundTint">@color/ud_tile_bg</item>
+        <item name="android:textColor">@color/ud_tile_fg</item>
+        <item name="iconTint">?attr/colorPrimary</item>
+        <item name="iconSize">18dp</item>
+        <item name="android:minHeight">44dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLargeEmphasized</item>
+    </style>
+
+    <!-- Options sheet / TV options dialog rows. -->
+    <style name="Widget.StreamFlix.Options.Row" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">@color/ud_option_text</item>
+        <item name="android:background">@drawable/ud_list_row_middle</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <!-- ============================================================ Player -->
+    <style name="Widget.StreamFlix.Player.IconButton" parent="">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:tint">@color/ud_player_icon</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+    <!-- TV: the focused icon button gets a primary disc behind the icon. -->
+    <style name="Widget.StreamFlix.Player.IconButton.Tv">
+        <item name="android:layout_width">52dp</item>
+        <item name="android:layout_height">52dp</item>
+        <item name="android:padding">13dp</item>
+        <item name="android:background">@drawable/ud_player_icon_bg_tv</item>
+        <item name="android:focusableInTouchMode">true</item>
+    </style>
+
+    <!-- ±10 s: ring arrow background with Media3's increment drawn as text in the middle. -->
+    <style name="Widget.StreamFlix.Player.SeekButton" parent="">
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_marginStart">12dp</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:background">@drawable/ic_ud_replay_ring</item>
+        <item name="android:backgroundTint">?attr/colorOnSurface</item>
+        <item name="android:foreground">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+    <style name="Widget.StreamFlix.Player.SeekButton.Forward">
+        <item name="android:background">@drawable/ic_ud_forward_ring</item>
+    </style>
+    <style name="Widget.StreamFlix.Player.SeekButton.Tv">
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:foreground">@drawable/ud_player_seek_focus_tv</item>
+    </style>
+    <style name="Widget.StreamFlix.Player.SeekButton.Tv.Forward">
+        <item name="android:background">@drawable/ic_ud_forward_ring</item>
+    </style>
+
+    <!-- Skip intro / recap: extended pill on secondaryContainer. -->
+    <style name="Widget.StreamFlix.Player.SkipPill" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="backgroundTint">@color/ud_skip_bg</item>
+        <item name="android:textColor">@color/ud_skip_fg</item>
+        <item name="iconTint">@color/ud_skip_fg</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="iconSize">22dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmallEmphasized</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.StreamFlix.Pill</item>
+    </style>
+
+    <!-- Up Next card buttons. -->
+    <style name="Widget.StreamFlix.Player.UpNext.Play" parent="Widget.Material3Expressive.Button">
+        <item name="backgroundTint">@color/ud_tv_hero_bg</item>
+        <item name="android:textColor">@color/ud_tv_hero_fg</item>
+        <item name="iconTint">@color/ud_tv_hero_fg</item>
+        <item name="android:minHeight">44dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLargeEmphasized</item>
+    </style>
+    <style name="Widget.StreamFlix.Player.UpNext.Cancel" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="backgroundTint">@color/ud_tv_button_bg</item>
+        <item name="android:textColor">@color/ud_tv_button_fg</item>
+        <item name="android:minHeight">44dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLargeEmphasized</item>
+    </style>
+
+    <!-- Up Next countdown ring: flat (non-wavy) so it costs nothing per frame on TV. -->
+    <style name="Widget.StreamFlix.Player.CountdownRing" parent="Widget.Material3Expressive.CircularProgressIndicator">
+        <item name="indicatorSize">52dp</item>
+        <item name="trackThickness">5dp</item>
+        <item name="indicatorColor">?attr/colorPrimary</item>
+        <item name="trackColor">?attr/colorSurfaceContainerHighest</item>
+    </style>
+
+    <!-- Watch progress on the details screen and episode cards. -->
+    <style name="Widget.StreamFlix.Details.Progress" parent="Widget.Material3Expressive.LinearProgressIndicator.Wavy">
+        <item name="indicatorColor">?attr/colorPrimary</item>
+        <item name="trackColor">?attr/colorSurfaceContainerHighest</item>
+    </style>
+</resources>

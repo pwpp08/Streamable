@@ -1,164 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+    Phone options bottom sheet (Sheet shape and surfaceContainerLow come from the theme's
+    bottomSheetDialogTheme). Actions are a grouped expressive list; Cancel stands alone.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_dialog_show_options_mobile"
-    android:paddingBottom="16dp">
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="24dp">
 
-    <ImageView
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
         android:id="@+id/ic_handlebar"
-        android:layout_width="50dp"
-        android:layout_height="wrap_content"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_handlebar"
-        android:tint="?attr/colorOnSurfaceVariant"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:ignore="ContentDescription,UseAppTint" />
-
-    <ImageView
-        android:id="@+id/iv_options_show_poster"
-        android:layout_width="0dp"
-        android:layout_height="150dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ic_handlebar"
-        tools:ignore="ContentDescription" />
-
-    <TextView
-        android:id="@+id/tv_options_show_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_options_show_poster"
-        tools:text="Title" />
-
-    <TextView
-        android:id="@+id/tv_show_subtitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_options_show_title"
-        tools:text="Subtitle" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="16dp"
-        android:clipToPadding="false"
-        android:orientation="vertical"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_show_subtitle">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/iv_options_show_poster"
+            android:layout_width="64dp"
+            android:layout_height="96dp"
+            android:background="?attr/colorSurfaceContainerHigh"
+            android:scaleType="centerCrop"
+            app:shapeAppearance="@style/ShapeAppearance.StreamFlix.Poster"
+            tools:ignore="ContentDescription" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_options_show_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAppearance="?attr/textAppearanceTitleLargeEmphasized"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Title" />
+
+            <TextView
+                android:id="@+id/tv_show_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Subtitle" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll_options_rows"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/btn_option_episode_open_tv_show"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_item_option"
-            android:gravity="center_vertical"
-            android:padding="12dp"
-            android:text="@string/option_episode_open_tv_show"
-            android:textColor="@color/option_text" />
+            style="@style/Widget.StreamFlix.Options.Row"
+            android:text="@string/option_episode_open_tv_show" />
 
         <TextView
             android:id="@+id/btn_option_play_on_tv"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_item_option"
-            android:gravity="center_vertical"
-            android:padding="12dp"
+            style="@style/Widget.StreamFlix.Options.Row"
             android:text="@string/sync_play_on_tv"
-            android:textColor="@color/option_text"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/btn_option_show_favorite"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_item_option"
-            android:gravity="center_vertical"
-            android:padding="12dp"
-            android:text="@string/option_show_favorite"
-            android:textColor="@color/option_text" />
+            style="@style/Widget.StreamFlix.Options.Row"
+            android:text="@string/option_show_favorite" />
 
         <TextView
             android:id="@+id/btn_option_show_watched"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_item_option"
-            android:gravity="center_vertical"
-            android:padding="12dp"
-            android:text="@string/option_show_watched"
-            android:textColor="@color/option_text" />
+            style="@style/Widget.StreamFlix.Options.Row"
+            android:text="@string/option_show_watched" />
+
         <TextView
             android:id="@+id/btn_option_episode_mark_all_previous_watched"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_item_option"
-            android:gravity="center_vertical"
-            android:padding="12dp"
-            android:text="@string/option_show_mark_all_previous_watched"
-            android:textColor="@color/option_text" />
+            style="@style/Widget.StreamFlix.Options.Row"
+            android:text="@string/option_show_mark_all_previous_watched" />
 
         <TextView
             android:id="@+id/btn_option_episode_mark_season_watched"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_item_option"
-            android:gravity="center_vertical"
-            android:padding="12dp"
+            style="@style/Widget.StreamFlix.Options.Row"
             android:text="@string/option_mark_season_watched"
-            android:textColor="@color/option_text"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/btn_option_program_clear"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_item_option"
-            android:gravity="center_vertical"
-            android:padding="12dp"
-            android:text="@string/option_clear_program"
-            android:textColor="@color/option_text" />
-
-        <TextView
-            android:id="@+id/btn_option_cancel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_item_option"
-            android:gravity="center_vertical"
-            android:padding="12dp"
-            android:text="@string/option_cancel"
-            android:textColor="@color/option_text" />
-
+            style="@style/Widget.StreamFlix.Options.Row"
+            android:text="@string/option_clear_program" />
     </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <TextView
+        android:id="@+id/btn_option_cancel"
+        style="@style/Widget.StreamFlix.Options.Row"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/ud_list_row_single"
+        android:gravity="center"
+        android:text="@string/option_cancel"
+        android:textAppearance="?attr/textAppearanceLabelLargeEmphasized" />
+
+</LinearLayout>

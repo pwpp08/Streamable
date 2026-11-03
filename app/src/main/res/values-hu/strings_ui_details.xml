@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="details_play">Lejátszás</string>
+    <string name="details_resume_at">Folytatás: %s</string>
+    <string name="details_more_play_options">További lejátszási lehetőségek</string>
+    <string name="details_more_options">További lehetőségek</string>
+    <string name="details_action_favorite">Kedvenc</string>
+    <string name="details_action_watched">Megnézve</string>
+    <string name="details_action_trailer">Előzetes</string>
+    <string name="details_action_play_on_tv">TV-n</string>
+    <string name="details_rating_content_description">Értékelés: %s</string>
+
+    <string name="details_more_like_this">Hasonló címek</string>
+    <string name="details_overview_more">Több</string>
+
+    <string name="episode_card_title">%1$d. rész · %2$s</string>
+    <string name="episode_time_left">Még %d perc</string>
+    <string name="episode_watched">Megnézve</string>
+
+    <string name="player_back">Vissza</string>
+    <string name="player_play_pause">Lejátszás vagy szünet</string>
+    <string name="player_rewind">Visszatekerés</string>
+    <string name="player_fast_forward">Előretekerés</string>
+    <string name="player_previous_episode">Előző rész</string>
+    <string name="player_next_episode">Következő rész</string>
+    <string name="player_restart">Újrakezdés</string>
+    <string name="player_lock_controls">Vezérlők zárolása</string>
+    <string name="player_unlock_controls">Vezérlők feloldása</string>
+    <string name="player_picture_in_picture">Kép a képben</string>
+    <string name="player_aspect_ratio">Képarány</string>
+    <string name="player_settings">Hang, felirat és egyebek</string>
+    <string name="player_external_player">Megnyitás másik lejátszóban</string>
+    <string name="player_up_next_cancel">Mégse</string>
+</resources>
