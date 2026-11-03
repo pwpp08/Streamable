@@ -252,8 +252,8 @@ class ProviderHealthChecker(
         private const val MAX_PLAYLIST_BYTES = 512L * 1024
 
         /** Providers not in `Provider.providers` that can be probed on request. */
-        val candidateProviders: List<Provider> =
-            listOf(AnyMovieProvider, HiAnimeProvider, SflixProvider, SuperStreamProvider)
+        val candidateProviders: List<Provider>
+            get() = listOf(AnyMovieProvider, HiAnimeProvider, SflixProvider, SuperStreamProvider)
 
         /** Registered providers plus the TMDb provider of the metadata language. */
         fun defaultProviders(includeCandidates: Boolean): List<Provider> = buildList {
