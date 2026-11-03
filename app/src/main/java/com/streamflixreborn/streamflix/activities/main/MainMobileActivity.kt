@@ -26,6 +26,8 @@ import com.streamflixreborn.streamflix.databinding.ActivityMainMobileBinding
 import com.streamflixreborn.streamflix.fragments.player.PlayerMobileFragment
 import com.streamflixreborn.streamflix.providers.IptvProvider
 import com.streamflixreborn.streamflix.providers.Provider
+import com.streamflixreborn.streamflix.sync.CloudSyncManager
+import com.streamflixreborn.streamflix.sync.HandoffResume
 import com.streamflixreborn.streamflix.ui.UpdateAppMobileDialog
 import com.streamflixreborn.streamflix.utils.AppLanguageManager
 import com.streamflixreborn.streamflix.utils.ProfileManager
@@ -115,9 +117,21 @@ class MainMobileActivity : FragmentActivity() {
             }
         }
 
+        if (savedInstanceState == null) {
+            intent?.data?.takeIf { it.scheme == "streamflix" && it.host == "pair" }?.let { uri ->
+                navController.navigate(R.id.pair_phone, Bundle().apply { putString("pairUri", uri.toString()) })
+            }
+        }
+        HandoffResume.attach(this) { navController }
+
         viewModel.checkUpdate()
 
         binding.bnvMain.setupWithNavController(navController)
+        binding.btnMainRemote.setOnClickListener {
+            if (navController.currentDestination?.id != R.id.remote) {
+                navController.navigate(R.id.remote)
+            }
+        }
         binding.btnMainSearch.setOnClickListener {
             if (navController.currentDestination?.id != R.id.search) {
                 navController.navigate(R.id.search)
@@ -254,6 +268,16 @@ class MainMobileActivity : FragmentActivity() {
             isTopLevelProviderDestination(destinationId) &&
             destinationId != R.id.search
         ) View.VISIBLE else View.GONE
+        binding.btnMainRemote.visibility = if (
+            showBottomNav && CloudSyncManager.currentUserId() != null
+        ) View.VISIBLE else View.GONE
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val navHost =
+            supportFragmentManager.findFragmentById(R.id.nav_main_fragment) as? NavHostFragment
+        _binding?.let { updateBottomNavigationVisibility(navHost?.navController?.currentDestination?.id) }
     }
 
     private fun updateNavigationVisibility(currentDestinationId: Int? = null) {

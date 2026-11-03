@@ -18,7 +18,7 @@ object CloudSyncHooks {
     fun movie(context: Context, provider: Provider, id: String) {
         if (CloudSyncManager.isApplyingRemote) return
         val profileId = ProfileManager.activeProfileId ?: return
-        val movie = runCatching { AppDatabase.getInstanceForProvider(provider.name, context, profileId).movieDao().getById(id) }.getOrNull()
+        val movie = withDatabase(context, provider, profileId) { it.movieDao().getById(id) }
             ?: Movie(id = id)
         movie(context, provider, movie)
     }
@@ -32,7 +32,7 @@ object CloudSyncHooks {
     fun tvShow(context: Context, provider: Provider, id: String) {
         if (CloudSyncManager.isApplyingRemote) return
         val profileId = ProfileManager.activeProfileId ?: return
-        val show = runCatching { AppDatabase.getInstanceForProvider(provider.name, context, profileId).tvShowDao().getById(id) }.getOrNull()
+        val show = withDatabase(context, provider, profileId) { it.tvShowDao().getById(id) }
             ?: TvShow(id = id)
         tvShow(context, provider, show)
     }
@@ -46,7 +46,7 @@ object CloudSyncHooks {
     fun episode(context: Context, provider: Provider, id: String) {
         if (CloudSyncManager.isApplyingRemote) return
         val profileId = ProfileManager.activeProfileId ?: return
-        val episode = runCatching { AppDatabase.getInstanceForProvider(provider.name, context, profileId).episodeDao().getById(id) }.getOrNull()
+        val episode = withDatabase(context, provider, profileId) { it.episodeDao().getById(id) }
             ?: Episode(id = id)
         episode(context, provider, episode)
     }
@@ -60,11 +60,29 @@ object CloudSyncHooks {
         val userId = CloudSyncManager.currentUserId(profileId)
             ?: CloudAccountStore.activeUserId(context, profileId)
             ?: return
+        val mutation = state(userId, System.currentTimeMillis())
+            .copy(lastDeviceId = DeviceIdentity.id(context))
+        LastDeviceStore.record(context, profileId, listOf(mutation))
         CloudMutationStore.enqueue(
             context.applicationContext,
             profileId,
-            state(userId, System.currentTimeMillis()),
+            mutation,
         )
         CloudSyncScheduler.enqueue(context, profileId, userId)
     }
+
+    /** Opens a short-lived Room instance for [provider] and always closes it. */
+    private inline fun <T> withDatabase(
+        context: Context,
+        provider: Provider,
+        profileId: String,
+        block: (AppDatabase) -> T?,
+    ): T? = runCatching {
+        val db = AppDatabase.getInstanceForProvider(provider.name, context, profileId)
+        try {
+            block(db)
+        } finally {
+            db.close()
+        }
+    }.getOrNull()
 }

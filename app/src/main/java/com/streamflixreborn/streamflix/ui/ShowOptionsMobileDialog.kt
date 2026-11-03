@@ -18,6 +18,7 @@ import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.providers.Provider
+import com.streamflixreborn.streamflix.sync.PlayOnTv
 import com.streamflixreborn.streamflix.utils.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -86,6 +87,20 @@ class ShowOptionsMobileDialog(
                     }
                     hide()
                 }
+            }
+        }
+
+        binding.btnOptionPlayOnTv.apply {
+            val activity = context.toActivity() as? androidx.fragment.app.FragmentActivity
+            val supported = show is Movie || show is Episode
+            visibility = if (supported && activity != null && PlayOnTv.isAvailable(activity)) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+            setOnClickListener {
+                hide()
+                activity?.let { PlayOnTv.play(it, show) }
             }
         }
 

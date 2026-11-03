@@ -258,4 +258,10 @@
         android:id="@+id/provider_health"
         android:name="com.streamflixreborn.streamflix.fragments.settings.health.ProviderHealthFragment"
         android:label="fragment_provider_health" />
+
+    <fragment
+        android:id="@+id/pair_tv"
+        android:name="com.streamflixreborn.streamflix.fragments.pairing.PairTvFragment"
+        android:label="fragment_pair_tv"
+        tools:layout="@layout/fragment_pair_tv" />
 </navigation>

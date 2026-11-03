@@ -9,7 +9,6 @@ import com.streamflixreborn.streamflix.models.Season
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.models.WatchItem
 import com.streamflixreborn.streamflix.providers.Provider
-import com.streamflixreborn.streamflix.providers.TmdbProvider
 import com.streamflixreborn.streamflix.ui.UserDataNotifier
 import com.streamflixreborn.streamflix.utils.UserDataCache
 import com.streamflixreborn.streamflix.utils.ProfileManager
@@ -32,6 +31,7 @@ object CloudSyncManager {
 
     suspend fun onProfileChanged(context: Context, profileId: String) {
         CloudRealtimeSync.stop()
+        DeviceCommandBus.stop()
         if (ProfileManager.activeProfileId == profileId) {
             initialize(context.applicationContext)
         }
@@ -39,6 +39,8 @@ object CloudSyncManager {
 
     suspend fun onProfileDeleted(context: Context, profileId: String) {
         if (CloudRealtimeSync.isOwnedBy(profileId)) CloudRealtimeSync.stop()
+        if (DeviceCommandBus.isOwnedBy(profileId)) DeviceCommandBus.stop()
+        LastDeviceStore.clearProfile(context, profileId)
         WorkManager.getInstance(context.applicationContext)
             .cancelAllWorkByTag("cloud-profile-$profileId")
         CloudMutationStore.clearProfile(context, profileId)
@@ -73,6 +75,7 @@ object CloudSyncManager {
         val userId = currentUserId(profileId)
         if (userId == null) {
             CloudRealtimeSync.stop()
+            DeviceCommandBus.stop()
             // Keep local media state when the persisted session is absent. A
             // signed-out user should stop syncing, not lose local favorites or
             // watch history.
@@ -80,6 +83,7 @@ object CloudSyncManager {
         }
         activateAccount(appContext, profileId, userId)
         CloudRealtimeSync.start(appContext, profileId, userId)
+        DeviceCommandBus.start(appContext, profileId, userId)
     }
 
     suspend fun signIn(
@@ -88,6 +92,21 @@ object CloudSyncManager {
         password: String,
         onProgress: (CloudSyncProgress) -> Unit = {},
     ) {
+        authenticate(context, email, password, onProgress)
+        finishSignIn(context, onProgress)
+    }
+
+    /**
+     * First half of [signIn]: creates the session for the active profile and
+     * returns the user id. It is a single auth request, so TV pairing can
+     * report a wrong password to the phone before the slower [finishSignIn].
+     */
+    internal suspend fun authenticate(
+        context: Context,
+        email: String,
+        password: String,
+        onProgress: (CloudSyncProgress) -> Unit = {},
+    ): String {
         requireConfigured()
         val profileId = ProfileManager.activeProfileId ?: error("No active profile")
         val client = SupabaseProvider.clientFor(context.applicationContext, profileId)
@@ -98,6 +117,16 @@ object CloudSyncManager {
         }
         val userId = currentUserId(profileId) ?: error("Sign in did not create a session")
         ensureAccountAvailable(context.applicationContext, profileId, userId, client)
+        return userId
+    }
+
+    /** Second half of [signIn]: merges local data and starts the realtime listeners. */
+    internal suspend fun finishSignIn(
+        context: Context,
+        onProgress: (CloudSyncProgress) -> Unit = {},
+    ) {
+        val profileId = ProfileManager.activeProfileId ?: error("No active profile")
+        val userId = currentUserId(profileId) ?: error("Sign in did not create a session")
         activateAccount(
             context = context.applicationContext,
             profileId = profileId,
@@ -106,6 +135,7 @@ object CloudSyncManager {
             mergeLocalOnLogin = true,
         )
         CloudRealtimeSync.start(context.applicationContext, profileId, userId)
+        DeviceCommandBus.start(context.applicationContext, profileId, userId)
     }
 
     suspend fun signUp(
@@ -132,6 +162,7 @@ object CloudSyncManager {
             mergeLocalOnLogin = true,
         )
         CloudRealtimeSync.start(context.applicationContext, profileId, userId)
+        DeviceCommandBus.start(context.applicationContext, profileId, userId)
         return true
     }
 
@@ -139,6 +170,7 @@ object CloudSyncManager {
         val appContext = context.applicationContext
         val profileId = ProfileManager.activeProfileId ?: return
         CloudRealtimeSync.stop()
+        DeviceCommandBus.stop()
         runCatching { flushPending(appContext, profileId, {}) }
         if (SupabaseProvider.isConfigured) {
             SupabaseProvider.clientOrNull(profileId)?.auth?.signOut()
@@ -280,6 +312,7 @@ object CloudSyncManager {
                     // device to a different cloud account.
                     runCatching { SupabaseProvider.clientOrNull(profileId)?.auth?.signOut() }
                     CloudRealtimeSync.stop()
+                    DeviceCommandBus.stop()
                     throw CloudAccountDataConflictException()
                 }
 
@@ -487,9 +520,7 @@ object CloudSyncManager {
             ),
         )
         states.chunked(250).forEach { chunk ->
-            SupabaseProvider.clientFor(context, profileId).from(TABLE).upsert(chunk) {
-                onConflict = "user_id,provider,media_type,media_id"
-            }
+            upsertChunk(context, profileId, chunk)
             uploaded += chunk.size
             onProgress(
                 CloudSyncProgress(
@@ -501,7 +532,40 @@ object CloudSyncManager {
         }
     }
 
+    /**
+     * PostgREST bulk upserts require every object to have the same keys, so
+     * last_device_id is either sent for all rows ("" when unknown) or, on a
+     * database that has not run the devices migration yet, for none.
+     */
+    @Volatile
+    private var lastDeviceColumnAvailable = true
+
+    private suspend fun upsertChunk(context: Context, profileId: String, chunk: List<RemoteMediaState>) {
+        val client = SupabaseProvider.clientFor(context, profileId)
+        if (lastDeviceColumnAvailable) {
+            try {
+                client.from(TABLE).upsert(chunk.map { it.copy(lastDeviceId = it.lastDeviceId.orEmpty()) }) {
+                    onConflict = "user_id,provider,media_type,media_id"
+                }
+                return
+            } catch (error: Exception) {
+                if (error.message?.contains("last_device_id") != true) throw error
+                Log.w(TAG, "user_media_state.last_device_id is missing; run the devices migration")
+                lastDeviceColumnAvailable = false
+            }
+        }
+        client.from(TABLE).upsert(chunk.map { it.copy(lastDeviceId = null) }) {
+            onConflict = "user_id,provider,media_type,media_id"
+        }
+    }
+
     private fun collectLocalState(context: Context, profileId: String, userId: String): List<RemoteMediaState> {
+        val deviceId = DeviceIdentity.id(context)
+        return collectLocalStateWithoutDevice(context, profileId, userId)
+            .map { it.copy(lastDeviceId = deviceId) }
+    }
+
+    private fun collectLocalStateWithoutDevice(context: Context, profileId: String, userId: String): List<RemoteMediaState> {
         val states = mutableListOf<RemoteMediaState>()
         existingProviders(context, profileId).forEach { provider ->
             val db = AppDatabase.getInstanceForProvider(provider.name, context, profileId)
@@ -571,6 +635,7 @@ object CloudSyncManager {
                     shouldApplyRemoteState(db, state)
                 }
                 if (statesToApply.isEmpty()) return@forEach
+                LastDeviceStore.record(context, profileId, statesToApply)
 
                 db.runInTransaction {
                     statesToApply.filter { it.mediaType == "movie" }.forEach { state ->
@@ -729,17 +794,10 @@ object CloudSyncManager {
         UserDataNotifier.notifyChanged()
     }
 
-    private fun existingProviders(context: Context, profileId: String): List<Provider> = allProviders()
-        .distinctBy { it.name }
-        .filter { provider ->
-        context.getDatabasePath(AppDatabase.databaseNameFor(provider.name, profileId)).exists()
-        }
+    private fun existingProviders(context: Context, profileId: String): List<Provider> =
+        SyncProviders.withDatabase(context, profileId)
 
-    private fun allProviders(): List<Provider> = (Provider.providers.keys +
-        listOf("it", "en", "es", "de", "fr").map(::TmdbProvider)).toList()
-
-    private fun providerByName(name: String): Provider? =
-        allProviders().firstOrNull { it.name == name }
+    private fun providerByName(name: String): Provider? = SyncProviders.byName(name)
 
     private fun requireConfigured() {
         check(SupabaseProvider.isConfigured) {

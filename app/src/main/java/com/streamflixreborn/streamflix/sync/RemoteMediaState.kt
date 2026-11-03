@@ -38,6 +38,12 @@ data class RemoteMediaState(
     @EncodeDefault @SerialName("duration_millis") val durationMillis: Long? = null,
     @EncodeDefault @SerialName("is_watching") val isWatching: Boolean? = null,
     @SerialName("client_updated_at_millis") val clientUpdatedAtMillis: Long,
+    /**
+     * Device that produced this state (DeviceIdentity id). Not annotated with
+     * EncodeDefault: older databases without the column keep working, and
+     * rows decoded from them default to null.
+     */
+    @SerialName("last_device_id") val lastDeviceId: String? = null,
 ) {
     val queueKey: String
         get() = listOf(userId, provider, mediaType, mediaId).joinToString("\u001f")

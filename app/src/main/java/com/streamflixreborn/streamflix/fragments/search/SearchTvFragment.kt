@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import androidx.navigation.fragment.findNavController
 import com.streamflixreborn.streamflix.providers.Provider
 import com.streamflixreborn.streamflix.providers.IptvProvider
+import com.streamflixreborn.streamflix.sync.RemoteSearch
 
 class SearchTvFragment : Fragment() {
 
@@ -96,6 +97,19 @@ class SearchTvFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initializeSearch()
+
+        // Text typed on the phone remote (DeviceCommand.Search).
+        viewLifecycleOwner.lifecycleScope.launch {
+            RemoteSearch.requests
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle, Lifecycle.State.STARTED)
+                .collect { pending ->
+                    if (pending == null) return@collect
+                    val text = RemoteSearch.consume() ?: return@collect
+                    binding.etSearch.setText(text)
+                    binding.etSearch.setSelection(text.length)
+                    submitSearch()
+                }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
