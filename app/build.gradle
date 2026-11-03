@@ -111,6 +111,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.8.8'
     implementation 'androidx.navigation:navigation-ui-ktx:2.8.8'
     implementation project(path: ':navigation')
+    implementation project(path: ':nextui')
 
     implementation 'androidx.core:core-ktx:1.17.0'
     implementation 'androidx.leanback:leanback:1.2.0'

@@ -53,7 +53,6 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
     private val marginAdapter = SettingsAdapter(this, Settings.Subtitle.Style.Margin.list)
 
     override var onSubtitlesClicked: (() -> Unit)? = null
-    var onManualZoomClicked: (() -> Unit)? = null
 
     init {
         binding.btnSettingsClose.setOnClickListener {
@@ -64,7 +63,7 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
         }
     }
 
-    fun onBackPressed(): Boolean {
+    override fun onBackPressed(): Boolean {
         if (shortcutPage != null && currentSettings == shortcutPage) {
             shortcutPage = null
             hide()
@@ -103,7 +102,7 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
     private var shortcutPage: Setting? = null
 
     /** Player toolbar shortcuts (subtitles, audio, quality, speed, servers). */
-    fun showSubtitles() = showShortcut(Setting.SUBTITLES)
+    override fun showSubtitles() = showShortcut(Setting.SUBTITLES)
     fun showAudio() = showShortcut(Setting.AUDIO)
     fun showQuality() = showShortcut(Setting.QUALITY)
     fun showSpeed() = showShortcut(Setting.SPEED)
@@ -115,7 +114,7 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
         displaySettings(setting)
     }
 
-    fun show() {
+    override fun show() {
         this.visibility = View.VISIBLE
         shortcutPage = null
 
@@ -206,8 +205,13 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
         }
     }
 
-    fun hide() {
+    /** Called after the panel closed, so the host can take focus back. */
+    var onHidden: (() -> Unit)? = null
+
+    override fun hide() {
+        val wasVisible = this.visibility == View.VISIBLE
         this.visibility = View.GONE
+        if (wasVisible) onHidden?.invoke()
     }
 
 
@@ -272,10 +276,6 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
                                 Settings.Server -> settingsView.displaySettings(Setting.SERVERS)
                                 Settings.Gestures -> settingsView.displaySettings(Setting.GESTURES)
                                 Settings.KeepScreenOn -> settingsView.displaySettings(Setting.KEEP_SCREEN_ON)
-                                Settings.ManualZoom -> {
-                                    settingsView.onManualZoomClicked?.invoke()
-                                    settingsView.hide()
-                                }
                             }
                         }
 
@@ -497,7 +497,6 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
                         Settings.Server -> R.drawable.ic_player_settings_servers
                         Settings.Gestures -> R.drawable.ic_player_settings_gestures
                         Settings.KeepScreenOn -> R.drawable.ic_brightness
-                        Settings.ManualZoom -> R.drawable.exo_styled_controls_aspect_ratio
                     })
                 )
             }
@@ -514,7 +513,6 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
                         Settings.Server -> context.getString(R.string.player_settings_servers_label)
                         Settings.Gestures -> context.getString(R.string.player_settings_gestures_title)
                         Settings.KeepScreenOn -> context.getString(R.string.player_settings_keep_screen_on_title)
-                        Settings.ManualZoom -> context.getString(R.string.player_settings_manual_zoom_label)
                     }
 
                     is Settings.Audio -> when (item) {
@@ -632,7 +630,6 @@ class PlayerSettingsMobileView @JvmOverloads constructor(
                         Settings.Gestures -> context.getString(Settings.Gestures.selected.stringId)
                         Settings.KeepScreenOn -> context.getString(Settings.KeepScreenOn.selected.stringId)
                         Settings.Server -> Settings.Server.selected?.name ?: ""
-                        Settings.ManualZoom -> ""
                         else -> ""
                     }
 

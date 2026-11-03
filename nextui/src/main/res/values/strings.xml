@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Defaults. The app overrides these by name (res/values*/strings_nextui.xml) with its own translations. -->
+    <string name="back">Back</string>
+    <string name="best_fit">Best fit</string>
+    <string name="stretch">Stretch</string>
+    <string name="crop">Crop</string>
+    <string name="hundred_percent">100%</string>
+    <string name="controls_unlock">Unlock controls</string>
+    <string name="fast_playback_speed">%.1fx speed</string>
+    <string name="play_pause">Play/Pause</string>
+    <string name="player_controls_next">Next episode</string>
+    <string name="player_controls_previous">Previous episode</string>
+    <string name="screen_rotation">Screen rotation</string>
+    <string name="select_playback_speed">Playback speed</string>
+    <string name="select_server">Servers</string>
+    <string name="select_quality">Quality</string>
+    <string name="select_audio_track">Audio</string>
+    <string name="select_subtitle_track">Subtitles</string>
+    <string name="more_settings">More settings</string>
+    <string name="video_zoom">Video zoom</string>
+    <string name="skip_silence">Skip silence</string>
+    <string name="open_in_external_player">Open in external player</string>
+    <string name="picker_empty">Nothing to choose from</string>
+</resources>

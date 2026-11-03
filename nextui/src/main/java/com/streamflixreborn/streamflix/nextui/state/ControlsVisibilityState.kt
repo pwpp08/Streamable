@@ -1,0 +1,94 @@
+package com.streamflixreborn.streamflix.nextui.state
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.media3.common.Player
+import androidx.media3.common.listen
+import kotlin.time.Duration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+@Composable
+fun rememberControlsVisibilityState(player: Player, hideAfter: Duration): ControlsVisibilityState {
+    val coroutineScope = rememberCoroutineScope()
+    val controlsVisibilityState = remember {
+        ControlsVisibilityState(
+            player = player,
+            hideAfter = hideAfter,
+            scope = coroutineScope,
+        )
+    }
+    LaunchedEffect(key1 = player) { controlsVisibilityState.observe() }
+    return controlsVisibilityState
+}
+
+@Stable
+class ControlsVisibilityState(
+    private val player: Player,
+    private val hideAfter: Duration,
+    private val scope: CoroutineScope,
+) {
+    private var autoHideControlsJob: Job? = null
+
+    var controlsVisible: Boolean by mutableStateOf(value = true)
+        private set
+
+    var controlsLocked: Boolean by mutableStateOf(value = false)
+        private set
+
+    fun showControls(duration: Duration = hideAfter) {
+        controlsVisible = true
+        autoHideControls(duration = duration)
+    }
+
+    fun hideControls() {
+        autoHideControlsJob?.cancel()
+        controlsVisible = false
+    }
+
+    fun toggleControlsVisibility() {
+        if (controlsVisible) {
+            hideControls()
+        } else {
+            showControls()
+        }
+    }
+
+    fun lockControls() {
+        controlsLocked = true
+    }
+
+    fun unlockControls() {
+        controlsLocked = false
+        showControls()
+    }
+
+    suspend fun observe() {
+        player.listen { events ->
+            if (events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
+                if (player.isPlaying) {
+                    autoHideControls()
+                }
+            }
+        }
+    }
+
+    private fun autoHideControls(duration: Duration = hideAfter) {
+        autoHideControlsJob?.cancel()
+        if (duration <= Duration.ZERO) return
+        autoHideControlsJob = scope.launch {
+            delay(duration = duration)
+            if (player.isPlaying) {
+                controlsVisible = false
+            }
+        }
+    }
+}

@@ -16,3 +16,5 @@ app/src/main/cpp/native-lib.cpp
 *.py
 *.pyc
 __pycache__/
+/nextui/build
+/app/build

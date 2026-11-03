@@ -7,33 +7,32 @@
     android:background="#000000"
     tools:context=".fragments.player.PlayerMobileFragment">
 
-    <com.streamflixreborn.streamflix.ui.PlayerMobileView
+    <!-- Video surface and subtitles only. The controls are the Compose overlay below. -->
+    <androidx.media3.ui.PlayerView
         android:id="@+id/pv_player"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:controller_layout_id="@layout/content_exo_controller_mobile"
+        android:focusable="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/settings"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:resize_mode="fit"
-        app:show_buffering="always"
-        app:show_next_button="false"
-        app:show_previous_button="false"
-        app:show_subtitle_button="true"
-        app:show_timeout="2000"
-        app:surface_type="texture_view" />
+        app:show_buffering="never"
+        app:surface_type="texture_view"
+        app:use_controller="false" />
 
-    <include
-        android:id="@+id/overlays"
-        layout="@layout/view_player_overlays_mobile"
+    <!-- NextPlayer's controls: top bar, centre buttons, seek bar, gestures, sheets, Up next, skip pill. -->
+    <com.streamflixreborn.streamflix.nextui.NextPlayerOverlayView
+        android:id="@+id/next_ui"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/settings"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- "More settings": subtitle style/offset/search, buffering, decoder, gestures. -->
     <com.streamflixreborn.streamflix.fragments.player.settings.PlayerSettingsMobileView
         android:id="@+id/settings"
         android:layout_width="320dp"
@@ -43,226 +42,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:visibility="visible" />
-
-    <!--
-        Up Next card: thumbnail, next episode, a countdown ring (determinate, flat so it is cheap
-        on TV) with the seconds inside, and Play now / Cancel. It only fades in and out.
-    -->
-    <LinearLayout
-        android:id="@+id/layout_next_episode_overlay"
-        android:layout_width="340dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:background="@drawable/ud_upnext_card"
-        android:clickable="true"
-        android:focusable="false"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/settings"
-        tools:visibility="visible">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/iv_next_episode_poster"
-                android:layout_width="112dp"
-                android:layout_height="63dp"
-                android:background="?attr/colorSurfaceContainerHighest"
-                android:contentDescription="@null"
-                android:scaleType="centerCrop"
-                app:shapeAppearance="@style/ShapeAppearance.StreamFlix.Poster"
-                tools:src="@drawable/glide_fallback_cover" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tv_next_episode_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/player_next_episode_up_next"
-                    android:textAllCaps="true"
-                    android:textAppearance="?attr/textAppearanceLabelMediumEmphasized"
-                    android:textColor="?attr/colorPrimary" />
-
-                <TextView
-                    android:id="@+id/tv_next_episode_meta"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:textAppearance="?attr/textAppearanceLabelLarge"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    tools:text="S2 E8" />
-
-                <TextView
-                    android:id="@+id/tv_next_episode_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:ellipsize="end"
-                    android:maxLines="2"
-                    android:textAppearance="?attr/textAppearanceTitleMediumEmphasized"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="Finale" />
-            </LinearLayout>
-
-            <FrameLayout
-                android:id="@+id/fl_next_episode_countdown"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_marginStart="10dp">
-
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/pi_next_episode_countdown"
-                    style="@style/Widget.StreamFlix.Player.CountdownRing"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:max="10"
-                    tools:progress="7" />
-
-                <TextView
-                    android:id="@+id/tv_next_episode_seconds"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:textAppearance="?attr/textAppearanceTitleMediumEmphasized"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="7" />
-            </FrameLayout>
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tv_next_episode_countdown"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            tools:text="Playing next in 8s" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="end"
-            android:orientation="horizontal">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_next_episode_dismiss"
-                style="@style/Widget.StreamFlix.Player.UpNext.Cancel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:focusable="true"
-                android:text="@string/player_up_next_cancel" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_next_episode_action"
-                style="@style/Widget.StreamFlix.Player.UpNext.Play"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:focusable="true"
-                android:text="@string/player_next_episode_action"
-                app:icon="@drawable/ic_ud_play" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/ll_brightness"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginStart="32dp"
-        tools:visibility="visible">
-
-        <TextView
-            android:id="@+id/tv_brightness_percentage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:shadowColor="#000000"
-            android:shadowDx="1"
-            android:shadowDy="1"
-            android:shadowRadius="2"
-            tools:text="50%"/>
-
-        <ProgressBar
-            android:id="@+id/pb_brightness"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="150dp"
-            android:layout_height="wrap_content"
-            android:rotation="270"
-            android:layout_marginTop="60dp"
-            android:layout_marginBottom="60dp"
-            tools:progress="50"/>
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_brightness"
-            android:tint="#FFFFFF" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/ll_volume"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginEnd="32dp"
-        tools:visibility="visible">
-
-        <TextView
-            android:id="@+id/tv_volume_percentage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:shadowColor="#000000"
-            android:shadowDx="1"
-            android:shadowDy="1"
-            android:shadowRadius="2"
-            tools:text="50%"/>
-
-        <ProgressBar
-            android:id="@+id/pb_volume"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="150dp"
-            android:layout_height="wrap_content"
-            android:rotation="270"
-            android:layout_marginTop="60dp"
-            android:layout_marginBottom="60dp"
-            tools:progress="50"/>
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_player_settings_audio"
-            android:tint="#FFFFFF" />
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
