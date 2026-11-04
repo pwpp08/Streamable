@@ -131,6 +131,12 @@ class MainMobileActivity : FragmentActivity(), IdleDimHost {
             }
         }
         HandoffResume.attach(this) { navController }
+        // Debug builds only: open a screen directly for emulator checks (adb ... --es debug_nav remote).
+        if (com.streamflixreborn.streamflix.BuildConfig.DEBUG && savedInstanceState == null) {
+            when (intent?.getStringExtra("debug_nav")) {
+                "remote" -> navController.navigate(R.id.remote)
+            }
+        }
 
         viewModel.checkUpdate()
 

@@ -17,9 +17,9 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingStart="16dp"
-        android:paddingTop="20dp"
+        android:paddingTop="12dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="24dp">
+        android:paddingBottom="12dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -32,7 +32,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:background="@drawable/bg_sf_card_large"
             android:gravity="center_vertical"
             android:minHeight="72dp"
@@ -78,7 +78,7 @@
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:hint="@string/remote_search_hint"
             app:boxCornerRadiusBottomEnd="28dp"
             app:boxCornerRadiusBottomStart="28dp"
@@ -97,10 +97,11 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <FrameLayout
+            android:id="@+id/fl_remote_dial"
             android:layout_width="288dp"
             android:layout_height="288dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="16dp"
             android:background="@drawable/bg_sf_remote_dpad">
 
             <com.google.android.material.button.MaterialButton
@@ -112,6 +113,8 @@
                 android:layout_marginStart="12dp"
                 android:contentDescription="@string/remote_back_10"
                 app:icon="@drawable/ic_sf_rewind"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
                 app:iconSize="32dp"
                 app:iconTint="?attr/colorOnSurface" />
 
@@ -123,6 +126,8 @@
                 android:layout_gravity="center"
                 android:contentDescription="@string/remote_play_pause"
                 app:icon="@drawable/ic_sf_play_pause"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
                 app:iconSize="52dp"
                 app:shapeAppearance="@style/ShapeAppearance.StreamFlix.Pill" />
 
@@ -135,6 +140,8 @@
                 android:layout_marginEnd="12dp"
                 android:contentDescription="@string/remote_forward_10"
                 app:icon="@drawable/ic_sf_forward"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
                 app:iconSize="32dp"
                 app:iconTint="?attr/colorOnSurface" />
 
@@ -153,7 +160,7 @@
             style="@style/Widget.Material3Expressive.MaterialButtonGroup.Connected"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="28dp">
+            android:layout_marginTop="16dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_remote_next"
@@ -180,7 +187,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="4dp"
             android:text="@string/remote_pair_tv"
             app:icon="@drawable/ic_sf_link" />
     </LinearLayout>

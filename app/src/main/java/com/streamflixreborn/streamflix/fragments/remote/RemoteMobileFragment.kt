@@ -7,7 +7,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import androidx.core.view.doOnLayout
 import androidx.core.widget.doAfterTextChanged
+import android.widget.FrameLayout
+import android.widget.ScrollView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -43,6 +46,10 @@ class RemoteMobileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // The remote is one page: shrink the round pad when the screen is short so nothing scrolls.
+        binding.root.doOnLayout { fitDial() }
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener { _binding?.let { fitDial() } }
 
         binding.btnRemoteChange.setOnClickListener { chooseTv(force = true) }
         binding.btnRemotePair.setOnClickListener { findNavController().navigate(R.id.pair_phone) }
@@ -89,6 +96,44 @@ class RemoteMobileFragment : Fragment() {
         } else if (tv == null) {
             chooseTv(force = false)
         }
+    }
+
+    private var lastDialSize = -1
+
+    /**
+     * Sizes the round pad (and its buttons) so the whole page just fits: full size when there is
+     * room, smaller on short screens, never below [MIN_DIAL_DP].
+     */
+    private fun fitDial() {
+        val b = _binding ?: return
+        val scroll = b.root as? ScrollView ?: return
+        val content = scroll.getChildAt(0) as? ViewGroup ?: return
+        val dial = b.flRemoteDial
+        val density = resources.displayMetrics.density
+        // Everything except the pad: child heights plus margins plus the column's own padding.
+        var others = content.paddingTop + content.paddingBottom
+        for (i in 0 until content.childCount) {
+            val child = content.getChildAt(i)
+            if (child === dial || child.visibility == View.GONE) continue
+            val lp = child.layoutParams as ViewGroup.MarginLayoutParams
+            others += child.height + lp.topMargin + lp.bottomMargin
+        }
+        val dialMargins = (dial.layoutParams as ViewGroup.MarginLayoutParams).let { it.topMargin + it.bottomMargin }
+        val full = (DIAL_DP * density).toInt()
+        val size = (scroll.height - others - dialMargins).coerceIn((MIN_DIAL_DP * density).toInt(), full)
+        if (kotlin.math.abs(size - lastDialSize) < 2) return
+        lastDialSize = size
+        val k = size.toFloat() / full
+        dial.layoutParams = dial.layoutParams.also { it.width = size; it.height = size }
+        fun View.sizeTo(widthDp: Int, marginDp: Int) {
+            layoutParams = (layoutParams as FrameLayout.LayoutParams).also { lp ->
+                lp.width = (widthDp * density * k).toInt(); lp.height = lp.width
+                lp.marginStart = (marginDp * density * k).toInt(); lp.marginEnd = lp.marginStart
+            }
+        }
+        b.btnRemoteBack.sizeTo(72, 12)
+        b.btnRemoteForward.sizeTo(72, 12)
+        b.btnRemotePlayPause.sizeTo(128, 0)
     }
 
     private fun chooseTv(force: Boolean) {
@@ -169,6 +214,8 @@ class RemoteMobileFragment : Fragment() {
     }
 
     companion object {
+        private const val DIAL_DP = 288
+        private const val MIN_DIAL_DP = 180
         private const val PREFS = "remote_mobile"
         private const val SEARCH_DEBOUNCE_MS = 400L
         private const val SEEK_MS = 10_000L
