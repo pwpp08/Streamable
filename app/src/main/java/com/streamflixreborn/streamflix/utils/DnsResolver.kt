@@ -50,7 +50,7 @@ object DnsResolver : Dns {
         Log.d(TAG, "Resolving host: $hostname using provider: $providerName")
         return try {
             val addresses = _internalDoh.lookup(hostname)
-            val sorted = addresses.sortedBy { if (it is java.net.Inet4Address) 0 else 1 }
+            val sorted = fastestFirst(hostname, addresses.sortedBy { if (it is java.net.Inet4Address) 0 else 1 })
             Log.d(TAG, "Resolved $hostname to: ${sorted.joinToString { it.hostAddress ?: "" }}")
             sorted
         } catch (e: Exception) {
@@ -68,6 +68,47 @@ object DnsResolver : Dns {
     }
 
     val doh: Dns get() = this
+
+    // CDNs such as Cloudflare answer with several edge IPs, and some of them are far slower than
+    // the rest on a given network (seconds to connect, ~1 Mbps instead of ~28). OkHttp only tries
+    // the next address when a connect fails, so the order we return decides which one is used.
+    private const val PROBE_TIMEOUT_MS = 800
+    private const val PROBE_TTL_MS = 10 * 60_000L
+    private const val PROBE_MAX_ADDRESSES = 6
+    private val probeCache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, List<InetAddress>>>()
+    private val probePool by lazy {
+        java.util.concurrent.Executors.newCachedThreadPool { r -> Thread(r, "dns-probe").apply { isDaemon = true } }
+    }
+
+    private fun fastestFirst(hostname: String, addresses: List<InetAddress>): List<InetAddress> {
+        if (addresses.size < 2) return addresses
+        probeCache[hostname]?.let { (at, cached) ->
+            if (System.currentTimeMillis() - at < PROBE_TTL_MS && cached.toSet() == addresses.toSet()) return cached
+        }
+        val candidates = addresses.take(PROBE_MAX_ADDRESSES)
+        val times = HashMap<InetAddress, Long>()
+        val tasks = candidates.map { address ->
+            java.util.concurrent.Callable {
+                val started = System.nanoTime()
+                runCatching {
+                    java.net.Socket().use { it.connect(java.net.InetSocketAddress(address, 443), PROBE_TIMEOUT_MS) }
+                    address to (System.nanoTime() - started) / 1_000_000
+                }.getOrNull()
+            }
+        }
+        runCatching {
+            probePool.invokeAll(tasks, PROBE_TIMEOUT_MS + 200L, TimeUnit.MILLISECONDS).forEach { future ->
+                if (future.isCancelled) return@forEach
+                runCatching { future.get() }.getOrNull()?.let { (address, ms) -> times[address] = ms }
+            }
+        }
+        val ordered = EdgeOrder.byLatency(candidates, times) + addresses.drop(PROBE_MAX_ADDRESSES)
+        if (times.isNotEmpty()) {
+            Log.d(TAG, "Edge probe $hostname: ${ordered.take(candidates.size).joinToString { "${it.hostAddress}=${times[it] ?: "x"}ms" }}")
+        }
+        probeCache[hostname] = System.currentTimeMillis() to ordered
+        return ordered
+    }
 
     @Synchronized
     fun setDnsUrl(newUrl: String) {
