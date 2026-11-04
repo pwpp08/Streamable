@@ -21,6 +21,7 @@
     <string name="home_rows_drag_handle">Húzd az átrendezéshez</string>
 
     <!-- Search history and suggestions -->
+    <string name="search_because_you_watched">Mert megnézted: %1$s</string>
     <string name="search_recent">Legutóbbi keresések</string>
     <string name="search_clear_history">Előzmények törlése</string>
     <string name="search_suggestions">Javaslatok</string>

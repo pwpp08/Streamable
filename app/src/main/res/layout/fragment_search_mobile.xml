@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phone search: pill search field, recent searches / suggestions panel, global toggle, results. -->
+<!-- Phone search: pill search field, recent searches / suggestions panel, results. -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -101,20 +101,6 @@
         app:layout_constraintStart_toStartOf="@id/cl_search"
         app:layout_constraintTop_toBottomOf="@id/cl_search" />
 
-    <com.google.android.material.materialswitch.MaterialSwitch
-        android:id="@+id/sw_global_search"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="12dp"
-        android:minHeight="48dp"
-        android:text="@string/global_search"
-        android:textAppearance="?attr/textAppearanceTitleSmall"
-        android:textColor="?attr/colorOnSurface"
-        app:layout_constraintEnd_toEndOf="@id/cl_search"
-        app:layout_constraintStart_toStartOf="@id/cl_search"
-        app:layout_constraintTop_toBottomOf="@id/rv_search_panel" />
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_search"
         android:layout_width="0dp"
@@ -128,7 +114,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sw_global_search"
+        app:layout_constraintTop_toBottomOf="@id/rv_search_panel"
         app:spanCount="3"
         tools:listitem="@layout/item_movie_mobile" />
 

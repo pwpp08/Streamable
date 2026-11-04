@@ -74,7 +74,6 @@
 
     <string name="search_input_hint">Szukaj filmow i seriali</string>
     <string name="search_input_hint_iptv">Szukaj kanałów</string>
-    <string name="global_search">Wyszukiwanie globalne</string>
     <string name="search_empty_query">Wpisz frazę wyszukiwania</string>
     <string name="searching">Wyszukiwanie...</string>
     <string name="search_error">Blad</string>

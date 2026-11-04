@@ -49,7 +49,8 @@ class SearchTvFragment : Fragment() {
 
     private val database by lazy { AppDatabase.getInstance(requireContext()) }
     private val viewModel by viewModelsFactory { SearchViewModel(database) }
-    private var isGlobalSearchChecked: Boolean = false
+    /** True while a typed query's results are on screen; false shows the recommendation rows. */
+    private var showingResults = false
     private var currentGridColumns: Int = 1
 
     private val appAdapter by lazy {
@@ -132,10 +133,16 @@ class SearchTvFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.recommendations.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { rows ->
+                if (!showingResults) displayRecommendations(rows)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
 
                 when (state) {
-                    is State.Searching, is State.GlobalSearching -> {
+                    is State.Searching -> {
                         binding.isLoading.apply {
                             root.visibility = View.VISIBLE
                             pbIsLoading.visibility = View.VISIBLE
@@ -146,16 +153,15 @@ class SearchTvFragment : Fragment() {
                     }
                     is State.SearchingMore -> appAdapter.isLoading = true
                     is State.SuccessSearching -> {
-                        displaySearch(state.results, state.hasMore)
-                        appAdapter.isLoading = false
-                        binding.vgvSearch.visibility = View.VISIBLE
-                        binding.isLoading.root.visibility = View.GONE
-                    }
-                    is State.SuccessGlobalSearching -> {
-                        displayGlobalSearch(state.providerResults)
-                        appAdapter.isLoading = false
-                        binding.vgvSearch.visibility = View.VISIBLE
-                        binding.isLoading.root.visibility = View.GONE
+                        showingResults = viewModel.query.isNotBlank()
+                        if (showingResults) {
+                            displaySearch(state.results, state.hasMore)
+                            appAdapter.isLoading = false
+                            binding.vgvSearch.visibility = View.VISIBLE
+                            binding.isLoading.root.visibility = View.GONE
+                        } else {
+                            displayRecommendations(viewModel.recommendations.value)
+                        }
                     }
                     is State.FailedSearching -> {
                         val code = (state.error as? retrofit2.HttpException)?.code()
@@ -208,16 +214,7 @@ class SearchTvFragment : Fragment() {
             renderPanel()
         }
 
-        if (isGlobalSearchChecked) {
-            if (query.isBlank()) {
-                Toast.makeText(requireContext(), getString(R.string.search_empty_query), Toast.LENGTH_SHORT).show()
-                return true
-            }
-            val currentLanguage = UserPreferences.currentProvider?.language ?: "es"
-            viewModel.searchGlobal(query, currentLanguage)
-        } else {
-            viewModel.search(query)
-        }
+        viewModel.search(query)
         return true
     }
 
@@ -226,18 +223,11 @@ class SearchTvFragment : Fragment() {
         val hintStringRes = if (isIptv) R.string.search_input_hint_iptv else R.string.search_input_hint
         binding.etSearch.hint = getString(hintStringRes)
 
-        binding.llGlobalSearch.nextFocusUpId = binding.etSearch.id
-        binding.vgvSearch.nextFocusUpId = binding.llGlobalSearch.id
-        binding.ivGlobalSearchSwitch.isChecked = isGlobalSearchChecked
-        listOf(binding.llGlobalSearch, binding.btnSearchClear, binding.btnSearchVoice).forEach { it.tvFocusSpring() }
+        binding.vgvSearch.nextFocusUpId = binding.etSearch.id
+        listOf(binding.btnSearchClear, binding.btnSearchVoice).forEach { it.tvFocusSpring() }
         // The phone remote can type here (RemoteSearch) once this TV is signed in to sync.
         binding.tvSearchRemoteHint.visibility =
             if (CloudSyncManager.currentUserId() != null) View.VISIBLE else View.GONE
-
-        binding.llGlobalSearch.setOnClickListener {
-            isGlobalSearchChecked = !isGlobalSearchChecked
-            binding.ivGlobalSearchSwitch.isChecked = isGlobalSearchChecked
-        }
 
         binding.etSearch.apply {
             setOnEditorActionListener { _, actionId, event ->
@@ -326,7 +316,7 @@ class SearchTvFragment : Fragment() {
             setOnClickListener { if (!voiceHelper.isListening) voiceHelper.startWithPermissionCheck() }
         }
 
-        listOf(binding.btnSearchClear, binding.btnSearchVoice, binding.llGlobalSearch).forEach { view ->
+        listOf(binding.btnSearchClear, binding.btnSearchVoice).forEach { view ->
             view.setOnKeyListener { _, keyCode, event ->
                 if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_BACK) {
                     focusSearchContent()
@@ -386,7 +376,7 @@ class SearchTvFragment : Fragment() {
 
     /**
      * Recent searches (empty box) or matches and suggestions (while typing), between the search
-     * box and the global-search toggle so the D-pad reaches them from the box.
+     * box and the results so the D-pad reaches them from the box.
      */
     private fun renderPanel() {
         val b = _binding ?: return
@@ -409,12 +399,10 @@ class SearchTvFragment : Fragment() {
         val searchViews = listOf(b.etSearch, b.btnSearchClear, b.btnSearchVoice)
         if (visible) {
             searchViews.forEach { it.nextFocusDownId = panelId }
-            b.llGlobalSearch.nextFocusUpId = panelId
         } else {
-            searchViews.forEach { if (it.nextFocusDownId == panelId) it.nextFocusDownId = b.llGlobalSearch.id }
-            b.llGlobalSearch.nextFocusUpId = b.etSearch.id
+            searchViews.forEach { if (it.nextFocusDownId == panelId) it.nextFocusDownId = b.vgvSearch.id }
             // Not the box itself: focusing it can open the keyboard.
-            if (wasFocused) b.llGlobalSearch.requestFocus()
+            if (wasFocused) b.vgvSearch.requestFocus()
         }
     }
 
@@ -423,9 +411,6 @@ class SearchTvFragment : Fragment() {
         return when {
             hasResults -> {
                 binding.vgvSearch.requestFocus()
-            }
-            binding.llGlobalSearch.visibility == View.VISIBLE -> {
-                binding.llGlobalSearch.requestFocus()
             }
             else -> false
         }
@@ -450,45 +435,37 @@ class SearchTvFragment : Fragment() {
         }
     }
 
-    private fun displayGlobalSearch(providerResults: List<ProviderResult>) {
-        val categories = providerResults.map { providerResult ->
-            val headerTitle = when (val state = providerResult.state) {
-                is ProviderResult.State.Loading -> "${providerResult.provider.name} - ${getString(R.string.searching)}"
-                is ProviderResult.State.Error -> "${providerResult.provider.name} - ${getString(R.string.search_error)}"
-                is ProviderResult.State.Success -> {
-                    val count = state.results.size
-                    val resultText = if (count == 1) getString(R.string.result) else getString(R.string.results)
-                    "${providerResult.provider.name} - $count $resultText"
-                }
-            }
+    private fun rowTitle(name: String): String =
+        if (name.startsWith(SearchViewModel.BECAUSE_PREFIX)) {
+            getString(R.string.search_because_you_watched, name.removePrefix(SearchViewModel.BECAUSE_PREFIX))
+        } else name
 
-            val items = (providerResult.state as? ProviderResult.State.Success)?.results?.onEach {
+    /** Empty search box: rows of recommended titles instead of genre tiles. */
+    private fun displayRecommendations(rows: List<Category>?) {
+        if (rows == null) {
+            binding.isLoading.apply {
+                root.visibility = View.VISIBLE
+                pbIsLoading.visibility = View.VISIBLE
+                gIsLoadingRetry.visibility = View.GONE
+            }
+            return
+        }
+        binding.isLoading.root.visibility = View.GONE
+        binding.vgvSearch.visibility = View.VISIBLE
+        currentGridColumns = 1
+        binding.vgvSearch.setNumColumns(currentGridColumns)
+        appAdapter.setOnLoadMoreListener(null)
+        appAdapter.isLoading = false
+        appAdapter.submitList(rows.map { row ->
+            row.list.forEach {
                 when (it) {
                     is Movie -> it.itemType = AppAdapter.Type.MOVIE_TV_ITEM
                     is TvShow -> it.itemType = AppAdapter.Type.TV_SHOW_TV_ITEM
                 }
-            } ?: emptyList()
-
-            Category(name = headerTitle, list = items).apply {
+            }
+            Category(name = rowTitle(row.name), list = row.list).apply {
                 itemType = AppAdapter.Type.CATEGORY_TV_ITEM
             }
-        }
-
-        currentGridColumns = 1
-        binding.vgvSearch.setNumColumns(currentGridColumns)
-        appAdapter.setOnLoadMoreListener(null)
-        appAdapter.submitList(categories)
-
-        if (_binding != null && categories.isNotEmpty()) {
-            binding.vgvSearch.selectedPosition = 0
-            binding.vgvSearch.post {
-                if (_binding == null) return@post
-                binding.vgvSearch.selectedPosition = 0
-                val topHolder = binding.vgvSearch.findViewHolderForAdapterPosition(0) as? CategoryViewHolder
-                val hgv = topHolder?.childRecyclerView as? HorizontalGridView
-                hgv?.selectedPosition = 0
-                (hgv ?: binding.vgvSearch).requestFocus()
-            }
-        }
+        })
     }
 }

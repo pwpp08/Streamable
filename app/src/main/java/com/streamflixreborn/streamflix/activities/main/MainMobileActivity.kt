@@ -135,6 +135,7 @@ class MainMobileActivity : FragmentActivity(), IdleDimHost {
         if (com.streamflixreborn.streamflix.BuildConfig.DEBUG && savedInstanceState == null) {
             when (intent?.getStringExtra("debug_nav")) {
                 "remote" -> navController.navigate(R.id.remote)
+                "search" -> navController.navigate(R.id.search)
             }
         }
 

@@ -14,6 +14,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.AppAdapter
@@ -56,6 +58,9 @@ class SearchMobileFragment : Fragment() {
     /** Hidden after a search runs, until the text changes again. */
     private var panelSuppressed = false
 
+    /** True while a typed query's results are on screen; false shows the recommendation rows. */
+    private var showingResults = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -78,10 +83,16 @@ class SearchMobileFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.recommendations.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { rows ->
+                if (!showingResults) displayRecommendations(rows)
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
                 // ========= BLOQUE WHEN MODIFICADO =========
                 when (state) {
-                    is State.Searching, is State.GlobalSearching -> {
+                    is State.Searching -> {
                         binding.isLoading.apply {
                             root.visibility = View.VISIBLE
                             pbIsLoading.visibility = View.VISIBLE
@@ -92,13 +103,14 @@ class SearchMobileFragment : Fragment() {
                     }
                     is State.SearchingMore -> appAdapter.isLoading = true
                     is State.SuccessSearching -> {
-                        displaySearch(state.results, state.hasMore)
-                        appAdapter.isLoading = false
-                        binding.isLoading.root.visibility = View.GONE
-                    }
-                    is State.SuccessGlobalSearching -> {
-                        displayGlobalSearch(state.providerResults)
-                        binding.isLoading.root.visibility = View.GONE
+                        showingResults = viewModel.query.isNotBlank()
+                        if (showingResults) {
+                            displaySearch(state.results, state.hasMore)
+                            appAdapter.isLoading = false
+                            binding.isLoading.root.visibility = View.GONE
+                        } else {
+                            displayRecommendations(viewModel.recommendations.value)
+                        }
                     }
                     is State.FailedSearching -> {
                         val code = (state.error as? retrofit2.HttpException)?.code()
@@ -251,12 +263,7 @@ class SearchMobileFragment : Fragment() {
         renderPanel()
         binding.etSearch.clearFocus()
 
-        if (binding.swGlobalSearch.isChecked) {
-            val currentLanguage = UserPreferences.currentProvider?.language ?: "es"
-            viewModel.searchGlobal(query, currentLanguage)
-        } else {
-            viewModel.search(query)
-        }
+        viewModel.search(query)
     }
 
     /** A recent search or suggestion was tapped. */
@@ -284,7 +291,42 @@ class SearchMobileFragment : Fragment() {
         b.rvSearchPanel.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
+    private fun rowTitle(name: String): String =
+        if (name.startsWith(SearchViewModel.BECAUSE_PREFIX)) {
+            getString(R.string.search_because_you_watched, name.removePrefix(SearchViewModel.BECAUSE_PREFIX))
+        } else name
+
+    /** Empty search box: rows of recommended titles instead of genre tiles. */
+    private fun displayRecommendations(rows: List<Category>?) {
+        if (rows == null) {
+            binding.isLoading.apply {
+                root.visibility = View.VISIBLE
+                pbIsLoading.visibility = View.VISIBLE
+                gIsLoadingRetry.visibility = View.GONE
+            }
+            return
+        }
+        binding.isLoading.root.visibility = View.GONE
+        binding.rvSearch.layoutManager = LinearLayoutManager(requireContext())
+        appAdapter.setOnLoadMoreListener(null)
+        appAdapter.submitList(rows.map { row ->
+            row.list.forEach {
+                when (it) {
+                    is Movie -> it.itemType = AppAdapter.Type.MOVIE_MOBILE_ITEM
+                    is TvShow -> it.itemType = AppAdapter.Type.TV_SHOW_MOBILE_ITEM
+                }
+            }
+            Category(name = rowTitle(row.name), list = row.list).apply {
+                itemSpacing = resources.getDimensionPixelSize(R.dimen.browse_row_item_gap)
+                itemType = AppAdapter.Type.CATEGORY_MOBILE_ITEM
+            }
+        })
+    }
+
     private fun displaySearch(list: List<AppAdapter.Item>, hasMore: Boolean) {
+        if (binding.rvSearch.layoutManager !is GridLayoutManager) {
+            binding.rvSearch.layoutManager = GridLayoutManager(requireContext(), 3)
+        }
         appAdapter.submitList(list.onEach {
             when (it) {
                 is Genre -> it.itemType = AppAdapter.Type.GENRE_GRID_MOBILE_ITEM
@@ -299,43 +341,4 @@ class SearchMobileFragment : Fragment() {
             appAdapter.setOnLoadMoreListener(null)
         }
     }
-
-    // ========= NUEVA FUNCIÓN PARA MOSTRAR RESULTADOS GLOBALES =========
-    private fun displayGlobalSearch(providerResults: List<ProviderResult>) {
-        val allItems = mutableListOf<AppAdapter.Item>()
-
-        providerResults.forEach { providerResult ->
-            val headerTitle = when (val state = providerResult.state) {
-                is ProviderResult.State.Loading -> "${providerResult.provider.name} - ${getString(R.string.searching)}"
-                is ProviderResult.State.Error -> "${providerResult.provider.name} - ${getString(R.string.search_error)}"
-                is ProviderResult.State.Success -> {
-                    val count = state.results.size
-                    val resultText = if (count == 1) getString(R.string.result) else getString(R.string.results)
-                    "${providerResult.provider.name} - $count $resultText"
-                }
-            }
-
-            val header = Category(
-                name = headerTitle,
-                list = emptyList()
-            ).apply {
-                itemType = AppAdapter.Type.CATEGORY_MOBILE_ITEM
-            }
-            allItems.add(header)
-
-            if (providerResult.state is ProviderResult.State.Success) {
-                val results = providerResult.state.results.onEach {
-                    when (it) {
-                        is Movie -> it.itemType = AppAdapter.Type.MOVIE_GRID_MOBILE_ITEM
-                        is TvShow -> it.itemType = AppAdapter.Type.TV_SHOW_GRID_MOBILE_ITEM
-                    }
-                }
-                allItems.addAll(results)
-            }
-        }
-
-        appAdapter.submitList(allItems)
-        appAdapter.setOnLoadMoreListener(null) // Desactivamos la carga infinita en la búsqueda global
-    }
-    // ================================================================
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
+import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
 import com.streamflixreborn.streamflix.providers.IptvProvider
@@ -19,6 +20,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.streamflixreborn.streamflix.BuildConfig
 import com.streamflixreborn.streamflix.utils.MetadataLanguage
@@ -39,23 +43,18 @@ sealed class State {
     data object SearchingMore : State()
     data class SuccessSearching(val results: List<AppAdapter.Item>, val hasMore: Boolean) : State()
     data class FailedSearching(val error: Exception) : State()
-    data object GlobalSearching : State()
-    data class SuccessGlobalSearching(val providerResults: List<ProviderResult>) : State()
 }
 
-data class ProviderResult(
-    val provider: Provider,
-    val state: State,
-) {
-    sealed class State {
-        data object Loading : State()
-        data class Success(val results: List<AppAdapter.Item>) : State()
-        data class Error(val error: Exception) : State()
+
+class SearchViewModel(private val database: AppDatabase) : ViewModel() {
+
+    companion object {
+        /** Category names that start with this hold the title the row is based on. */
+        const val BECAUSE_PREFIX = "because:"
+        private const val RECOMMENDATION_SEEDS = 2
+        private const val MIN_ROW_ITEMS = 4
+        private const val HOME_ROWS = 3
     }
-}
-
-
-class SearchViewModel(database: AppDatabase) : ViewModel() {
 
     private val _state = MutableStateFlow<State>(State.Searching)
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -174,15 +173,77 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
             (UserPreferences.tmdbApiKey.isNotBlank() || BuildConfig.TMDB_API_KEY.let { it.isNotBlank() && it != "null" }) &&
             UserPreferences.currentProvider !is IptvProvider
 
+    // --- Recommendations (shown while the search box is empty) ---
+
+    private val _recommendations = MutableStateFlow<List<Category>?>(null)
+    /** null while loading; rows of recommended titles afterwards (possibly empty). */
+    val recommendations: StateFlow<List<Category>?> = _recommendations.asStateFlow()
+
     init {
         search(query)
+        loadRecommendations()
+    }
+
+    /**
+     * "Because you watched X" rows from what was played or favourited most recently, then the
+     * provider's own trending/popular rows. Parental filters apply to every row.
+     */
+    fun loadRecommendations() = viewModelScope.launch(Dispatchers.IO) {
+        _recommendations.value = try {
+            val provider = UserPreferences.currentProvider ?: run { _recommendations.value = emptyList(); return@launch }
+            val rows = mutableListOf<Category>()
+
+            val seeds = (
+                database.movieDao().getRecentlyWatched().first() +
+                    database.tvShowDao().getRecentlyWatched().first() +
+                    database.movieDao().getFavorites().first() +
+                    database.tvShowDao().getFavorites().first()
+                ).distinctBy { (it as? Movie)?.id ?: (it as TvShow).id }
+                .take(RECOMMENDATION_SEEDS)
+
+            val becauseRows = kotlinx.coroutines.coroutineScope {
+                seeds.map { seed ->
+                    async {
+                        runCatching {
+                            when (seed) {
+                                is Movie -> seed.title to provider.getMovie(seed.id).recommendations
+                                is TvShow -> seed.title to provider.getTvShow(seed.id).recommendations
+                                else -> null
+                            }
+                        }.getOrNull()
+                    }
+                }.awaitAll()
+            }
+            becauseRows.filterNotNull().forEach { (title, shows) ->
+                val list = ParentalControlUtils.filterItems(shows.filter { it is Movie || it is TvShow })
+                if (list.size >= MIN_ROW_ITEMS) rows += Category(name = BECAUSE_PREFIX + title, list = list)
+            }
+
+            runCatching { provider.getHome() }.getOrNull()
+                ?.filter { it.name != Category.FEATURED && it.list.any { item -> item is Movie || item is TvShow } }
+                ?.take(HOME_ROWS)
+                ?.forEach { row ->
+                    val list = ParentalControlUtils.filterItems(row.list.filter { it is Movie || it is TvShow })
+                    if (list.isNotEmpty()) rows += Category(name = row.name, list = list)
+                }
+            rows
+        } catch (e: Exception) {
+            Log.w("SearchViewModel", "recommendations: ", e)
+            emptyList()
+        }
     }
 
     fun search(query: String) = viewModelScope.launch(Dispatchers.IO) {
-        _state.emit(State.Searching)
-        recordSearch(query)
         // Set up front so Retry after a failure repeats this query instead of the previous one.
         this@SearchViewModel.query = query
+        if (query.isBlank()) {
+            // Nothing to look up: the screen shows recommendations instead of the provider's genre list.
+            page = 1
+            _state.emit(State.SuccessSearching(emptyList(), false))
+            return@launch
+        }
+        _state.emit(State.Searching)
+        recordSearch(query)
 
         try {
             val results = ParentalControlUtils.filterItems(UserPreferences.currentProvider!!.search(query))
@@ -217,59 +278,6 @@ class SearchViewModel(database: AppDatabase) : ViewModel() {
             } catch (e: Exception) {
                 Log.e("SearchViewModel", "loadMore: ", e)
                 _state.emit(State.FailedSearching(e))
-            }
-        }
-    }
-
-    // FUNCIÓN DE BÚSQUEDA GLOBAL AÑADIDA
-    fun searchGlobal(query: String, currentLanguage: String) = viewModelScope.launch(Dispatchers.IO) {
-        _state.emit(State.GlobalSearching)
-        recordSearch(query)
-
-        val isCurrentProviderIptv = UserPreferences.currentProvider is IptvProvider
-        val targetProviders = Provider.providers.keys
-            .filter { it.language == currentLanguage && (it is IptvProvider) == isCurrentProviderIptv }
-            .toList()
-
-        if (targetProviders.isEmpty()) {
-            _state.emit(State.SuccessGlobalSearching(emptyList()))
-            return@launch
-        }
-
-        val initialResults = targetProviders.map { provider ->
-            ProviderResult(provider, ProviderResult.State.Loading)
-        }
-        _state.emit(State.SuccessGlobalSearching(initialResults))
-
-        val mutableResults = initialResults.toMutableList()
-
-        val stateComparator = compareBy<ProviderResult> { providerResult ->
-            when (val state = providerResult.state) {
-                is ProviderResult.State.Success -> if (state.results.isNotEmpty()) 1 else 3
-                is ProviderResult.State.Loading -> 2
-                is ProviderResult.State.Error -> 4
-            }
-        }
-
-        targetProviders.forEachIndexed { index, provider ->
-            launch {
-                try {
-                    val results = ParentalControlUtils.filterItems(provider.search(query).onEach { item ->
-                        // ========= ¡AQUÍ ESTÁ LA MAGIA! =========
-                        // Le ponemos el sello a cada resultado
-                        when (item) {
-                            is Movie -> item.providerName = provider.name
-                            is TvShow -> item.providerName = provider.name
-                        }
-                        // =======================================
-                    })
-                    mutableResults[index] = ProviderResult(provider, ProviderResult.State.Success(results))
-                } catch (e: Exception) {
-                    Log.e("SearchViewModel", "searchGlobal for ${provider.name}: ", e)
-                    mutableResults[index] = ProviderResult(provider, ProviderResult.State.Error(e))
-                }
-
-                _state.emit(State.SuccessGlobalSearching(mutableResults.sortedWith(stateComparator)))
             }
         }
     }

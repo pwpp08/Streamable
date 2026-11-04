@@ -21,6 +21,7 @@
     <string name="home_rows_drag_handle">Drag to reorder</string>
 
     <!-- Search history and suggestions -->
+    <string name="search_because_you_watched">Because you watched %1$s</string>
     <string name="search_recent">Recent searches</string>
     <string name="search_clear_history">Clear history</string>
     <string name="search_suggestions">Suggestions</string>

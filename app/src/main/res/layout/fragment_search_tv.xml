@@ -40,7 +40,7 @@
             android:inputType="text"
             android:maxLines="1"
             android:nextFocusRight="@+id/btn_search_clear"
-            android:nextFocusDown="@id/ll_global_search"
+            android:nextFocusDown="@id/vgv_search"
             android:paddingStart="28dp"
             android:paddingEnd="8dp"
             android:textAppearance="?attr/textAppearanceTitleLarge"
@@ -62,7 +62,7 @@
             android:focusableInTouchMode="true"
             android:nextFocusLeft="@+id/et_search"
             android:nextFocusRight="@+id/btn_search_voice"
-            android:nextFocusDown="@id/ll_global_search"
+            android:nextFocusDown="@id/vgv_search"
             android:padding="14dp"
             android:src="@drawable/ic_search_clear"
             android:tint="@color/sf_tv_icon_tint"
@@ -81,7 +81,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:nextFocusLeft="@+id/btn_search_clear"
-            android:nextFocusDown="@id/ll_global_search"
+            android:nextFocusDown="@id/vgv_search"
             android:padding="14dp"
             android:src="@drawable/ic_mic"
             android:tint="@color/sf_tv_icon_tint"
@@ -131,45 +131,6 @@
         app:layout_constraintStart_toStartOf="@id/cl_search"
         app:layout_constraintTop_toBottomOf="@id/tv_search_remote_hint" />
 
-    <LinearLayout
-        android:id="@+id/ll_global_search"
-        android:layout_width="wrap_content"
-        android:layout_height="56dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_sf_tv_chip"
-        android:clickable="true"
-        android:focusable="true"
-        android:gravity="center_vertical"
-        android:nextFocusUp="@id/et_search"
-        android:nextFocusDown="@id/vgv_search"
-        android:orientation="horizontal"
-        android:paddingStart="24dp"
-        android:paddingEnd="16dp"
-        app:layout_constraintStart_toStartOf="@id/cl_search"
-        app:layout_constraintTop_toBottomOf="@id/rv_search_panel">
-
-        <TextView
-            android:id="@+id/tv_global_search"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:duplicateParentState="true"
-            android:text="@string/global_search"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textColor="?attr/colorOnSurface" />
-
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/iv_global_search_switch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@null"
-            android:clickable="false"
-            android:focusable="false"
-            android:importantForAccessibility="no"
-            android:minHeight="0dp" />
-
-    </LinearLayout>
-
     <androidx.leanback.widget.VerticalGridView
         android:id="@+id/vgv_search"
         android:layout_width="0dp"
@@ -187,7 +148,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ll_global_search"
+        app:layout_constraintTop_toBottomOf="@id/rv_search_panel"
         tools:listitem="@layout/item_movie_tv" />
 
     <include
