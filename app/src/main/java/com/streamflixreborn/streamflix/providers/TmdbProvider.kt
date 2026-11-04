@@ -13,7 +13,7 @@ import com.streamflixreborn.streamflix.extractors.VidsrcRuExtractor
 import com.streamflixreborn.streamflix.extractors.VidflixExtractor
 import com.streamflixreborn.streamflix.extractors.VidrockExtractor
 import com.streamflixreborn.streamflix.extractors.VidloveExtractor
-import com.streamflixreborn.streamflix.extractors.PrimeSrcExtractor
+import com.streamflixreborn.streamflix.utils.health.HealthStore
 import com.streamflixreborn.streamflix.extractors.VidemExtractor
 import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Episode
@@ -757,7 +757,6 @@ class TmdbProvider(override val language: String) : Provider {
 
         servers.addAll(VidrockExtractor().servers(videoType))
         servers.addAll(VidzeeExtractor().servers(videoType))
-        servers.addAll(PrimeSrcExtractor().servers(videoType))
         servers.addAll(VidemExtractor().servers(videoType, "en"))
         servers.addAll(VidloveExtractor().servers(videoType))
 
@@ -767,7 +766,10 @@ class TmdbProvider(override val language: String) : Provider {
                 .getOrNull().orEmpty()
         )
 
-        return servers.distinctBy { it.id }
+        // Servers that failed the last two health runs only slow playback down; keep them if nothing else is left.
+        val unique = servers.distinctBy { it.id }
+        val alive = unique.filterNot { !TorrentServers.isTorrentServer(it) && HealthStore.isDead(it.name) }
+        return if (alive.size >= 2) alive else unique
     }
 
     override suspend fun getVideo(server: Video.Server): Video {

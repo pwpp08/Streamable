@@ -117,7 +117,8 @@ class ProviderHealthChecker(
                     serverName = server.name,
                     ok = stream.ok,
                     latencyMs = System.currentTimeMillis() - started,
-                    maxHeight = stream.maxHeight,
+                    // Media playlists and MP4s carry no RESOLUTION; estimate from the bitrate so they are not shown as "?".
+                    maxHeight = stream.maxHeight ?: if (stream.ok) runCatching { estimateFromBitrate(video) }.getOrNull() else null,
                     error = stream.error,
                     checkedAt = System.currentTimeMillis(),
                     probe = kind,

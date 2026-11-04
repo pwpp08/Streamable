@@ -40,7 +40,6 @@ class VidloveExtractor : Extractor() {
         ServerConfig("Barbarian King", "moviebox"),
         ServerConfig("Electro Dragon", "dcloud"),
         ServerConfig("Ice Wizard", "tcloud"),
-        ServerConfig("Archer Queen", "vidapi")
     )
 
     fun servers(videoType: Video.Type): List<Video.Server> {

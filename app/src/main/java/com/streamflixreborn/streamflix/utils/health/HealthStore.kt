@@ -21,11 +21,20 @@ object HealthStore {
     const val MAX_AGE_MS = 14L * 24 * 60 * 60 * 1000
 
     @Serializable
-    private data class Snapshot(val version: Int = FORMAT_VERSION, val results: List<ServerHealth> = emptyList())
+    private data class Snapshot(
+        val version: Int = FORMAT_VERSION,
+        val results: List<ServerHealth> = emptyList(),
+        /** Consecutive health runs a server failed in, by lower-case server name. */
+        val streaks: Map<String, Int> = emptyMap(),
+    )
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val lock = Any()
     private var cache: List<ServerHealth>? = null
+    private var streaks: Map<String, Int> = emptyMap()
+
+    /** A server that failed this many health runs in a row is skipped when playing. */
+    const val DEAD_AFTER_RUNS = 2
 
     /** Overridable for tests; defaults to the app's `filesDir`. */
     internal var fileProvider: () -> File = { File(StreamFlixApp.instance.filesDir, FILE_NAME) }
@@ -49,13 +58,37 @@ object HealthStore {
             val providers = results.mapTo(HashSet()) { it.provider }
             val merged = load().filterNot { it.provider in providers || (knownProviders != null && it.provider !in knownProviders) } + results
             cache = merged
+            streaks = nextStreaks(streaks, results)
             write(merged)
         }
+    }
+
+    /** True when [serverName] failed the last [DEAD_AFTER_RUNS] health runs, so playback should not wait for it. */
+    fun isDead(serverName: String): Boolean = synchronized(lock) {
+        load()
+        (streaks[serverName.trim().lowercase()] ?: 0) >= DEAD_AFTER_RUNS
+    }
+
+    /**
+     * Failure streaks after one more run: a server that had at least one working result in
+     * [run] resets to 0, one that only failed counts up. Provider-level and "title not found"
+     * results say nothing about a server and are ignored.
+     */
+    internal fun nextStreaks(previous: Map<String, Int>, run: List<ServerHealth>): Map<String, Int> {
+        val byServer = run
+            .filter { !it.isProviderLevel && !it.isUnknown }
+            .groupBy { it.serverName.trim().lowercase() }
+        val next = previous.toMutableMap()
+        for ((name, results) in byServer) {
+            next[name] = if (results.any { it.ok }) 0 else (previous[name] ?: 0) + 1
+        }
+        return next
     }
 
     fun clear() {
         synchronized(lock) {
             cache = emptyList()
+            streaks = emptyMap()
             runCatching { fileProvider().delete() }
         }
     }
@@ -107,7 +140,7 @@ object HealthStore {
         val loaded = runCatching {
             val file = fileProvider()
             if (!file.isFile) emptyList()
-            else json.decodeFromString(Snapshot.serializer(), file.readText()).results
+            else json.decodeFromString(Snapshot.serializer(), file.readText()).also { streaks = it.streaks }.results
         }.onFailure { warn("Unreadable health file, starting fresh", it) }
             .getOrDefault(emptyList())
         cache = loaded
@@ -119,7 +152,7 @@ object HealthStore {
             val file = fileProvider()
             file.parentFile?.mkdirs()
             val tmp = File(file.parentFile, "${file.name}.tmp")
-            tmp.writeText(json.encodeToString(Snapshot.serializer(), Snapshot(results = results)))
+            tmp.writeText(json.encodeToString(Snapshot.serializer(), Snapshot(results = results, streaks = streaks)))
             if (!tmp.renameTo(file)) {
                 file.delete()
                 tmp.renameTo(file)

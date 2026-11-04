@@ -61,7 +61,6 @@ interface Provider {
 
         val providers = mapOf(
             StreamingCommunityProvider("en") to ProviderSupport(movies = true, tvShows = true),
-            NetPrimeProvider to ProviderSupport(movies = true, tvShows = true),
             MkissaProvider to ProviderSupport(movies = true, tvShows = true),
             AnikotoProvider to ProviderSupport(movies = true, tvShows = true),
         )
