@@ -38,7 +38,11 @@
 - Device-aware buffering (low-memory profile for projectors and cheap TV boxes), retries before giving up, and progress saved every 15 s.
 - **Skip intro / recap / credits** (TheIntroDB), with an Up Next countdown.
 - Subtitle presets (Classic, Yellow, Outline, Large) and frame-rate matching on TV.
-- Media3 1.11, R8-optimised release build (~20 MB).
+- **Automatic best quality**: playback starts on the fastest server, then the app checks the others and switches to a 1080p one (keeping your position) if it finds it. It remembers which servers really deliver 1080p.
+- **Torrent sources (P2P)**: when the web servers only offer 720p, 1080p H.264 torrents (found through Torrentio) can be streamed directly. This shares your IP address with other peers, so use a VPN; switch it off under Settings → Sources.
+- **Burn-in protection**: the screen dims after 10 s to 5 min (default 20 s) with nothing playing or while paused, and wakes on any key or touch (Settings → Playback → Screen).
+- NextPlayer-style player controls, with D-pad support on TV.
+- Media3 1.11, R8-optimised release build (~20 MB; ~28 MB with the torrent engine, 32-bit only for projectors).
 
 ### 🧹 Cleaner sources
 - Only English sources are kept, and dead ones were removed after an automated health test.
@@ -56,7 +60,7 @@
 2. Open it on your phone, tablet or Android TV and allow installing from unknown sources. On a TV, copy it over with a USB stick or send it with an app like *Send files to TV*.
 3. One APK works everywhere: it opens the phone or TV interface automatically.
 
-> **Coming from Streamflix?** Streamable uses the same package name but a different signing key, so Android won't install it over an existing Streamflix. Back up first (Settings → Backup), uninstall Streamflix, install Streamable, then restore.
+> **Coming from Streamflix?** Streamable uses the same package name but a different signing key (Android only updates an app signed with the same key, and the original authors' key isn't available), so it won't install over an existing Streamflix. Back up first (Settings → Backup), uninstall Streamflix, install Streamable, then restore.
 
 Requires Android 6.0 or newer.
 
