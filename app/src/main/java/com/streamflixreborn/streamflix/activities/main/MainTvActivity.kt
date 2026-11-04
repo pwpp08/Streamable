@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import com.streamflixreborn.streamflix.sync.pairing.PairingApplier
+import com.streamflixreborn.streamflix.sync.settings.SettingsSync
 import androidx.activity.viewModels
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
@@ -151,6 +153,15 @@ class MainTvActivity : FragmentActivity(), IdleDimHost {
             }
         }
 
+        // Settings changed on another device (e.g. the theme) take effect immediately; a freshly
+        // paired TV adopts the phone's settings as soon as the pairing finishes.
+        lifecycleScope.launch {
+            SettingsSync.applied.collect { if (it.themeChanged) recreate() }
+        }
+        lifecycleScope.launch {
+            PairingApplier.status.collect { if (it is PairingApplier.Status.Done) SettingsSync.pull(this@MainTvActivity, force = true) }
+        }
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when (navController.currentDestination?.id) {
@@ -189,12 +200,14 @@ class MainTvActivity : FragmentActivity(), IdleDimHost {
 
     override fun onPause() {
         idleDimmer.onPause()
+        SettingsSync.push(this)
         super.onPause()
     }
 
     override fun onResume() {
         super.onResume()
         idleDimmer.onResume()
+        SettingsSync.pull(this)
         updateNavigationHeader()
         viewModel.checkUpdate()
     }

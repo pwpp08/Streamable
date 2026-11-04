@@ -18,6 +18,11 @@ object HomeRowsStore {
         _changes.value++
     }
 
+    /** Home re-applies the config after another device changed it. */
+    fun notifyChanged() {
+        _changes.value++
+    }
+
     fun reset() {
         UserPreferences.homeRowsConfig = null
         _changes.value++

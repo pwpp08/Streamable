@@ -34,6 +34,8 @@ object ThemeManager {
     const val CRIMSON = "crimson"
     const val OCEAN = "ocean"
     const val FOREST = "forest"
+    /** Sage green: near-black green surfaces, sage primary. */
+    const val SAGE = "sage"
     const val VIOLET = "violet"
     const val SUNSET = "sunset"
     /** Crimson accents on pure-black surfaces. */
@@ -43,7 +45,7 @@ object ThemeManager {
     const val DEFAULT = "default"
 
     /** Ids in settings order; must match `@array/theme_values`. */
-    val ALL = listOf(WALLPAPER, CRIMSON, OCEAN, FOREST, VIOLET, SUNSET, AMOLED)
+    val ALL = listOf(WALLPAPER, SAGE, CRIMSON, OCEAN, FOREST, VIOLET, SUNSET, AMOLED)
 
     /** Ids from the pre-M3 theme list, mapped to the closest new palette. */
     private val LEGACY = mapOf(
@@ -62,9 +64,9 @@ object ThemeManager {
     fun supportsWallpaperColors(isTv: Boolean): Boolean =
         !isTv && DynamicColors.isDynamicColorAvailable()
 
-    /** Wallpaper colours where supported, otherwise Crimson. */
+    /** Wallpaper colours where supported, otherwise Sage. */
     fun defaultTheme(isTv: Boolean): String =
-        if (supportsWallpaperColors(isTv)) WALLPAPER else CRIMSON
+        if (supportsWallpaperColors(isTv)) WALLPAPER else SAGE
 
     /**
      * Normalises any stored id (new, legacy, "default" or unknown) to one of [ALL] that is valid
@@ -76,7 +78,7 @@ object ThemeManager {
             in ALL -> stored
             else -> LEGACY[stored] ?: defaultTheme(isTv)
         }
-        return if (id == WALLPAPER && !supportsWallpaperColors(isTv)) CRIMSON else id
+        return if (id == WALLPAPER && !supportsWallpaperColors(isTv)) SAGE else id
     }
 
     /** The current theme id for this form factor. */
@@ -86,6 +88,7 @@ object ThemeManager {
     fun mobileThemeRes(id: String): Int = when (resolve(id, isTv = false)) {
         OCEAN -> R.style.Theme_StreamFlix_Ocean
         FOREST -> R.style.Theme_StreamFlix_Forest
+        SAGE -> R.style.Theme_StreamFlix_Sage
         VIOLET -> R.style.Theme_StreamFlix_Violet
         SUNSET -> R.style.Theme_StreamFlix_Sunset
         AMOLED -> R.style.Theme_StreamFlix_Amoled
@@ -97,6 +100,7 @@ object ThemeManager {
     fun tvThemeRes(id: String): Int = when (resolve(id, isTv = true)) {
         OCEAN -> R.style.Theme_StreamFlix_Tv_Ocean
         FOREST -> R.style.Theme_StreamFlix_Tv_Forest
+        SAGE -> R.style.Theme_StreamFlix_Tv_Sage
         VIOLET -> R.style.Theme_StreamFlix_Tv_Violet
         SUNSET -> R.style.Theme_StreamFlix_Tv_Sunset
         AMOLED -> R.style.Theme_StreamFlix_Tv_Amoled
@@ -108,6 +112,7 @@ object ThemeManager {
         WALLPAPER -> R.string.theme_wallpaper
         OCEAN -> R.string.theme_ocean
         FOREST -> R.string.theme_forest
+        SAGE -> R.string.theme_sage
         VIOLET -> R.string.theme_violet
         SUNSET -> R.string.theme_sunset
         AMOLED -> R.string.theme_amoled

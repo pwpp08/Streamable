@@ -3,6 +3,7 @@
     <!-- Order must match ThemeManager.ALL. "wallpaper" is removed at runtime where unsupported. -->
     <string-array name="theme_names">
         <item>@string/theme_wallpaper</item>
+        <item>@string/theme_sage</item>
         <item>@string/theme_crimson</item>
         <item>@string/theme_ocean</item>
         <item>@string/theme_forest</item>
@@ -12,6 +13,7 @@
     </string-array>
     <string-array name="theme_values" translatable="false">
         <item>wallpaper</item>
+        <item>sage</item>
         <item>crimson</item>
         <item>ocean</item>
         <item>forest</item>

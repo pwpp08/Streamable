@@ -31,10 +31,12 @@
 - **Play on TV**: start something on the phone and it opens on the TV.
 - **Phone as remote and keyboard**: play/pause, ±10 s, next episode, subtitles, and type searches on the TV from your phone.
 - **Hand-off**: pick up on one device where you stopped on the other.
+- **Settings follow you**: theme, home-screen rows, languages and playback preferences sync to your other devices (a phone on wallpaper colours gives the TV the closest palette). Run `supabase_settings.sql` once if you use your own Supabase project.
+- **Sign-in when needed**: pairing a TV, the remote and Play on TV ask you to sign in or create an account right there.
 
 ### ▶️ Smoother, more reliable playback
 - **Your languages only**: choose the languages you speak (default English + Hungarian). Only those audio and subtitle tracks are loaded and shown.
-- Servers are resolved in parallel and ranked 1080p-first. If one fails, playback switches to the next server at the same position.
+- Servers are resolved in parallel and ranked 1080p-first. If one fails, playback switches to the next server at the same position. Switching servers by hand keeps your position, subtitles, audio track and speed.
 - Device-aware buffering (low-memory profile for projectors and cheap TV boxes), retries before giving up, and progress saved every 15 s.
 - **Skip intro / recap / credits** (TheIntroDB), with an Up Next countdown.
 - Subtitle presets (Classic, Yellow, Outline, Large) and frame-rate matching on TV.
@@ -50,8 +52,8 @@
 
 ### 📥 More
 - Offline downloads on phones.
-- Customisable home rows (reorder or hide).
-- Search history and suggestions.
+- Customisable home rows (reorder or hide, with Save/Cancel).
+- Search history, suggestions and recommendation rows ("Because you watched…", trending).
 - Continue Watching control: remove items, mark watched or unwatched.
 
 ## Install
