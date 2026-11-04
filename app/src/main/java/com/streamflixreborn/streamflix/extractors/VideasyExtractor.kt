@@ -32,26 +32,36 @@ class VideasyExtractor : Extractor() {
     }
 
     fun servers(videoType: Video.Type): List<Video.Server> {
-        val tmdbId: String
-        val tail: String
-        when (videoType) {
-            is Video.Type.Movie -> {
-                tmdbId = videoType.id
-                tail = "mediaType=movie"
-            }
-            is Video.Type.Episode -> {
-                tmdbId = videoType.tvShow.id
-                tail = "mediaType=tv&seasonId=${videoType.season.number}&episodeId=${videoType.number}"
-            }
-        }
+        // The same fields movy.sx sends: real title and year help the node match the right release.
         return NODES.map { node ->
+            val url = "$mainUrl/${node.path}/sources".toHttpUrl().newBuilder().apply {
+                when (videoType) {
+                    is Video.Type.Movie -> {
+                        addQueryParameter("title", videoType.title)
+                        addQueryParameter("mediaType", "movie")
+                        yearOf(videoType.releaseDate)?.let { addQueryParameter("year", it) }
+                        addQueryParameter("tmdbId", videoType.id)
+                        videoType.imdbId?.takeIf { it.isNotBlank() }?.let { addQueryParameter("imdbId", it) }
+                    }
+                    is Video.Type.Episode -> {
+                        addQueryParameter("title", videoType.tvShow.title)
+                        addQueryParameter("mediaType", "tv")
+                        yearOf(videoType.tvShow.releaseDate)?.let { addQueryParameter("year", it) }
+                        addQueryParameter("tmdbId", videoType.tvShow.id)
+                        addQueryParameter("seasonId", videoType.season.number.toString())
+                        addQueryParameter("episodeId", videoType.number.toString())
+                    }
+                }
+            }.build()
             Video.Server(
                 id = "Videasy ${node.label}",
                 name = "Videasy ${node.label}",
-                src = "$mainUrl/${node.path}/sources?tmdbId=$tmdbId&$tail",
+                src = url.toString(),
             )
         }
     }
+
+    private fun yearOf(date: String?): String? = date?.take(4)?.takeIf { it.length == 4 && it.all(Char::isDigit) }
 
     override suspend fun extract(link: String): Video {
         val url = link.toHttpUrl()
@@ -59,7 +69,7 @@ class VideasyExtractor : Extractor() {
         val seed = seedFor(tmdbId)
 
         val request = url.newBuilder()
-            .setQueryParameter("title", "media")
+            .apply { if (url.queryParameter("title").isNullOrBlank()) setQueryParameter("title", "media") }
             .setQueryParameter("enc", "2")
             .setQueryParameter("seed", seed)
             .build()
@@ -143,8 +153,8 @@ class VideasyExtractor : Extractor() {
          * (HTTP 429) when too many nodes are asked at once.
          */
         private val NODES = listOf(
-            Node("boise", "Boise"),
             Node("miami", "Miami"),
+            Node("boise", "Boise"),
             Node("portland", "Portland"),
             Node("atlanta", "Atlanta"),
             Node("phoenix", "Phoenix"),
