@@ -72,6 +72,7 @@ object SettingsSync {
     private fun entries(themeColor: () -> Int): List<Entry> = listOf(
         Entry("theme", { publishedTheme(themeColor) }, ::applyTheme),
         Entry("home_rows", { UserPreferences.homeRowsConfig.orEmpty() }, { UserPreferences.homeRowsConfig = it.ifBlank { null } }),
+        Entry("home_banner", { UserPreferences.homeBanner }, { UserPreferences.homeBanner = it }),
         Entry("spoken_languages", { UserPreferences.spokenLanguages.joinToString(",") },
             { value -> UserPreferences.spokenLanguages = value.split(',').map { it.trim() }.filter { it.isNotEmpty() } }),
         Entry("subtitle_mode", { UserPreferences.subtitleMode.name },

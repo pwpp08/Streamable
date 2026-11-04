@@ -44,11 +44,11 @@ fun ControlsMiddleView(
         ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (hasPrevious) PreviousButton(onClick = onPreviousClick) else Box(Modifier.size(48.dp))
+        if (hasPrevious) PreviousButton(onClick = onPreviousClick) else Box(Modifier.size(60.dp))
         PlayPauseButton(
             player = player,
             modifier = Modifier.focusRequester(focusRequester = playPauseFocusRequester),
         )
-        if (hasNext) NextButton(onClick = onNextClick) else Box(Modifier.size(48.dp))
+        if (hasNext) NextButton(onClick = onNextClick) else Box(Modifier.size(60.dp))
     }
 }

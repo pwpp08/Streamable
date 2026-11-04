@@ -102,51 +102,39 @@ private fun SimpleSlider(
     onValueChangeFinished: () -> Unit,
     isFocused: Boolean = false,
 ) {
-    val thumbSize by animateDpAsState(
-        targetValue = if (isFocused) 22.dp else 16.dp,
-        label = "thumbSize",
+    val thumbHeight by animateDpAsState(
+        targetValue = if (isFocused) 40.dp else 34.dp,
+        label = "thumbHeight",
     )
     Slider(
         value = value,
         valueRange = valueRange,
         onValueChange = onValueChange,
         onValueChangeFinished = onValueChangeFinished,
-        modifier = modifier.height(24.dp),
+        modifier = modifier.height(40.dp),
         thumb = {
             Box(
                 modifier = Modifier
-                    .size(size = thumbSize)
-                    .shadow(
-                        4.dp,
-                        shape = CircleShape,
-                    )
-                    .background(Color.White)
-                    .then(
-                        other = if (isFocused) {
-                            Modifier.border(
-                                2.dp,
-                                MaterialTheme.colorScheme.primary,
-                                shape = CircleShape,
-                            )
-                        } else {
-                            Modifier
-                        },
-                    ),
+                    .width(if (isFocused) 8.dp else 6.dp)
+                    .height(thumbHeight)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
             )
         },
         track = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(Color.White.copy(alpha = 0.5f)),
+                    .height(12.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)),
             ) {
                 if (valueRange.endInclusive > 0f) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(fraction = value / valueRange.endInclusive)
-                            .height(4.dp)
+                            .fillMaxWidth(fraction = (value / valueRange.endInclusive).coerceIn(0f, 1f))
+                            .height(12.dp)
+                            .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary),
                     )
                 }

@@ -34,4 +34,11 @@
     <string name="search_suggestion_movie">Film</string>
     <string name="search_suggestion_tv">Sorozat</string>
 
+    <string name="home_banner_button">Felső banner</string>
+    <string name="home_banner_current">Felső banner: %1$s</string>
+    <string name="home_banner_title">Mit mutasson a felső banner</string>
+    <string name="home_banner_trending">Felkapott (alapértelmezett)</string>
+    <string name="home_banner_favorites">Kedvenceim</string>
+    <string name="home_banner_recent">Legutóbb nézett</string>
+    <string name="home_banner_off">Elrejtve</string>
 </resources>

@@ -28,6 +28,17 @@
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="?attr/colorOnSurfaceVariant" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_home_banner"
+        style="@style/Widget.StreamFlix.Button.Tv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:focusable="true"
+        android:gravity="start|center_vertical"
+        android:text="@string/home_banner_button"
+        app:icon="@drawable/ic_refresh" />
+
     <TextView
         android:id="@+id/tv_home_rows_note"
         android:layout_width="match_parent"

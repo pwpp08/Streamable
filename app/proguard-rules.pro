@@ -17,6 +17,9 @@
 -keep class com.streamflixreborn.streamflix.database.** { *; }
 -keep class com.streamflixreborn.streamflix.backup.** { *; }
 -keep class com.streamflixreborn.streamflix.sync.** { *; }
+# Home-row layout JSON is (de)serialised by Gson through private holder classes.
+-keep class com.streamflixreborn.streamflix.fragments.home.HomeRowsConfig { *; }
+-keep class com.streamflixreborn.streamflix.fragments.home.HomeRowsConfig$** { *; }
 -keep class com.streamflixreborn.streamflix.BuildConfig { *; }
 
 # Anything annotated for Gson anywhere in the app

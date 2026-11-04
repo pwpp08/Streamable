@@ -1273,7 +1273,7 @@ class PlayerTvFragment : Fragment() {
                     val position = player.currentPosition
                     val duration = player.duration
                     // The fixed +85 s button is only a fallback when there is no segment data.
-                    showSkipIntroButton(!skipSegments.hasData && position in 3000..120000)
+                    showSkipIntroButton(false) // no guessed fixed jump: only real intro data offers a skip
                     skipSegments.onTick(position, duration)
                     updateNextEpisodeOverlay(position, duration)
                 }

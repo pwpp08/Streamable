@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
 import com.streamflixreborn.streamflix.models.Category
+import com.streamflixreborn.streamflix.utils.HomeBanner
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.TvShow
@@ -263,9 +264,8 @@ class HomeViewModel : ViewModel() {
 
                 val categories = ParentalControlUtils.filterCategories(listOfNotNull(
 
-                    // FEATURED
-                    state.categories
-                        .find { it.name == Category.FEATURED }
+                    // FEATURED: the provider's trending carousel, or whatever the user chose to show instead
+                    featuredFor(UserPreferences.homeBanner, state.categories, history)
                         ?.let { category ->
                             category.copy(
                                 list = category.list.map(::mergeItem)
@@ -341,6 +341,23 @@ class HomeViewModel : ViewModel() {
             else -> state
         }
     }.flowOn(Dispatchers.IO)
+
+    /** The top carousel for [source]; null hides it. Falls back to trending when the choice has nothing to show. */
+    private fun featuredFor(source: String, provided: List<Category>, history: HomeHistory): Category? {
+        val trending = provided.find { it.name == Category.FEATURED }
+        fun shows(items: List<AppAdapter.Item>) =
+            items.filter { it is Movie || it is TvShow }.distinctBy { (it as? Movie)?.id ?: (it as TvShow).id }.take(HomeBanner.MAX_ITEMS)
+                // Copies: the other rows tag their items with a view type, which would break the carousel.
+                .map { if (it is Movie) it.copy() else (it as TvShow).copy() }
+        val chosen: List<AppAdapter.Item>? = when {
+            source == HomeBanner.OFF -> return null
+            source == HomeBanner.FAVORITES -> shows(history.favoritesMovies.sortedByDescending { (it as? Movie)?.favoritedAtMillis ?: 0L } + history.favoriteTvShows)
+            source == HomeBanner.RECENT -> shows(history.recentlyWatched)
+            HomeBanner.rowName(source) != null -> provided.find { it.name == HomeBanner.rowName(source) }?.let { shows(it.list) }
+            else -> null
+        }
+        return if (chosen.isNullOrEmpty()) trending else Category(name = Category.FEATURED, list = chosen)
+    }
 
     sealed class State {
         data object Loading : State()

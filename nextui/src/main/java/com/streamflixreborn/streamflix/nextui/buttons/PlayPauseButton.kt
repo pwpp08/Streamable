@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.nextui.buttons
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.annotation.OptIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -27,14 +28,15 @@ fun PlayPauseButton(modifier: Modifier = Modifier, player: Player?) {
     }
 
     PlayerButton(
-        modifier = modifier.size(64.dp),
+        modifier = modifier.size(84.dp),
+        contentPadding = PaddingValues(18.dp),
         enabled = state.isEnabled,
         onClick = state::onClick,
     ) {
         Icon(
             painter = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(44.dp),
         )
     }
 }

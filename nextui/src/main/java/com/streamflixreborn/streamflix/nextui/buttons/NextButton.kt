@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.nextui.buttons
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -12,7 +13,8 @@ import com.streamflixreborn.streamflix.nextui.R
 @Composable
 internal fun NextButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     PlayerButton(
-        modifier = modifier.size(48.dp),
+        modifier = modifier.size(60.dp),
+        contentPadding = PaddingValues(16.dp),
         onClick = onClick,
     ) {
         Icon(

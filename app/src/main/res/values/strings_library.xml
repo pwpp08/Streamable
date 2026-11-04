@@ -35,4 +35,11 @@
     <string name="search_suggestion_tv">TV show</string>
     <string name="search_suggestion_meta" translatable="false">%1$s · %2$s</string>
 
+    <string name="home_banner_button">Top banner</string>
+    <string name="home_banner_current">Top banner: %1$s</string>
+    <string name="home_banner_title">Show in the top banner</string>
+    <string name="home_banner_trending">Trending (default)</string>
+    <string name="home_banner_favorites">My favourites</string>
+    <string name="home_banner_recent">Recently watched</string>
+    <string name="home_banner_off">Hidden</string>
 </resources>

@@ -13,6 +13,7 @@ import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.RippleConfiguration
 import androidx.compose.runtime.Composable
@@ -33,7 +34,11 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
-val PlayerButtonBlackAlpha = Color.Black.copy(alpha = 0.3f)
+/** Marker: use the theme's tonal container (secondaryContainer) for the button. */
+val PlayerButtonTonal = Color.Unspecified
+
+/** Kept for call sites that asked for the old translucent black; now the same tonal look. */
+val PlayerButtonBlackAlpha = PlayerButtonTonal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,8 +47,8 @@ fun PlayerButton(
     enabled: Boolean = true,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
-    containerColor: Color = Color.Transparent,
-    contentPadding: PaddingValues = PaddingValues(8.dp),
+    containerColor: Color = PlayerButtonTonal,
+    contentPadding: PaddingValues = PaddingValues(12.dp),
     content: @Composable BoxScope.() -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -74,9 +79,11 @@ fun PlayerButton(
         }
     }
 
+    val scheme = MaterialTheme.colorScheme
+    val resolvedContainer = if (containerColor == Color.Unspecified) scheme.secondaryContainer.copy(alpha = 0.94f) else containerColor
     val colors = IconButtonDefaults.iconButtonColors(
-        contentColor = Color.White,
-        containerColor = containerColor,
+        contentColor = if (containerColor == Color.Unspecified) scheme.onSecondaryContainer else Color.White,
+        containerColor = resolvedContainer,
     )
 
     val rippleConfiguration = RippleConfiguration(

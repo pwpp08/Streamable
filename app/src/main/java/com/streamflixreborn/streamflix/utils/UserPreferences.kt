@@ -320,6 +320,14 @@ object UserPreferences {
         get() = Key.HOME_ROWS_CONFIG.getString()
         set(value) = Key.HOME_ROWS_CONFIG.setString(value)
 
+    /**
+     * What the big carousel at the top of Home shows: "trending" (the provider's own, default),
+     * "off", "favorites", "recent" or "row:<provider row name>".
+     */
+    var homeBanner: String
+        get() = Key.HOME_BANNER.getString() ?: HomeBanner.TRENDING
+        set(value) = Key.HOME_BANNER.setString(value)
+
     /** JSON array of recent search queries, newest first. */
     var searchHistory: String?
         get() = Key.SEARCH_HISTORY.getString()
@@ -701,6 +709,7 @@ object UserPreferences {
         TUNNELED_PLAYBACK,
         SUBTITLE_PRESET,
         HOME_ROWS_CONFIG,
+        HOME_BANNER,
         SEARCH_HISTORY,
         FAVORITE_PROVIDERS;
 

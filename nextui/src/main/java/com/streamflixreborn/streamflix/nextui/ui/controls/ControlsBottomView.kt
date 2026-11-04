@@ -93,8 +93,8 @@ fun ControlsBottomView(
                 onClick = { showRemainingTime = !showRemainingTime },
                 containerColor = PlayerButtonBlackAlpha,
                 contentPadding = PaddingValues(
-                    horizontal = 8.dp,
-                    vertical = 1.dp,
+                    horizontal = 14.dp,
+                    vertical = 6.dp,
                 ),
             ) {
                 val timeTextPositionMs by remember(progressState) {
