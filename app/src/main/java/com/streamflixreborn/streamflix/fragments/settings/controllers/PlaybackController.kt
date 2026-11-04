@@ -17,7 +17,7 @@ import com.streamflixreborn.streamflix.utils.UserPreferences.SkipSegmentsMode
 class PlaybackController(private val host: SettingsHost) : SettingsController {
 
     override fun bind() {
-        host.bindEnumList("QUALITY_MODE", { UserPreferences.qualityMode }, { enumOr(it, QualityMode.MAX) }) {
+        host.bindEnumList("QUALITY_MODE", { UserPreferences.qualityMode }, { enumOr(it, QualityMode.AUTO) }) {
             UserPreferences.qualityMode = it
         }
         host.bindList("MAX_RESOLUTION", { UserPreferences.maxResolution.toString() }) {

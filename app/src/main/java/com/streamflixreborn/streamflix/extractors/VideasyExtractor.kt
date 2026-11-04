@@ -27,7 +27,7 @@ class VideasyExtractor : Extractor() {
 
     private val client by lazy {
         NetworkClient.noCookies.newBuilder()
-            .callTimeout(10, TimeUnit.SECONDS)
+            .callTimeout(6, TimeUnit.SECONDS)
             .build()
     }
 
@@ -137,16 +137,17 @@ class VideasyExtractor : Extractor() {
         private const val USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
-        /** Fastest, most reliable nodes first; "vegas" is left out (it times out). */
+        /**
+         * The nodes that serve adaptive 1080p+ playlists, fastest first. The "Auto" nodes (seattle,
+         * reno, oakland) and vegas are left out: lower quality or erratic, and the API rate-limits
+         * (HTTP 429) when too many nodes are asked at once.
+         */
         private val NODES = listOf(
             Node("boise", "Boise"),
+            Node("miami", "Miami"),
             Node("portland", "Portland"),
             Node("atlanta", "Atlanta"),
-            Node("miami", "Miami"),
             Node("phoenix", "Phoenix"),
-            Node("seattle", "Seattle"),
-            Node("reno", "Reno"),
-            Node("oakland", "Oakland"),
         )
 
         private val seeds = ConcurrentHashMap<Long, Pair<String, Long>>()

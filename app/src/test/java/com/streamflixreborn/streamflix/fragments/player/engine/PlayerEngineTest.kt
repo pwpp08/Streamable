@@ -40,10 +40,10 @@ class PlayerEngineTest {
 
     @Test
     fun `video size cap follows display, max resolution and data saver`() {
-        assertEquals(1958 to 1102, TrackPreferences.videoSizeCap(1920, 1080, 0, false))
-        assertEquals(1306 to 734, TrackPreferences.videoSizeCap(1920, 1080, 720, false))
-        assertEquals(1306 to 734, TrackPreferences.videoSizeCap(3840, 2160, 0, true))
-        assertEquals(3917 to 2203, TrackPreferences.videoSizeCap(3840, 2160, 0, false))
+        assertEquals(3305 to 1102, TrackPreferences.videoSizeCap(1920, 1080, 0, false))
+        assertEquals(2203 to 734, TrackPreferences.videoSizeCap(1920, 1080, 720, false))
+        assertEquals(2203 to 734, TrackPreferences.videoSizeCap(3840, 2160, 0, true))
+        assertEquals(6610 to 2203, TrackPreferences.videoSizeCap(3840, 2160, 0, false))
     }
 
     @Test

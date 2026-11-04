@@ -9,7 +9,9 @@ import com.streamflixreborn.streamflix.StreamFlixApp
 import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.fragments.player.engine.NextEpisodePrefetch
 import com.streamflixreborn.streamflix.fragments.player.engine.QualityMemory
+import com.streamflixreborn.streamflix.fragments.player.engine.AudioGate
 import com.streamflixreborn.streamflix.fragments.player.engine.ServerRanker
+import com.streamflixreborn.streamflix.fragments.player.engine.SourceProbe
 import com.streamflixreborn.streamflix.torrent.TorrentEngine
 import com.streamflixreborn.streamflix.torrent.TorrentSpec
 import com.streamflixreborn.streamflix.fragments.player.engine.StickyServers
@@ -21,6 +23,8 @@ import com.streamflixreborn.streamflix.utils.SubDL
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
@@ -64,6 +68,7 @@ class PlayerViewModel(
     private var ranked: List<Video.Server> = emptyList()
     private val resolved = ConcurrentHashMap<String, Resolved>()
     private val failedIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    private val wrongAudio: MutableSet<String> = ConcurrentHashMap.newKeySet()
     private var lastError: Exception? = null
 
     @Volatile
@@ -185,6 +190,7 @@ class PlayerViewModel(
         val sticky = StickyServers.get(StreamFlixApp.instance, stickyKey)
         ranked = ServerRanker.rank(servers, preferredName = preferredServerName, stickyName = sticky)
         failedIds.clear()
+        wrongAudio.clear()
         Log.d(TAG, "ranked servers (preferred=$preferredServerName, sticky=$sticky): ${ranked.joinToString { it.name }}")
 
         val results = Channel<Pair<Int, Video?>>(Channel.UNLIMITED)
@@ -302,7 +308,8 @@ class PlayerViewModel(
                 val now = SystemClock.elapsedRealtime()
                 if (graceDeadline == 0L) graceDeadline = now + PICK_GRACE_MS
                 if (higherRankedDone || now >= graceDeadline) {
-                    emitSuccess(videos[best]!!, order[best], failover = false)
+                    val pick = chooseByMeasurement(order, videos) ?: best
+                    emitSuccess(videos[pick]!!, order[pick], failover = false)
                     return
                 }
             } else if (done.all { it }) {
@@ -323,6 +330,38 @@ class PlayerViewModel(
         }
     }
 
+    /**
+     * Samples the resolved candidates (best ranked first, a few at most) in parallel and returns the
+     * index of the one that can really deliver full HD; null keeps the ranking's choice.
+     */
+    private suspend fun chooseByMeasurement(order: List<Video.Server>, videos: Array<Video?>): Int? {
+        val candidates = videos.indices
+            .filter { videos[it] != null && !ServerRanker.isTorrentServer(order[it].name) }
+            .take(PROBE_CANDIDATES)
+        if (candidates.size < 2) return null
+        val started = SystemClock.elapsedRealtime()
+        val results = ArrayList<Pair<Int, SourceProbe.Result?>>()
+        coroutineScope {
+            val done = Channel<Pair<Int, SourceProbe.Result?>>(Channel.UNLIMITED)
+            candidates.forEach { index -> launch(Dispatchers.IO) { done.send(index to SourceProbe.measure(videos[index]!!)) } }
+            var deadline = started + MEASURE_MAX_MS
+            while (results.size < candidates.size) {
+                val remaining = deadline - SystemClock.elapsedRealtime()
+                if (remaining <= 0) break
+                val next = withTimeoutOrNull(remaining) { done.receive() } ?: break
+                results += next
+                // A full-HD stream the link sustains is good enough; give the others a moment, not seconds.
+                if (next.second?.let { it.height >= 1000 && it.sustainable } == true) {
+                    deadline = minOf(deadline, SystemClock.elapsedRealtime() + MEASURE_GRACE_MS)
+                }
+            }
+            coroutineContext.cancelChildren()
+        }
+        val best = SourceProbe.pickBest(results.map { (index, result) -> index to result })
+        Log.d(TAG, "measured ${results.joinToString { (i, r) -> "${order[i].name}=${r?.speedMbps?.let { "%.1f".format(it) } ?: "?"}Mbps@${r?.height ?: "?"}p" }} in ${SystemClock.elapsedRealtime() - started} ms -> ${best?.let { order[it].name }}")
+        return best
+    }
+
     private suspend fun playWithFailover(first: Video.Server?, failover: Boolean) {
         var candidate = first ?: nextCandidate()
         var isFailover = failover
@@ -340,6 +379,12 @@ class PlayerViewModel(
             failedIds += candidate.id
             isFailover = true
             candidate = nextCandidate()
+        }
+        // Nothing else worked: a wrong-language stream still beats no picture.
+        ranked.firstOrNull { it.id in wrongAudio && cachedVideo(it) != null }?.let { server ->
+            wrongAudio -= server.id
+            emitSuccess(cachedVideo(server)!!, server, isFailover)
+            return
         }
         val server = lastTried ?: ranked.lastOrNull() ?: servers.lastOrNull() ?: return
         _state.emit(State.FailedLoadingVideo(lastError ?: Exception("All servers failed"), server))
@@ -423,6 +468,12 @@ class PlayerViewModel(
     private suspend fun resolve(server: Video.Server): Video? {
         val video = resolveRaw(server) ?: return null
         resolved[server.id] = Resolved(video)
+        // A stream dubbed only in languages the user doesn't speak waits behind the others.
+        if (AudioGate.lacksSpokenAudio(video, UserPreferences.spokenLanguages)) {
+            Log.w(TAG, "${server.name}: no audio in a spoken language, trying others first")
+            wrongAudio += server.id
+            return null
+        }
         return video
     }
 
@@ -608,5 +659,9 @@ class PlayerViewModel(
         /** How long after start the other servers are checked for a sharper picture. */
         private const val UPGRADE_WINDOW_MS = 45_000L
         private const val PROBE_TIMEOUT_MS = 6_000L
+        /** Resolved servers whose speed is sampled before choosing the one to play. */
+        private const val PROBE_CANDIDATES = 4
+        private const val MEASURE_MAX_MS = 3_500L
+        private const val MEASURE_GRACE_MS = 600L
     }
 }

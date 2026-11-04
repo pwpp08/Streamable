@@ -1229,6 +1229,15 @@ class PlayerMobileFragment : Fragment() {
         )
         player = built.player
         analytics = built.analytics
+        built.stalls.onStalled = {
+            val server = currentServer
+            if (server != null && player.currentPosition > 0 && !player.currentMediaItem?.localConfiguration?.uri?.toString().isNullOrEmpty()) {
+                Log.w("PlayerMobileFragment", "${server.name} keeps stalling, trying the next server at ${player.currentPosition} ms")
+                com.streamflixreborn.streamflix.fragments.player.engine.StallMemory.record(server.name)
+                pendingResumeMs = player.currentPosition
+                viewModel.onPlaybackFailed(server)
+            }
+        }
         player.addListener(playerListener)
         autoSubtitles = TrackPreferences.AutoSubtitles(player)
         mediaSession = MediaSession.Builder(requireContext(), player).build()

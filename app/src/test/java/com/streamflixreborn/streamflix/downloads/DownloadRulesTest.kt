@@ -56,8 +56,8 @@ class DownloadRulesTest {
 
     @Test
     fun videoCapFollowsSaveSpace() {
-        assertEquals(1952 to 1096, DownloadRules.videoSizeCap(saveSpace = false))
-        assertEquals(1312 to 736, DownloadRules.videoSizeCap(saveSpace = true))
+        assertEquals(3272 to 1096, DownloadRules.videoSizeCap(saveSpace = false))
+        assertEquals(2192 to 736, DownloadRules.videoSizeCap(saveSpace = true))
     }
 
     @Test

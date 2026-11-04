@@ -21,7 +21,7 @@ object DownloadRules {
      */
     fun videoSizeCap(saveSpace: Boolean): Pair<Int, Int> {
         val height = if (saveSpace) SAVE_SPACE_MAX_HEIGHT else DEFAULT_MAX_HEIGHT
-        val width = height * 16 / 9
+        val width = height * 3 // wide films: 2.39:1 1080p is 2592 px wide
         return (width + 32) to (height + 16)
     }
 

@@ -24,6 +24,9 @@ object TrackPreferences {
 
     private const val DATA_SAVER_HEIGHT = 720
 
+    /** Widest picture (width / height) still counted as part of its height class. */
+    private const val MAX_ASPECT = 3
+
     fun apply(context: Context, builder: TrackSelectionParameters.Builder): TrackSelectionParameters.Builder {
         val spoken = UserPreferences.spokenLanguages
         builder.setPreferredAudioLanguages(*spoken.toTypedArray())
@@ -82,15 +85,11 @@ object TrackPreferences {
      */
     fun videoSizeCap(displayLong: Int, displayShort: Int, maxResolution: Int, dataSaver: Boolean): Pair<Int, Int> {
         var height = if (displayShort > 0) displayShort else Int.MAX_VALUE
-        var width = if (displayLong > 0) displayLong else Int.MAX_VALUE
-        if (maxResolution > 0) {
-            height = min(height, maxResolution)
-            width = min(width, (maxResolution * 16f / 9f).roundToInt())
-        }
-        if (dataSaver) {
-            height = min(height, DATA_SAVER_HEIGHT)
-            width = min(width, DATA_SAVER_HEIGHT * 16 / 9)
-        }
+        if (maxResolution > 0) height = min(height, maxResolution)
+        if (dataSaver) height = min(height, DATA_SAVER_HEIGHT)
+        // The quality class is the height: a 2.39:1 film's 1080p rung is 2592x1080, which a
+        // 16:9 width cap would wrongly drop, leaving the 720p rung.
+        val width = if (height == Int.MAX_VALUE) Int.MAX_VALUE else height * MAX_ASPECT
         fun tolerant(value: Int) = if (value == Int.MAX_VALUE) value else (value * 1.02f).roundToInt()
         return tolerant(width) to tolerant(height)
     }

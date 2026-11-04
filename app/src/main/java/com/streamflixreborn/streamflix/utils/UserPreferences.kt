@@ -272,7 +272,7 @@ object UserPreferences {
     enum class QualityMode { MAX, AUTO }
 
     var qualityMode: QualityMode
-        get() = runCatching { QualityMode.valueOf(Key.QUALITY_MODE.getString() ?: "") }.getOrDefault(QualityMode.MAX)
+        get() = runCatching { QualityMode.valueOf(Key.QUALITY_MODE.getString() ?: "") }.getOrDefault(QualityMode.AUTO)
         set(value) = Key.QUALITY_MODE.setString(value.name)
 
     /** 0 = limited by the display only. */

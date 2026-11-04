@@ -30,6 +30,9 @@ object ServerRanker {
     /** Taken off a server that is known to stop below full HD, so unknown ones get a try. */
     const val LOW_RES_PENALTY = 10
 
+    /** Taken off a server that stalled in the last half hour. */
+    const val STALL_PENALTY = 40
+
     /** Taken off P2P servers: web servers start faster, so torrents only lead when known to be full HD. */
     const val TORRENT_PENALTY = 15
 
@@ -37,6 +40,9 @@ object ServerRanker {
 
     /** Videasy nodes answer in ~150 ms with adaptive HLS up to 1080p+, so they start with a head start. */
     fun isVideasy(name: String) = name.startsWith("Videasy ", ignoreCase = true)
+
+    /** Servers that never go above this height, whatever the title (measured). */
+    private val KNOWN_HEIGHT_CAP = mapOf("vixsrc" to 720)
 
     /** Score for a server nothing is known about yet. */
     const val VIDEASY_PRIOR = 70
@@ -49,10 +55,14 @@ object ServerRanker {
         height: (String) -> Int? = playedHeight,
     ): List<Video.Server> {
         if (servers.size <= 1) return servers
-        val heights = servers.associateWith { runCatching { height(it.name) }.getOrNull() }
+        val heights = servers.associateWith { server ->
+            runCatching { height(server.name) }.getOrNull() ?: KNOWN_HEIGHT_CAP[server.name.lowercase()]
+        }
         val scores = servers.associateWith { server ->
-            val base = runCatching { score(server.name) }.getOrNull()
+            val stalled = runCatching { StallMemory.isRecent(server.name) }.getOrDefault(false)
+            val known = runCatching { score(server.name) }.getOrNull()
                 ?: if (isVideasy(server.name)) VIDEASY_PRIOR else UNKNOWN_SCORE
+            val base = known - if (stalled) STALL_PENALTY else 0
             val played = heights.getValue(server)
             base + when {
                 played == null -> 0
@@ -67,7 +77,9 @@ object ServerRanker {
         }
         val stickyHeight = servers.firstOrNull { it.name.equals(stickyName, ignoreCase = true) }
             ?.let { heights.getValue(it) }
-        val stickyUsable = !(fullHdExists && stickyHeight != null && stickyHeight < 1080)
+        // A sticky server only keeps its lead when it is known to deliver full HD, or when no
+        // server is expected to (a remembered 720p server must not beat a 1080p one).
+        val stickyUsable = if (fullHdExists) stickyHeight != null && stickyHeight >= 1080 else true
         return servers.withIndex()
             .sortedWith(
                 compareBy<IndexedValue<Video.Server>> { if (it.value.name.equals(preferredName, ignoreCase = true)) 0 else 1 }
