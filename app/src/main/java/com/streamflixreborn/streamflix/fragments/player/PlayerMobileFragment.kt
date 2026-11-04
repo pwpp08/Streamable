@@ -89,6 +89,7 @@ import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.fragments.player.engine.SkipSegmentController
 import com.streamflixreborn.streamflix.fragments.player.engine.StreamDataSourceFactory
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleStyler
+import com.streamflixreborn.streamflix.fragments.player.engine.PlaybackSnapshot
 import com.streamflixreborn.streamflix.fragments.player.engine.TrackPreferences
 import com.streamflixreborn.streamflix.fragments.player.engine.UpNextController
 import com.streamflixreborn.streamflix.sync.CloudSyncHooks
@@ -121,6 +122,9 @@ class PlayerMobileFragment : Fragment() {
 
     /** Position to restore after a server switch (failover or manual). */
     private var pendingResumeMs: Long? = null
+
+    /** Subtitle/audio/speed/sideloaded subtitles of the stream being replaced (see PlaybackSnapshot). */
+    private var pendingSnapshot: PlaybackSnapshot? = null
     private var stickyReportedServerId: String? = null
     private lateinit var progressHandler: android.os.Handler
     private lateinit var progressRunnable: Runnable
@@ -280,6 +284,7 @@ class PlayerMobileFragment : Fragment() {
                     }
 
                     is PlayerViewModel.State.LoadingVideo -> {
+                        if (pendingSnapshot == null) pendingSnapshot = captureSnapshot()
                         player.setMediaItem(
                             MediaItem.Builder()
                                 .setUri("".toUri())
@@ -822,6 +827,14 @@ class PlayerMobileFragment : Fragment() {
     }
 
 
+    /** Snapshot of the stream that is playing now, or null when none is loaded yet. */
+    private fun captureSnapshot(): PlaybackSnapshot? {
+        if (!::player.isInitialized || currentVideo == null) return null
+        if (player.currentMediaItem?.localConfiguration?.uri?.toString().isNullOrEmpty()) return null
+        val serverFiles = currentVideo?.subtitles.orEmpty().map { it.file.toUri().toString() }.toSet()
+        return PlaybackSnapshot.capture(player, serverFiles)
+    }
+
     private fun displayVideo(
         video: Video,
         server: Video.Server,
@@ -829,6 +842,8 @@ class PlayerMobileFragment : Fragment() {
         failover: Boolean = false,
     ) {
         val previousPositionMs = if (::player.isInitialized) player.currentPosition else 0L
+        val snapshot = pendingSnapshot ?: captureSnapshot()
+        pendingSnapshot = null
         currentVideo = video
         currentServer = server
         updatePlayerHeader()
@@ -850,7 +865,7 @@ class PlayerMobileFragment : Fragment() {
                 .build()
         }
 
-        val resumeMs = startPositionMs ?: pendingResumeMs ?: previousPositionMs.takeIf { it > 0 }
+        val resumeMs = startPositionMs ?: pendingResumeMs ?: snapshot?.positionMs?.takeIf { it > 0 } ?: previousPositionMs.takeIf { it > 0 }
         pendingResumeMs = null
         stickyReportedServerId = null
 
@@ -868,7 +883,7 @@ class PlayerMobileFragment : Fragment() {
                         .setLanguage(LanguageMatcher.normalize(subtitle.label))
                         .setSelectionFlags(if (subtitle.default) C.SELECTION_FLAG_DEFAULT else 0)
                         .build()
-                })
+                } + snapshot?.sideloaded.orEmpty())
                 .setMediaMetadata(
                     MediaMetadata.Builder()
                         .setMediaServerId(server.id)
@@ -876,6 +891,8 @@ class PlayerMobileFragment : Fragment() {
                 )
                 .build()
         )
+
+        snapshot?.restore(player)
 
         binding.nextUi.model.showExternalPlayerButton = true
         val remoteStartMs = if (failover) null else com.streamflixreborn.streamflix.sync.PlayerStartPosition.consume(args.id)
