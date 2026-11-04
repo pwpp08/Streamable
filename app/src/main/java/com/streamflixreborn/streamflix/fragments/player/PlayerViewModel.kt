@@ -373,14 +373,18 @@ class PlayerViewModel(
             // Let playback settle first; the projector has one weak CPU cluster.
             kotlinx.coroutines.delay(UPGRADE_DELAY_MS)
             val prober = ProviderHealthChecker(providers = emptyList())
+            Log.d(TAG, "upgrade check: probing ${server.name}")
             val current = prober.probeHeight(playing)
             QualityMemory.hint(server.name, current)
             if (current != null && current >= FULL_HD) return@launch
             val deadline = SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
             var probes = 0
             // Web servers first (they start faster); torrents get their own turn after them.
-            val order = ranked.filterNot { ServerRanker.isTorrentServer(it.name) } +
+            // Ones already resolved come first (instant); slow resolvers can't hold up the check.
+            val web = ranked.filterNot { ServerRanker.isTorrentServer(it.name) }
+            val order = web.filter { cachedVideo(it) != null } + web.filter { cachedVideo(it) == null } +
                 ranked.filter { ServerRanker.isTorrentServer(it.name) }
+            Log.d(TAG, "upgrade check: playing ${server.name} at ${current ?: "?"}p, ${order.size} candidates")
             for (candidate in order) {
                 val torrent = ServerRanker.isTorrentServer(candidate.name)
                 if (!torrent && (SystemClock.elapsedRealtime() > deadline || probes >= UPGRADE_MAX_PROBES)) continue
