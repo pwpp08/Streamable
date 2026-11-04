@@ -11,7 +11,13 @@
     <string name="home_rows_hint_tv">Press OK on a row to show or hide it. Use Move up and Move down to reorder.</string>
     <string name="home_rows_no_provider_rows">The source\'s own rows appear here after the home screen has loaded once.</string>
     <string name="home_rows_reset">Reset to default</string>
-    <string name="home_rows_reset_done">Home screen rows reset</string>
+    <string name="home_rows_reset_done">Reset to default. Press Save to apply.</string>
+    <string name="home_rows_save">Save</string>
+    <string name="home_rows_saved">Home screen saved</string>
+    <string name="home_rows_unsaved_title">Unsaved changes</string>
+    <string name="home_rows_unsaved_message">Save your changes to the home screen?</string>
+    <string name="home_rows_discard">Discard</string>
+    <string name="home_rows_keep_editing">Keep editing</string>
     <string name="home_rows_move_up">Move up</string>
     <string name="home_rows_move_down">Move down</string>
     <string name="home_rows_shown">Shown</string>

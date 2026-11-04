@@ -11,7 +11,13 @@
     <string name="home_rows_hint_tv">Az OK gombbal megjelenítheted vagy elrejtheted a sort. Az átrendezéshez használd a Feljebb és Lejjebb gombot.</string>
     <string name="home_rows_no_provider_rows">A forrás saját sorai a kezdőképernyő első betöltése után jelennek meg itt.</string>
     <string name="home_rows_reset">Alapértelmezés visszaállítása</string>
-    <string name="home_rows_reset_done">A kezdőképernyő sorai visszaállítva</string>
+    <string name="home_rows_reset_done">Alaphelyzetbe állítva. A használathoz nyomj a Mentés gombra.</string>
+    <string name="home_rows_save">Mentés</string>
+    <string name="home_rows_saved">Kezdőképernyő elmentve</string>
+    <string name="home_rows_unsaved_title">Nem mentett változtatások</string>
+    <string name="home_rows_unsaved_message">Elmented a kezdőképernyő változtatásait?</string>
+    <string name="home_rows_discard">Elvetés</string>
+    <string name="home_rows_keep_editing">Szerkesztés folytatása</string>
     <string name="home_rows_move_up">Feljebb</string>
     <string name="home_rows_move_down">Lejjebb</string>
     <string name="home_rows_shown">Látható</string>

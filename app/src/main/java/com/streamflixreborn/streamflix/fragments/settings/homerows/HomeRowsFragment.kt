@@ -5,7 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -39,6 +41,44 @@ class HomeRowsFragment : Fragment() {
     private lateinit var adapter: HomeRowsAdapter
     private lateinit var touchHelper: ItemTouchHelper
 
+    /** What the home screen currently uses; the adapter holds the staged edits. */
+    private var baseline: HomeRowsConfig? = null
+    private val dirty get() = baseline != null && adapter.config != baseline
+
+    private val backCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.home_rows_unsaved_title)
+                .setMessage(R.string.home_rows_unsaved_message)
+                .setPositiveButton(R.string.home_rows_save) { _, _ -> save(); leave() }
+                .setNegativeButton(R.string.home_rows_discard) { _, _ -> baseline = adapter.config; leave() }
+                .setNeutralButton(R.string.home_rows_keep_editing, null)
+                .show()
+        }
+    }
+
+    private fun updateButtons() {
+        val b = _binding ?: return
+        val changed = dirty
+        b.btnHomeRowsSave.isEnabled = changed
+        b.btnHomeRowsSave.alpha = if (changed) 1f else 0.4f
+        backCallback.isEnabled = changed
+    }
+
+    private fun save() {
+        val config = adapter.config
+        if (config == HomeRowsConfig.default(providerCategories)) HomeRowsStore.reset() else HomeRowsStore.save(config)
+        baseline = config
+        updateButtons()
+        Toast.makeText(requireContext(), R.string.home_rows_saved, Toast.LENGTH_SHORT).show()
+    }
+
+    /** Leaves the screen without asking again. */
+    private fun leave() {
+        backCallback.isEnabled = false
+        requireActivity().onBackPressedDispatcher.onBackPressed()
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeRowsBinding.inflate(inflater, container, false)
         return binding.root
@@ -63,7 +103,7 @@ class HomeRowsFragment : Fragment() {
                 else getString(R.string.home_rows_library_row)
             },
             onStartDrag = { holder -> touchHelper.startDrag(holder) },
-            onChanged = HomeRowsStore::save,
+            onChanged = { updateButtons() },
         )
 
         touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
@@ -78,7 +118,7 @@ class HomeRowsFragment : Fragment() {
 
             override fun clearView(rv: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(rv, viewHolder)
-                HomeRowsStore.save(adapter.config)
+                updateButtons()
             }
         })
 
@@ -88,12 +128,16 @@ class HomeRowsFragment : Fragment() {
         (binding.rvHomeRows.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
         if (!isTv) touchHelper.attachToRecyclerView(binding.rvHomeRows)
 
-        if (isTv) binding.btnHomeRowsReset.tvFocusSpring()
+        if (isTv) listOf(binding.btnHomeRowsSave, binding.btnHomeRowsCancel, binding.btnHomeRowsReset).forEach { it.tvFocusSpring() }
+        // Edits are staged: nothing reaches the home screen until Save.
         binding.btnHomeRowsReset.setOnClickListener {
-            HomeRowsStore.reset()
             adapter.submit(HomeRowsConfig.default(providerCategories))
+            updateButtons()
             Toast.makeText(context, R.string.home_rows_reset_done, Toast.LENGTH_SHORT).show()
         }
+        binding.btnHomeRowsSave.setOnClickListener { save(); leave() }
+        binding.btnHomeRowsCancel.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
 
         viewLifecycleOwner.lifecycleScope.launch {
             providerCategories = withContext(Dispatchers.IO) {
@@ -106,6 +150,8 @@ class HomeRowsFragment : Fragment() {
             b.tvHomeRowsNote.visibility = if (providerCategories.isEmpty()) View.VISIBLE else View.GONE
             val config = (HomeRowsStore.load() ?: HomeRowsConfig.default(providerCategories)).merge(providerCategories)
             adapter.submit(config)
+            baseline = adapter.config
+            updateButtons()
             if (isTv) b.rvHomeRows.post { _binding?.rvHomeRows?.requestFocus() }
         }
     }

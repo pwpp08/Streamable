@@ -51,13 +51,48 @@
         android:paddingBottom="8dp" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_home_rows_reset"
+        android:id="@+id/btn_home_rows_save"
         style="@style/Widget.StreamFlix.Button.Tv"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:enabled="false"
         android:focusable="true"
-        android:text="@string/home_rows_reset"
-        app:icon="@drawable/ic_refresh" />
+        android:text="@string/home_rows_save"
+        android:textColor="?attr/colorOnPrimary"
+        app:backgroundTint="?attr/colorPrimary" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_home_rows_cancel"
+            style="@style/Widget.StreamFlix.Button.Tv"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@android:string/cancel" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_home_rows_reset"
+            style="@style/Widget.StreamFlix.Button.Tv"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:focusable="true"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@string/home_rows_reset"
+            app:icon="@drawable/ic_refresh" />
+
+    </LinearLayout>
 
 </LinearLayout>

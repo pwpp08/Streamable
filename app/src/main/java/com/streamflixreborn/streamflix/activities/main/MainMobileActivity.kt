@@ -136,6 +136,7 @@ class MainMobileActivity : FragmentActivity(), IdleDimHost {
             when (intent?.getStringExtra("debug_nav")) {
                 "remote" -> navController.navigate(R.id.remote)
                 "search" -> navController.navigate(R.id.search)
+                "home_rows" -> navController.navigate(R.id.home_rows)
             }
         }
 
