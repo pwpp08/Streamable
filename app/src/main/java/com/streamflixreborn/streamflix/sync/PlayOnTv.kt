@@ -24,16 +24,15 @@ import kotlinx.coroutines.withContext
 object PlayOnTv {
     private const val TV_WINDOW_MS = 24 * 60 * 60_000L
 
-    /** True when the action should be offered (signed in, not on a TV). */
-    fun isAvailable(activity: FragmentActivity): Boolean =
-        !DeviceIdentity.isTv(activity) && CloudSyncManager.currentUserId() != null
+    /** True when the action should be offered (not on a TV; signing in is asked for on use). */
+    fun isAvailable(activity: FragmentActivity): Boolean = !DeviceIdentity.isTv(activity)
 
     fun play(activity: FragmentActivity, item: AppAdapter.Item) {
+        AuthGate.require(activity, R.string.auth_reason_play_on_tv) { playSignedIn(activity, item) }
+    }
+
+    private fun playSignedIn(activity: FragmentActivity, item: AppAdapter.Item) {
         activity.lifecycleScope.launch {
-            if (CloudSyncManager.currentUserId() == null) {
-                toast(activity, activity.getString(R.string.sync_sign_in_first))
-                return@launch
-            }
             val command = withContext(Dispatchers.IO) { commandFor(activity, item) } ?: return@launch
             val tv = chooseTv(activity, TV_WINDOW_MS) ?: return@launch
             sendTo(activity, tv, command)

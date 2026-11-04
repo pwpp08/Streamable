@@ -85,4 +85,12 @@
     <string name="settings_remote_summary">Type searches and control playback on your TV from this phone</string>
     <string name="settings_pair_phone_title">Pair with phone</string>
     <string name="settings_pair_phone_summary">Show a QR code to scan with the StreamFlix app on your phone</string>
+    <!-- Sign-in popup -->
+    <string name="auth_gate_title">Sign in to continue</string>
+    <string name="auth_gate_message">You need an account to %1$s. Sign in, or create one in a few seconds. It keeps your library and settings in sync across your devices.</string>
+    <string name="auth_gate_not_configured">Sync is not set up in this build.</string>
+    <string name="auth_gate_done">Signed in</string>
+    <string name="auth_reason_pair_tv">pair a TV</string>
+    <string name="auth_reason_remote">use the phone as a remote</string>
+    <string name="auth_reason_play_on_tv">play on your TV</string>
 </resources>

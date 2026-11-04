@@ -60,6 +60,16 @@ class PairPhoneFragment : Fragment() {
 
         binding.btnPairPhoneScan.setOnClickListener { startScan() }
         binding.btnPairPhoneCode.setOnClickListener { askCode() }
+        if (!signedIn && savedInstanceState == null) {
+            com.streamflixreborn.streamflix.sync.AuthGate.require(requireActivity(), R.string.auth_reason_pair_tv) {
+                if (_binding != null) {
+                    val account = CloudSyncManager.currentUserEmail()
+                    binding.tvPairPhoneAccount.text = getString(R.string.pair_phone_account, account)
+                    binding.btnPairPhoneScan.isEnabled = true
+                    binding.btnPairPhoneCode.isEnabled = true
+                }
+            }
+        }
 
         val uriArg = arguments?.getString(ARG_PAIR_URI)
         if (signedIn && savedInstanceState == null && !uriArg.isNullOrBlank()) {

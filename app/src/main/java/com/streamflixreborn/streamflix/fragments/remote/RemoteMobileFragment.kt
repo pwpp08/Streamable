@@ -93,6 +93,14 @@ class RemoteMobileFragment : Fragment() {
         if (CloudSyncManager.currentUserId() == null) {
             binding.tvRemoteDevice.text = getString(R.string.sync_sign_in_first)
             setControlsEnabled(false)
+            if (savedInstanceState == null) {
+                com.streamflixreborn.streamflix.sync.AuthGate.require(requireActivity(), R.string.auth_reason_remote) {
+                    if (_binding != null) {
+                        setControlsEnabled(true)
+                        chooseTv(force = false)
+                    }
+                }
+            }
         } else if (tv == null) {
             chooseTv(force = false)
         }

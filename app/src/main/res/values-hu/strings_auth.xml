@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_gate_title">Jelentkezz be a folytatáshoz</string>
+    <string name="auth_gate_message">Ehhez fiók kell: %1$s. Jelentkezz be, vagy hozz létre egyet pár másodperc alatt. Így a könyvtárad és a beállításaid minden eszközödön szinkronban maradnak.</string>
+    <string name="auth_gate_not_configured">Ebben a buildben nincs beállítva a szinkron.</string>
+    <string name="auth_gate_done">Bejelentkezve</string>
+    <string name="auth_reason_pair_tv">tévé párosítása</string>
+    <string name="auth_reason_remote">a telefon távirányítóként használata</string>
+    <string name="auth_reason_play_on_tv">lejátszás a tévén</string>
+</resources>
