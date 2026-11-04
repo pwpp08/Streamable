@@ -102,6 +102,7 @@ abstract class Extractor {
             VidflixExtractor(),
             VidrockExtractor(),
             VidzeeExtractor(),
+            VideasyExtractor(),
             VidnestExtractor(),
             PrimeSrcExtractor(),
             VidoraExtractor(),

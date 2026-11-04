@@ -95,6 +95,11 @@ class TorrentioTest {
         assertFalse(TorrentCandidateSelector.isUsable(stream("Movie 2020 1080p WEB-DL H.264 10bit")))
         assertFalse(TorrentCandidateSelector.isUsable(stream("Film 2020 1080p BluRay x264", languages = "🇫🇷")))
         assertFalse(TorrentCandidateSelector.isUsable(stream("Movie 2020 720p BluRay x264", height = 720)))
+        assertFalse(TorrentCandidateSelector.isUsable(stream("Movie 2025 1080p HDTS x264")))
+        assertFalse(TorrentCandidateSelector.isUsable(stream("Movie 2025 1080p PreDVD x264")))
+        assertFalse(TorrentCandidateSelector.isUsable(stream("Movie 2025 1080p HD-TC x264")))
+        assertFalse(TorrentCandidateSelector.isUsable(stream("Movie 2025 1080p BluRay x264 DTS-HD")))
+        assertFalse(TorrentCandidateSelector.isUsable(stream("Movie 2025 1080p WEB-DL x264 DDP5.1 Atmos")))
         assertTrue(TorrentCandidateSelector.isUsable(stream("Movie 2020 1080p BluRay x264")))
         assertTrue(TorrentCandidateSelector.isUsable(stream("Film 2020 1080p BluRay x264", languages = "🇭🇺")))
         assertTrue(TorrentCandidateSelector.isUsable(stream("Film 2020 1080p BluRay x264", languages = "🇬🇧 / 🇫🇷")))
@@ -160,7 +165,7 @@ class TorrentioTest {
     }
 
     @Test
-    fun torrentServersRankAfterWebUnlessKnownFullHd() {
+    fun torrentServersAlwaysRankAfterWeb() {
         val web = Video.Server("vix", "VixSrc")
         val web2 = Video.Server("zee", "Vidzee")
         val torrent = Video.Server("torrent:x:0", "Torrent 1080p (YTS)")
@@ -169,6 +174,10 @@ class TorrentioTest {
         val ranked = ServerRanker.rank(servers, score = { if (it == "VixSrc") 40 else 50 }, height = { null })
         assertEquals("Torrent 1080p (YTS)", ranked.last().name)
         val withHeight = ServerRanker.rank(servers, score = { 50 }, height = { if (it.startsWith("Torrent")) 1080 else 720 })
-        assertEquals("Torrent 1080p (YTS)", withHeight.first().name)
+        // Even a torrent known to be 1080p only joins as the quality upgrade: it takes ~30 s to start.
+        assertEquals("Torrent 1080p (YTS)", withHeight.last().name)
+        val videasy = Video.Server("v", "Videasy Boise")
+        val sticky = ServerRanker.rank(listOf(web, videasy, torrent), stickyName = "VixSrc", score = { null }, height = { if (it == "VixSrc") 720 else null })
+        assertEquals("Videasy Boise", sticky.first().name)
     }
 }

@@ -112,7 +112,7 @@ object TorrentCandidateSelector {
     )
     private val goodCodec = Regex("(?<![a-z0-9])(x264|h[. ]?264|avc|yts|yify)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val goodSource = Regex("(?<![a-z0-9])(web-?dl|bluray|brrip|bdrip|webrip)(?![a-z0-9])", RegexOption.IGNORE_CASE)
-    private val badSource = Regex("(?<![a-z0-9])(cam|hdcam|ts|hdts|telesync|telecine|screener|scr)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val badSource = Regex("(?<![a-z0-9])(cam|camrip|cam-rip|hqcam|hdcam|hd-cam|ts|hdts|hd-ts|tc|hdtc|telesync|telecine|screener|scr|dvdscr|pdvd|predvd|pre-dvd|r5)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val heavyAudio = Regex("(?<![a-z0-9])(dts|dts-?hd|truehd|atmos|ddp|dd[+]|eac3|e-ac3)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val lightAudio = Regex("(?<![a-z0-9])(aac|ac3|ac-3|dd5[. ]?1|dd2[. ]?0)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val cyrillic = Regex("[\\u0400-\\u04FF]")
@@ -137,6 +137,8 @@ object TorrentCandidateSelector {
         if (cyrillic.containsMatchIn(text)) return false
         if (badCodec.containsMatchIn(text)) return false
         if (badSource.containsMatchIn(text)) return false
+        // Audio the box cannot decode plays silently; skip those releases instead of just ranking them lower.
+        if (heavyAudio.containsMatchIn(text)) return false
         // Torrentio lists flags only for releases that are not English-only; none means English.
         val langs = s.languages
         if (langs.isNotBlank() && acceptedFlags.none { langs.contains(it) } && !multiOrEnglish.containsMatchIn(text)) return false

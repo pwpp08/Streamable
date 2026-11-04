@@ -374,9 +374,11 @@ class PlayerViewModel(
             kotlinx.coroutines.delay(UPGRADE_DELAY_MS)
             val prober = ProviderHealthChecker(providers = emptyList())
             Log.d(TAG, "upgrade check: probing ${server.name}")
-            val current = prober.probeHeight(playing)
+            val current = withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(playing) }
             QualityMemory.hint(server.name, current)
             if (current != null && current >= FULL_HD) return@launch
+            // Adaptive Videasy streams reach their top rung on their own; an unreadable playlist is no reason to churn.
+            if (current == null && ServerRanker.isVideasy(server.name)) return@launch
             val deadline = SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
             var probes = 0
             // Web servers first (they start faster); torrents get their own turn after them.
@@ -393,7 +395,8 @@ class PlayerViewModel(
                 if (QualityMemory.height(candidate.name)?.let { it in 1 until FULL_HD } == true) continue
                 val video = cachedVideo(candidate) ?: resolve(candidate) ?: continue
                 if (!torrent) probes++
-                val height = prober.probeHeight(video)
+                // Web probes that take longer than this are not worth waiting for; torrents are checked by swarm.
+                val height = if (torrent) prober.probeHeight(video) else withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(video) }
                 QualityMemory.hint(candidate.name, height)
                 // A torrent is only worth switching to when its swarm is alive; check before cutting the picture.
                 if (TorrentSpec.isTorrentUri(video.source) && height != null && height >= FULL_HD) {
@@ -601,8 +604,9 @@ class PlayerViewModel(
         private const val FULL_HD = 1080
         private const val UPGRADE_DELAY_MS = 8_000L
         private const val TORRENT_PREWARM_MS = 90_000L
-        private const val UPGRADE_MAX_PROBES = 4
+        private const val UPGRADE_MAX_PROBES = 6
         /** How long after start the other servers are checked for a sharper picture. */
-        private const val UPGRADE_WINDOW_MS = 40_000L
+        private const val UPGRADE_WINDOW_MS = 45_000L
+        private const val PROBE_TIMEOUT_MS = 6_000L
     }
 }

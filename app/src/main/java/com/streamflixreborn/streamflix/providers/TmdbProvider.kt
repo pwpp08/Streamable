@@ -7,6 +7,7 @@ import com.streamflixreborn.streamflix.extractors.TwoEmbedExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcNetExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcToExtractor
 import com.streamflixreborn.streamflix.extractors.VidzeeExtractor
+import com.streamflixreborn.streamflix.extractors.VideasyExtractor
 import com.streamflixreborn.streamflix.extractors.VixSrcExtractor
 import com.streamflixreborn.streamflix.extractors.VidLinkExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcRuExtractor
@@ -742,17 +743,21 @@ class TmdbProvider(override val language: String) : Provider {
     }
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
-        val servers = mutableListOf(
+        val servers = mutableListOf<Video.Server>()
+        // Videasy first: native, ~150 ms, adaptive up to 1080p (see VideasyExtractor).
+        val videasy = VideasyExtractor().servers(videoType)
+        servers.addAll(videasy)
+        servers.addAll(listOf(
             VixSrcExtractor().server(videoType),
             TwoEmbedExtractor().server(videoType),
             VidsrcNetExtractor().server(videoType),
             VidLinkExtractor().server(videoType),
             VidsrcRuExtractor().server(videoType),
             VidflixExtractor().server(videoType),
-        )
+        ))
 
         if (videoType is Video.Type.Movie) {
-            servers.add(2, MoviesapiExtractor().server(videoType))
+            servers.add(videasy.size + 2, MoviesapiExtractor().server(videoType))
         }
 
         servers.addAll(VidrockExtractor().servers(videoType))

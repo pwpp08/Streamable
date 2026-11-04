@@ -4,7 +4,7 @@ import com.streamflixreborn.streamflix.models.Video
 
 /**
  * Orders servers for parallel resolution and failover:
- * explicitly preferred server → sticky server (last one that played this title) →
+ * explicitly preferred server → web servers before torrents → sticky server (last one that played this title) →
  * health score (higher first) → the provider's original order.
  */
 object ServerRanker {
@@ -35,6 +35,12 @@ object ServerRanker {
 
     fun isTorrentServer(name: String) = name.startsWith("Torrent ", ignoreCase = true)
 
+    /** Videasy nodes answer in ~150 ms with adaptive HLS up to 1080p+, so they start with a head start. */
+    fun isVideasy(name: String) = name.startsWith("Videasy ", ignoreCase = true)
+
+    /** Score for a server nothing is known about yet. */
+    const val VIDEASY_PRIOR = 70
+
     fun rank(
         servers: List<Video.Server>,
         preferredName: String? = null,
@@ -45,7 +51,8 @@ object ServerRanker {
         if (servers.size <= 1) return servers
         val heights = servers.associateWith { runCatching { height(it.name) }.getOrNull() }
         val scores = servers.associateWith { server ->
-            val base = runCatching { score(server.name) }.getOrNull() ?: UNKNOWN_SCORE
+            val base = runCatching { score(server.name) }.getOrNull()
+                ?: if (isVideasy(server.name)) VIDEASY_PRIOR else UNKNOWN_SCORE
             val played = heights.getValue(server)
             base + when {
                 played == null -> 0
@@ -55,13 +62,18 @@ object ServerRanker {
         }
         // The sticky server only keeps its lead when it isn't known to be low-res while another
         // server is known to play in full HD.
-        val fullHdExists = heights.values.any { it != null && it >= 1080 }
+        val fullHdExists = servers.any { server ->
+            !isTorrentServer(server.name) && (isVideasy(server.name) || (heights.getValue(server) ?: 0) >= 1080)
+        }
         val stickyHeight = servers.firstOrNull { it.name.equals(stickyName, ignoreCase = true) }
             ?.let { heights.getValue(it) }
         val stickyUsable = !(fullHdExists && stickyHeight != null && stickyHeight < 1080)
         return servers.withIndex()
             .sortedWith(
                 compareBy<IndexedValue<Video.Server>> { if (it.value.name.equals(preferredName, ignoreCase = true)) 0 else 1 }
+                    // P2P takes ~30 s to start: it only plays first when nothing else is left (the
+                    // quality upgrade and failover still reach it).
+                    .thenBy { if (isTorrentServer(it.value.name)) 1 else 0 }
                     .thenBy { if (stickyUsable && it.value.name.equals(stickyName, ignoreCase = true)) 0 else 1 }
                     .thenByDescending { scores.getValue(it.value) }
                     .thenBy { it.index }
