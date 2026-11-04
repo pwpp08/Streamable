@@ -516,6 +516,14 @@
                 android:title="@string/settings_screen_profiles_title"
                 app:iconSpaceReserved="false">
 
+                <SwitchPreferenceCompat
+                    android:key="MULTIPLE_PROFILES"
+                    android:title="@string/settings_multiple_profiles_title"
+                    android:summaryOn="@string/settings_multiple_profiles_on"
+                    android:summaryOff="@string/settings_multiple_profiles_off"
+                    android:defaultValue="true"
+                    app:iconSpaceReserved="false" />
+
                 <Preference
                     android:key="key_profile_edit"
                     android:title="@string/profile_edit_btn"

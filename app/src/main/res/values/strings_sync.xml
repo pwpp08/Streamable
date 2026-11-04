@@ -62,6 +62,7 @@
     <string name="remote_title">Remote</string>
     <string name="remote_tv_label">TV: %1$s</string>
     <string name="remote_no_tv">No TV selected</string>
+    <string name="remote_tv_stale">Last seen %1$s. Open Streamable on the TV for the remote to work.</string>
     <string name="remote_change_tv">Change</string>
     <string name="remote_search_hint">Type to search on TV</string>
     <string name="remote_play_pause">Play / Pause</string>

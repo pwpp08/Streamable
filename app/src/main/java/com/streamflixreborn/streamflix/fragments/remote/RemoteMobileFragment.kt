@@ -103,6 +103,28 @@ class RemoteMobileFragment : Fragment() {
             }
         } else if (tv == null) {
             chooseTv(force = false)
+        } else {
+            verifySavedTv()
+        }
+    }
+
+    /**
+     * The saved TV can be stale: a reinstalled app registers under a new device id, and the old id
+     * keeps its row. Re-read the account's TVs and follow the freshest one with the same name.
+     */
+    private fun verifySavedTv() {
+        val saved = tv ?: return
+        val activity = activity ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val tvs = runCatching { PlayOnTv.listTvs(activity, DeviceCommandBus.LIST_WINDOW_MS) }.getOrNull()
+            if (tvs.isNullOrEmpty() || _binding == null) return@launch
+            val target = tvs.filter { it.name == saved.name }.maxByOrNull { it.lastSeenAtMillis }
+                ?: tvs.firstOrNull { it.id == saved.id }
+                ?: tvs.maxByOrNull { it.lastSeenAtMillis }
+                ?: return@launch
+            tv = target
+            saveTv(target)
+            renderTv()
         }
     }
 
@@ -182,8 +204,19 @@ class RemoteMobileFragment : Fragment() {
 
     private fun renderTv() {
         val b = _binding ?: return
-        b.tvRemoteDevice.text = tv?.let { getString(R.string.remote_tv_label, it.name) }
-            ?: getString(R.string.remote_no_tv)
+        b.tvRemoteDevice.text = tv?.let { device ->
+            val label = getString(R.string.remote_tv_label, device.name)
+            val ago = System.currentTimeMillis() - device.lastSeenAtMillis
+            // A running TV app checks in every 15 minutes; silence means it is closed.
+            if (device.lastSeenAtMillis > 0 && ago > STALE_AFTER_MS) {
+                val seen = android.text.format.DateUtils.getRelativeTimeSpanString(
+                    device.lastSeenAtMillis, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS,
+                )
+                label + "\n" + getString(R.string.remote_tv_stale, seen)
+            } else {
+                label
+            }
+        } ?: getString(R.string.remote_no_tv)
         setControlsEnabled(tv != null)
     }
 
@@ -227,5 +260,6 @@ class RemoteMobileFragment : Fragment() {
         private const val PREFS = "remote_mobile"
         private const val SEARCH_DEBOUNCE_MS = 400L
         private const val SEEK_MS = 10_000L
+        private const val STALE_AFTER_MS = 20 * 60_000L
     }
 }

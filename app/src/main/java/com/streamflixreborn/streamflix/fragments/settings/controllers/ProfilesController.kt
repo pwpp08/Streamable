@@ -22,6 +22,11 @@ import kotlinx.coroutines.withContext
 class ProfilesController(private val host: SettingsHost) : SettingsController {
 
     override fun bind() {
+        host.find<TwoStatePreference>("MULTIPLE_PROFILES")?.setOnPreferenceChangeListener { _, newValue ->
+            UserPreferences.multipleProfiles = newValue as Boolean
+            applyProfileVisibility(newValue)
+            true
+        }
         host.onClick("key_profile_edit") { ProfileManager.activeProfile?.let(::showRenameDialog) }
         host.onClick("key_profile_manage") { showManagementDialog() }
         host.onClick("key_profile_add") { showCreateDialog() }
@@ -50,7 +55,12 @@ class ProfilesController(private val host: SettingsHost) : SettingsController {
         refresh()
     }
 
+    private fun applyProfileVisibility(multiple: Boolean) {
+        listOf("key_profile_manage", "key_profile_add").forEach { host.find<Preference>(it)?.isVisible = multiple }
+    }
+
     override fun refresh() {
+        applyProfileVisibility(UserPreferences.multipleProfiles)
         host.find<Preference>("key_profile_edit")?.summary =
             ProfileManager.activeProfile?.name ?: host.string(R.string.profile_edit_btn)
     }

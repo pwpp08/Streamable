@@ -64,9 +64,9 @@ object ThemeManager {
     fun supportsWallpaperColors(isTv: Boolean): Boolean =
         !isTv && DynamicColors.isDynamicColorAvailable()
 
-    /** Wallpaper colours where supported, otherwise Sage. */
-    fun defaultTheme(isTv: Boolean): String =
-        if (supportsWallpaperColors(isTv)) WALLPAPER else SAGE
+    /** Sage everywhere; wallpaper colours stay available as an explicit choice. */
+    @Suppress("UNUSED_PARAMETER")
+    fun defaultTheme(isTv: Boolean): String = SAGE
 
     /**
      * Normalises any stored id (new, legacy, "default" or unknown) to one of [ALL] that is valid

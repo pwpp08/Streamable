@@ -152,6 +152,21 @@ fun ImageView.loadMoviePoster(
     }
 }
 
+/** Poster first (portrait cards), falling back to the backdrop. */
+fun ImageView.loadMovieCardArtwork(
+    movie: Movie,
+    configure: RequestBuilder<Drawable>.() -> RequestBuilder<Drawable> = { this },
+) {
+    loadRecoverableArtwork(movie.poster ?: movie.banner, configure) { staleUrl, onUpdated ->
+        ArtworkRepairCoordinator.repairMovieArtwork(this, movie, staleUrl) { refreshedMovie ->
+            val refreshedUrl = refreshedMovie.poster ?: refreshedMovie.banner
+            if (!refreshedUrl.isNullOrBlank() && refreshedUrl != staleUrl) {
+                onUpdated(refreshedUrl)
+            }
+        }
+    }
+}
+
 fun ImageView.loadMovieBanner(
     movie: Movie,
     configure: RequestBuilder<Drawable>.() -> RequestBuilder<Drawable> = { this },

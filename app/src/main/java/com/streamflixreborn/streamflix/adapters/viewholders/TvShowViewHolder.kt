@@ -69,6 +69,7 @@ import com.streamflixreborn.streamflix.utils.toActivity
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.dp
 import com.streamflixreborn.streamflix.utils.loadTvShowBanner
+import com.streamflixreborn.streamflix.utils.loadTvShowCardArtwork
 import com.streamflixreborn.streamflix.utils.loadTvShowPoster
 import com.streamflixreborn.streamflix.utils.ArtworkRepair
 import com.streamflixreborn.streamflix.providers.Provider
@@ -572,7 +573,7 @@ class TvShowViewHolder(
 
     private fun displaySwiperMobileItem(binding: ItemCategorySwiperMobileBinding) {
         BrowseCards.bindHeroMask(binding.mflSwiper, binding.clSwiperContent)
-        binding.ivSwiperBackground.loadTvShowBanner(tvShow) {
+        binding.ivSwiperBackground.loadTvShowCardArtwork(tvShow) {
             centerCrop().transition(DrawableTransitionOptions.withCrossFade())
         }
         binding.tvSwiperTitle.text = tvShow.title
@@ -609,8 +610,8 @@ class TvShowViewHolder(
             // Live channel: Play starts it, More info opens the channel page.
             binding.btnSwiperWatchNow.setText(R.string.browse_play)
             binding.btnSwiperWatchNow.setOnClickListener { handleDirectPlay(binding.root.findNavController()) }
-            binding.btnSwiperMoreInfo.isVisible = true
-            binding.btnSwiperMoreInfo.setOnClickListener { openDetails() }
+            binding.btnSwiperMoreInfo.isVisible = false
+            binding.btnSwiperMoreInfo.setOnClickListener(null)
         } else {
             // Episodes are picked on the show page, so a single "Watch now" action leads there.
             binding.btnSwiperWatchNow.setText(R.string.home_swiper_watch_now)

@@ -13,5 +13,5 @@ object HomeBanner {
     fun rowName(value: String): String? = value.takeIf { it.startsWith(ROW_PREFIX) }?.removePrefix(ROW_PREFIX)?.takeIf { it.isNotEmpty() }
 
     /** Most titles the banner carousel shows. */
-    const val MAX_ITEMS = 8
+    const val MAX_ITEMS = 20
 }

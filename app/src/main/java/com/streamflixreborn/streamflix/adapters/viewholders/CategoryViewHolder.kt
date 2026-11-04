@@ -14,7 +14,7 @@ import androidx.viewbinding.ViewBinding
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.carousel.CarouselLayoutManager
 import com.google.android.material.carousel.CarouselSnapHelper
-import com.google.android.material.carousel.HeroCarouselStrategy
+import com.google.android.material.carousel.UncontainedCarouselStrategy
 import com.streamflixreborn.streamflix.ui.browse.BrowseCards
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.adapters.AppAdapter
@@ -148,7 +148,7 @@ class CategoryViewHolder(
         val carousel = binding.rvCategorySwiper
 
         if (carousel.layoutManager !is CarouselLayoutManager) {
-            carousel.layoutManager = CarouselLayoutManager(HeroCarouselStrategy())
+            carousel.layoutManager = CarouselLayoutManager(UncontainedCarouselStrategy())
             CarouselSnapHelper().attachToRecyclerView(carousel)
             carousel.addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {

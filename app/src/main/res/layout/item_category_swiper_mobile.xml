@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phone hero carousel item. MaskableFrameLayout lets CarouselLayoutManager mask it into the
-     small peeking item; the text group fades with the mask (see BrowseHero). -->
+<!-- Phone hero carousel item: a bare 2:3 poster (tap opens the details page). The text group below
+     is kept for the binders but stays hidden so it never covers the artwork. -->
 <com.google.android.material.carousel.MaskableFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mfl_swiper"
-    android:layout_width="match_parent"
+    android:layout_width="@dimen/browse_hero_item_width"
     android:layout_height="match_parent"
     android:layout_marginStart="4dp"
     android:layout_marginEnd="4dp"
@@ -17,7 +17,6 @@
         android:id="@+id/iv_swiper_background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:foreground="@drawable/fg_browse_hero_scrim"
         android:scaleType="centerCrop"
         tools:ignore="ContentDescription" />
 
@@ -26,7 +25,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:padding="20dp">
+        android:padding="12dp"
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/tv_swiper_title"
@@ -34,6 +34,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="2"
+            android:visibility="gone"
             android:textAppearance="?attr/textAppearanceHeadlineMediumEmphasized"
             android:textColor="?attr/colorOnSurface"
             app:layout_constraintEnd_toEndOf="parent"
@@ -108,11 +109,12 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_swiper_watch_now"
             style="@style/Widget.StreamFlix.Button"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="10dp"
             android:text="@string/browse_play"
             app:icon="@drawable/ic_browse_play"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_swiper_overview" />
 
@@ -122,6 +124,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:visibility="gone"
             android:text="@string/browse_more_info"
             app:icon="@drawable/ic_browse_info"
             app:layout_constraintBaseline_toBaselineOf="@id/btn_swiper_watch_now"

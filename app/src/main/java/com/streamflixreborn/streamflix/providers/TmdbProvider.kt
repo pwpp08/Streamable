@@ -240,7 +240,7 @@ class TmdbProvider(override val language: String) : Provider {
                 categories.add(
                     Category(
                         name = Category.FEATURED,
-                        list = trending.safeSubList(0, 5).mapNotNull(mapMulti)
+                        list = trending.safeSubList(0, 20).mapNotNull(mapMulti)
                     )
                 )
             }
@@ -248,7 +248,7 @@ class TmdbProvider(override val language: String) : Provider {
                 categories.add(
                     Category(
                         name = getTranslation("Trending"),
-                        list = trending.safeSubList(5, trending.size).mapNotNull(mapMulti)
+                        list = trending.safeSubList(20, trending.size).mapNotNull(mapMulti)
                     )
                 )
             }

@@ -581,6 +581,9 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                 val selected: Quality
                     get() = list.find { it.isSelected } ?: Auto
 
+                /** Tall enough for a 1080p picture of any widescreen ratio (e.g. 2592x1080). */
+                private const val MAX_LISTED_HEIGHT = 1088
+
                 fun init(player: ExoPlayer, resources: Resources) {
                     list.clear()
                     list.add(Auto)
@@ -594,6 +597,8 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                                         if (trackFormat.selectionFlags and C.SELECTION_FLAG_FORCED != 0) {
                                             return@mapNotNull null
                                         }
+                                        // Nothing above full HD is offered (the player never selects it either).
+                                        if (trackFormat.height > MAX_LISTED_HEIGHT) return@mapNotNull null
 
                                         VideoTrackInformation(
                                             name = DefaultTrackNameProvider(resources)

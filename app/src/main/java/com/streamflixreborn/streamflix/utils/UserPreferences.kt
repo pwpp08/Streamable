@@ -199,6 +199,13 @@ object UserPreferences {
             Key.CAPTION_TEXT_SIZE.setFloat(value)
         }
 
+    /** Off hides the profile chip and the profile management settings; the active profile stays. */
+    var multipleProfiles: Boolean
+        get() = Key.MULTIPLE_PROFILES.getBoolean() ?: true
+        set(value) {
+            Key.MULTIPLE_PROFILES.setBoolean(value)
+        }
+
     var autoplay: Boolean
         get() = Key.AUTOPLAY.getBoolean() ?: true
         set(value) {
@@ -671,6 +678,7 @@ object UserPreferences {
         STREAMINGCOMMUNITY_DOMAIN,
         DOH_PROVIDER_URL,
         AUTOPLAY,
+        MULTIPLE_PROFILES,
         PROVIDER_CACHE,
         KEEP_SCREEN_ON_WHEN_PAUSED,
         IDLE_DIM_ENABLED,

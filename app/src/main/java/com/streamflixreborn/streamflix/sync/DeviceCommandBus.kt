@@ -106,6 +106,7 @@ object DeviceCommandBus {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val lifecycleMutex = Mutex()
 
+    private var appContext: Context? = null
     private var activeProfileId: String? = null
     private var activeUserId: String? = null
     private var activeClient: SupabaseClient? = null
@@ -143,6 +144,7 @@ object DeviceCommandBus {
             stopLocked()
 
             val client = SupabaseProvider.clientFor(appContext, profileId)
+            this.appContext = appContext
             activeProfileId = profileId
             activeUserId = userId
             activeClient = client
@@ -160,6 +162,38 @@ object DeviceCommandBus {
                 subscribeLocked(appContext, client, profileId)
             }
         }
+    }
+
+    /**
+     * Reads commands addressed to this TV that realtime did not deliver (a dropped socket, an
+     * undecodable record, a table missing from the publication). Cheap enough to run every few
+     * seconds while the TV app is on screen.
+     */
+    suspend fun poll() {
+        val client = activeClient ?: return
+        val context = appContext ?: return
+        val myId = DeviceIdentity.id(context)
+        runCatching {
+            val since = SyncTime.iso(System.currentTimeMillis() - CATCH_UP_WINDOW_MS)
+            client.from(COMMANDS).select {
+                filter {
+                    eq("target_device_id", myId)
+                    exact("consumed_at", null)
+                    gt("created_at", since)
+                }
+                order("created_at", Order.ASCENDING)
+            }.decodeList<CommandRow>().forEach { deliver(client, it) }
+        }.onFailure { Log.w(TAG, "Command poll failed", it) }
+    }
+
+    /** Re-subscribes when the realtime channel has dropped (the socket can die while the TV dims). */
+    suspend fun ensureListening() {
+        val context = appContext ?: return
+        val profileId = activeProfileId ?: return
+        val userId = activeUserId ?: return
+        if (channel?.status?.value == RealtimeChannel.Status.SUBSCRIBED) return
+        Log.i(TAG, "Realtime channel is not subscribed; re-subscribing")
+        start(context, profileId, userId)
     }
 
     suspend fun stop() {
@@ -254,7 +288,12 @@ object DeviceCommandBus {
         }
         val collector = inserts
             .onEach { action ->
-                action.decodeRecordOrNull<CommandRow>()?.let { deliver(client, it) }
+                val row = action.decodeRecordOrNull<CommandRow>()
+                if (row != null) deliver(client, row) else {
+                    // The change arrived but could not be decoded: read the row the normal way.
+                    Log.w(TAG, "Could not decode a realtime command; polling instead")
+                    poll()
+                }
             }
             .catch { error -> Log.w(TAG, "Device command listener stopped", error) }
             .launchIn(scope)
@@ -311,6 +350,7 @@ object DeviceCommandBus {
             }
         }.onFailure { Log.w(TAG, "Could not mark command consumed", it) }
 
+        Log.i(TAG, "Command ${row.kind} received")
         val (command, sourceName) = DeviceCommand.fromPayload(row.kind, row.payload) ?: run {
             Log.w(TAG, "Ignoring unknown device command kind ${row.kind}")
             return

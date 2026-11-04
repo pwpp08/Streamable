@@ -92,6 +92,7 @@ import androidx.preference.Preference
 import com.streamflixreborn.streamflix.utils.format
 import com.streamflixreborn.streamflix.utils.getCurrentFragment
 import com.streamflixreborn.streamflix.utils.loadMovieBanner
+import com.streamflixreborn.streamflix.utils.loadMovieCardArtwork
 import com.streamflixreborn.streamflix.utils.loadMoviePoster
 import com.streamflixreborn.streamflix.utils.ArtworkRepair
 import com.streamflixreborn.streamflix.utils.toActivity
@@ -761,7 +762,7 @@ class MovieViewHolder(
 
     private fun displaySwiperMobileItem(binding: ItemCategorySwiperMobileBinding) {
         BrowseCards.bindHeroMask(binding.mflSwiper, binding.clSwiperContent)
-        binding.ivSwiperBackground.loadMovieBanner(movie) {
+        binding.ivSwiperBackground.loadMovieCardArtwork(movie) {
             centerCrop()
             transition(DrawableTransitionOptions.withCrossFade())
         }
@@ -810,8 +811,7 @@ class MovieViewHolder(
             ShowOptionsMobileDialog(context, movie).show()
             true
         }
-        binding.btnSwiperMoreInfo.visibility = View.VISIBLE
-        binding.btnSwiperMoreInfo.setOnClickListener { openDetails() }
+        binding.btnSwiperMoreInfo.visibility = View.GONE
         binding.btnSwiperWatchNow.apply {
             setText(R.string.browse_play)
             setOnClickListener {

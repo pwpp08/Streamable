@@ -182,6 +182,7 @@ class ProvidersTvFragment : Fragment() {
 
     private fun setupProfileHeader() {
         binding.llProfile.apply {
+            visibility = if (UserPreferences.multipleProfiles) android.view.View.VISIBLE else android.view.View.INVISIBLE
             val profile = ProfileManager.activeProfile
             if (profile != null) {
                 binding.ivProfileAvatar.setImageDrawable(ProfileAvatarDrawable.create(requireContext(), profile))
@@ -194,7 +195,7 @@ class ProvidersTvFragment : Fragment() {
                 binding.tvProfileName.text = "Profile"
             }
             setOnClickListener {
-                findNavController().navigate(R.id.profiles)
+                if (UserPreferences.multipleProfiles) findNavController().navigate(R.id.profiles)
             }
         }
     }

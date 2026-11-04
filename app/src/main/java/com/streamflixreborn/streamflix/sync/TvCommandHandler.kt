@@ -8,6 +8,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.navOptions
 import com.streamflixreborn.streamflix.R
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
@@ -22,6 +24,15 @@ class TvCommandHandler(
     fun attach() {
         activity.lifecycleScope.launch {
             activity.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Backstop for realtime: look for commands every few seconds while the app is on screen.
+                launch {
+                    var round = 0
+                    while (isActive) {
+                        DeviceCommandBus.poll()
+                        if (++round % RESUBSCRIBE_EVERY == 0) DeviceCommandBus.ensureListening()
+                        delay(POLL_INTERVAL_MS)
+                    }
+                }
                 DeviceCommandBus.commands.collect { handle(it) }
             }
         }
@@ -61,5 +72,10 @@ class TvCommandHandler(
 
     private fun toast(text: String) {
         Toast.makeText(activity, text, Toast.LENGTH_SHORT).show()
+    }
+
+    private companion object {
+        const val POLL_INTERVAL_MS = 3_000L
+        const val RESUBSCRIBE_EVERY = 10
     }
 }

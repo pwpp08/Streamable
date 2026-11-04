@@ -183,8 +183,10 @@ class HomeMobileFragment : Fragment() {
             binding.tvProfileInitial.text = profile.name.firstOrNull()?.uppercase() ?: "?"
             binding.tvProfileName.text = profile.name
         }
+        // Invisible, not gone: the row keeps the space the top-bar icons sit in.
+        binding.llProfile.visibility = if (UserPreferences.multipleProfiles) View.VISIBLE else View.INVISIBLE
         binding.llProfile.setOnClickListener {
-            findNavController().navigate(R.id.profiles)
+            if (UserPreferences.multipleProfiles) findNavController().navigate(R.id.profiles)
         }
     }
 
