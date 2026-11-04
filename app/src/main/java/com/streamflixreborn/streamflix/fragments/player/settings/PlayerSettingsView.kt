@@ -920,6 +920,22 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                                 0.5F
                             ),
                             TextSize(
+                                R.string.player_settings_caption_style_text_size_0_55,
+                                0.55F
+                            ),
+                            TextSize(
+                                R.string.player_settings_caption_style_text_size_0_6,
+                                0.6F
+                            ),
+                            TextSize(
+                                R.string.player_settings_caption_style_text_size_0_65,
+                                0.65F
+                            ),
+                            TextSize(
+                                R.string.player_settings_caption_style_text_size_0_7,
+                                0.7F
+                            ),
+                            TextSize(
                                 R.string.player_settings_caption_style_text_size_0_75,
                                 0.75F
                             ),

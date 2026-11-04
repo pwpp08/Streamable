@@ -77,10 +77,8 @@ object SettingsSync {
             { value -> UserPreferences.spokenLanguages = value.split(',').map { it.trim() }.filter { it.isNotEmpty() } }),
         Entry("subtitle_mode", { UserPreferences.subtitleMode.name },
             { runCatching { UserPreferences.SubtitleMode.valueOf(it) }.getOrNull()?.let { m -> UserPreferences.subtitleMode = m } }),
-        Entry("subtitle_preset", { UserPreferences.subtitlePreset.name },
-            { runCatching { UserPreferences.SubtitlePreset.valueOf(it) }.getOrNull()?.let { m -> UserPreferences.subtitlePreset = m } }),
-        Entry("caption_text_size", { UserPreferences.captionTextSize.toString() },
-            { it.toFloatOrNull()?.let { size -> UserPreferences.captionTextSize = size } }),
+        // Subtitle preset, size, margin and style are deliberately not synced: a phone and a
+        // projector need different values, and a newer change on one must never reset the other.
         Entry("quality_mode", { UserPreferences.qualityMode.name },
             { runCatching { UserPreferences.QualityMode.valueOf(it) }.getOrNull()?.let { m -> UserPreferences.qualityMode = m } }),
         Entry("max_resolution", { UserPreferences.maxResolution.toString() },

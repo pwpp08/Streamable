@@ -113,16 +113,30 @@ class PlayerSettingsTvView @JvmOverloads constructor(
     fun showServers() = showShortcut(Setting.SERVERS)
 
     private fun showShortcut(setting: Setting) {
+        rememberedFocus.clear()
+        onShown?.invoke()
         this.visibility = View.VISIBLE
         shortcutPage = setting
         displaySettings(setting)
     }
 
     override fun show() {
+        rememberedFocus.clear()
+        onShown?.invoke()
         this.visibility = View.VISIBLE
         shortcutPage = null
 
         displaySettings(Setting.MAIN)
+    }
+
+    /** Called when the panel opens, before it takes focus, so the host can stop competing for it. */
+    var onShown: (() -> Unit)? = null
+
+    /** Row (by page) that opened a deeper page, so coming back puts the cursor on it again. */
+    private val rememberedFocus = HashMap<Setting, Int>()
+
+    private fun rememberFocus(position: Int) {
+        if (position >= 0) rememberedFocus[currentSettings] = position
     }
 
     private fun displaySettings(setting: Setting) {
@@ -189,8 +203,60 @@ class PlayerSettingsTvView @JvmOverloads constructor(
         if (setting == Setting.SUBTITLE_OFFSET) {
             focusSelectedSubtitleOffset()
         } else {
-            binding.rvSettings.requestFocus()
+            focusPage(setting)
         }
+    }
+
+    /**
+     * Keeps the cursor inside the panel: on the row that was used to get here, else on the chosen
+     * value of a choice list, else on the first row.
+     */
+    private fun focusPage(setting: Setting) {
+        binding.rvSettings.requestFocus()
+        val items = (binding.rvSettings.adapter as? SettingsAdapter)?.items ?: return
+        val remembered = rememberedFocus.remove(setting)
+        val target = remembered
+            ?: if (setting in MENU_PAGES) 0 else items.indexOfFirst(::isChosen).coerceAtLeast(0)
+        if (target <= 0) return
+        binding.rvSettings.post {
+            binding.rvSettings.doOnNextLayout {
+                binding.rvSettings.findViewHolderForAdapterPosition(target)?.itemView?.requestFocus()
+            }
+            (binding.rvSettings.layoutManager as? LinearLayoutManager)
+                ?.scrollToPositionWithOffset(target, binding.rvSettings.height / 3)
+        }
+    }
+
+    private fun isChosen(item: Item): Boolean = when (item) {
+        is Settings.Quality -> item.isSelected
+        is Settings.Audio -> item.isSelected
+        is Settings.Subtitle.TextTrackInformation -> item.isSelected
+        is Settings.Subtitle.None -> item.isSelected
+        is Settings.Subtitle.Style.FontColor -> item.isSelected
+        is Settings.Subtitle.Style.TextSize -> item.isSelected
+        is Settings.Subtitle.Style.FontOpacity -> item.isSelected
+        is Settings.Subtitle.Style.EdgeStyle -> item.isSelected
+        is Settings.Subtitle.Style.BackgroundColor -> item.isSelected
+        is Settings.Subtitle.Style.BackgroundOpacity -> item.isSelected
+        is Settings.Subtitle.Style.WindowColor -> item.isSelected
+        is Settings.Subtitle.Style.WindowOpacity -> item.isSelected
+        is Settings.Subtitle.Style.Margin -> item.isSelected
+        is Settings.Speed -> item.isSelected
+        is Settings.ExtraBuffering -> item.isSelected
+        is Settings.SoftwareDecoder -> item.isSelected
+        is Settings.Server -> item.isSelected
+        else -> false
+    }
+
+    private companion object {
+        /** Pages that are menus of entries rather than lists of values to choose from. */
+        val MENU_PAGES = setOf(
+            Setting.MAIN,
+            Setting.SUBTITLES,
+            Setting.CAPTION_STYLE,
+            Setting.OPEN_SUBTITLES,
+            Setting.SUBDL,
+        )
     }
 
     private fun focusSelectedSubtitleOffset() {
@@ -227,7 +293,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
 
     private class SettingsAdapter(
         private val settingsView: PlayerSettingsTvView,
-        private val items: List<Item>,
+        val items: List<Item>,
     ) : RecyclerView.Adapter<SettingViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
@@ -274,6 +340,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                     else -> margin(bottom = 0, top = 0)
                 }
                 setOnClickListener {
+                    settingsView.rememberFocus(bindingAdapterPosition)
                     when (item) {
                         is Settings -> {
                             when (item) {

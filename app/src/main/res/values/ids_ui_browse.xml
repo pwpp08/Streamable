@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="sf_browse_press_scale" type="id" />
+    <item name="sf_subtitle_margin_listener" type="id" />
     <item name="sf_browse_snap_attached" type="id" />
 </resources>

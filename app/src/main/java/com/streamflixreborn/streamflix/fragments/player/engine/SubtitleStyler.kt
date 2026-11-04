@@ -5,6 +5,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
+import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.fragments.player.settings.PlayerSettingsView
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.dp
@@ -59,6 +60,23 @@ object SubtitleStyler {
                 UserPreferences.captionTextSize *
                 sizeMultiplier(UserPreferences.subtitlePreset)
         )
-        subtitleView.setPadding(0, 0, 0, UserPreferences.captionMargin.dp(subtitleView.context))
+        // Media3 places cues with a bottom padding fraction of the view height; a plain view
+        // padding does not move them. Recomputed on layout so the margin stays the same in dp.
+        subtitleView.setPadding(0, 0, 0, 0)
+        applyMargin(subtitleView)
+        if (subtitleView.getTag(R.id.sf_subtitle_margin_listener) == null) {
+            subtitleView.setTag(R.id.sf_subtitle_margin_listener, true)
+            subtitleView.addOnLayoutChangeListener { view, _, top, _, bottom, _, oldTop, _, oldBottom ->
+                if (bottom - top != oldBottom - oldTop) (view as? SubtitleView)?.let(::applyMargin)
+            }
+        }
     }
+
+    private fun applyMargin(subtitleView: SubtitleView) {
+        val marginPx = UserPreferences.captionMargin.dp(subtitleView.context)
+        val height = subtitleView.height.takeIf { it > 0 } ?: subtitleView.resources.displayMetrics.heightPixels
+        subtitleView.setBottomPaddingFraction((marginPx.toFloat() / height).coerceIn(0f, MAX_MARGIN_FRACTION))
+    }
+
+    private const val MAX_MARGIN_FRACTION = 0.5f
 }

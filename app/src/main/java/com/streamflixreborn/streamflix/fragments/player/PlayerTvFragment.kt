@@ -614,7 +614,16 @@ class PlayerTvFragment : Fragment() {
                 updatePlayerScale()
             }
         }
-        binding.settings.onHidden = { if (_binding != null) binding.nextUi.focusCompose() }
+        // While the settings panel is open the player controls must not take D-pad focus back.
+        binding.settings.onShown = {
+            if (_binding != null) binding.nextUi.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+        }
+        binding.settings.onHidden = {
+            if (_binding != null) {
+                binding.nextUi.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+                binding.nextUi.focusCompose()
+            }
+        }
     }
 
     private fun showPlayerMessage(message: String) {
