@@ -1,0 +1,110 @@
+name: Desktop release
+
+# Builds the Windows installer and the macOS disk image from the desktop/ module, each with VLC
+# bundled so nothing else needs installing, and publishes them on the tag's release.
+on:
+  push:
+    tags: ['desktop-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  VLC_VERSION: 3.0.21
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Bundle VLC
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/vlc.zip" "https://download.videolan.org/pub/videolan/vlc/$VLC_VERSION/win64/vlc-$VLC_VERSION-win64.zip"
+          7z x -y -o"$RUNNER_TEMP/vlc" "$RUNNER_TEMP/vlc.zip" > /dev/null
+          src="$RUNNER_TEMP/vlc/vlc-$VLC_VERSION"
+          mkdir -p resources/windows/vlc
+          cp "$src/libvlc.dll" "$src/libvlccore.dll" resources/windows/vlc/
+          cp -r "$src/plugins" resources/windows/vlc/
+
+      - name: Build installers
+        run: ./gradlew packageMsi packageExe --no-daemon
+
+      - name: Collect
+        run: |
+          v="${GITHUB_REF_NAME#desktop-v}"
+          [ "$v" = "$GITHUB_REF_NAME" ] && v="dev"
+          mkdir -p ../out
+          cp build/compose/binaries/main/msi/*.msi "../out/StreamFlix-Desktop-$v-windows.msi"
+          cp build/compose/binaries/main/exe/*.exe "../out/StreamFlix-Desktop-$v-windows-setup.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: out/*
+
+  macos:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Bundle VLC
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/vlc.dmg" "https://download.videolan.org/pub/videolan/vlc/$VLC_VERSION/macosx/vlc-$VLC_VERSION-universal.dmg"
+          hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/vlcmnt" "$RUNNER_TEMP/vlc.dmg"
+          app="$RUNNER_TEMP/vlcmnt/VLC.app/Contents/MacOS"
+          mkdir -p resources/macos/vlc
+          cp -R "$app/lib" resources/macos/vlc/
+          cp -R "$app/plugins" resources/macos/vlc/
+          hdiutil detach "$RUNNER_TEMP/vlcmnt"
+
+      - name: Build disk image
+        run: |
+          chmod +x gradlew
+          ./gradlew packageDmg --no-daemon
+
+      - name: Collect
+        run: |
+          v="${GITHUB_REF_NAME#desktop-v}"
+          [ "$v" = "$GITHUB_REF_NAME" ] && v="dev"
+          mkdir -p ../out
+          cp build/compose/binaries/main/dmg/*.dmg "../out/StreamFlix-Desktop-$v-macos.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: out/*
+
+  publish:
+    needs: [windows, macos]
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "StreamFlix Desktop ${GITHUB_REF_NAME#desktop-v}" \
+            --notes-file desktop/RELEASE_NOTES.md

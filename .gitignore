@@ -18,3 +18,10 @@ app/src/main/cpp/native-lib.cpp
 __pycache__/
 /nextui/build
 /app/build
+
+# Desktop build output and the VLC copied in by the release workflow
+/desktop/build
+/desktop/.gradle
+/desktop/.kotlin
+/desktop/resources/windows
+/desktop/resources/macos
