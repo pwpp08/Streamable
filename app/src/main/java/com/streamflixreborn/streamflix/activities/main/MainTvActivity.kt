@@ -131,7 +131,10 @@ class MainTvActivity : FragmentActivity(), IdleDimHost {
         lifecycleScope.launch {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
                 when (state) {
-                    is MainViewModel.State.SuccessCheckingUpdate -> {
+                    MainViewModel.State.UpToDate -> if (viewModel.firstTime(state)) {
+                        Toast.makeText(this@MainTvActivity, R.string.update_up_to_date, Toast.LENGTH_SHORT).show()
+                    }
+                    is MainViewModel.State.SuccessCheckingUpdate -> if (viewModel.firstTime(state)) {
                         updateAppDialog = UpdateAppTvDialog(this@MainTvActivity, state.newReleases).also {
                             it.setOnUpdateClickListener { _ ->
                                 if (!it.isLoading) viewModel.downloadUpdate(this@MainTvActivity, state.asset)
@@ -145,7 +148,8 @@ class MainTvActivity : FragmentActivity(), IdleDimHost {
                         if (::updateAppDialog.isInitialized) updateAppDialog.hide()
                     }
                     MainViewModel.State.InstallingUpdate -> if (::updateAppDialog.isInitialized) updateAppDialog.isLoading = true
-                    is MainViewModel.State.FailedUpdate -> {
+                    is MainViewModel.State.FailedUpdate -> if (viewModel.firstTime(state)) {
+                        if (::updateAppDialog.isInitialized) updateAppDialog.isLoading = false
                         Toast.makeText(this@MainTvActivity, state.error.message ?: "Update failed", Toast.LENGTH_SHORT).show()
                     }
                     else -> {}

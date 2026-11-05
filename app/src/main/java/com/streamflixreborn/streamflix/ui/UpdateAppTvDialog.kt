@@ -8,11 +8,11 @@ import android.view.WindowManager
 import androidx.core.view.isVisible
 import com.streamflixreborn.streamflix.BuildConfig
 import com.streamflixreborn.streamflix.databinding.DialogUpdateAppTvBinding
-import com.streamflixreborn.streamflix.utils.GitGay
+import com.streamflixreborn.streamflix.utils.InAppUpdater
 
 class UpdateAppTvDialog(
     context: Context,
-    newReleases: List<GitGay.Release>,
+    newReleases: List<InAppUpdater.AppRelease>,
 ) : Dialog(context) {
 
     private val binding = DialogUpdateAppTvBinding.inflate(LayoutInflater.from(context))
@@ -34,7 +34,7 @@ class UpdateAppTvDialog(
 
         binding.tvUpdateCurrentVersion.text = BuildConfig.VERSION_NAME
 
-        binding.tvUpdateNewVersion.text = newReleases.first().tagName.substringAfter("v")
+        binding.tvUpdateNewVersion.text = newReleases.first().versionName
 
         binding.tvUpdateReleaseNotes.text = newReleases.map {
             it.body?.replace(

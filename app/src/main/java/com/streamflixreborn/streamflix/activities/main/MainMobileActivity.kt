@@ -180,7 +180,10 @@ class MainMobileActivity : FragmentActivity(), IdleDimHost {
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { state ->
                 when (state) {
                     is MainViewModel.State.SuccessCheckingUpdate -> {
-                        showUpdateDialog(state)
+                        if (viewModel.firstTime(state)) showUpdateDialog(state)
+                    }
+                    MainViewModel.State.UpToDate -> if (viewModel.firstTime(state)) {
+                        Toast.makeText(this@MainMobileActivity, R.string.update_up_to_date, Toast.LENGTH_SHORT).show()
                     }
 
                     MainViewModel.State.DownloadingUpdate -> updateAppDialog?.isLoading = true
@@ -190,7 +193,7 @@ class MainMobileActivity : FragmentActivity(), IdleDimHost {
                     }
 
                     MainViewModel.State.InstallingUpdate -> updateAppDialog?.isLoading = true
-                    is MainViewModel.State.FailedUpdate -> {
+                    is MainViewModel.State.FailedUpdate -> if (viewModel.firstTime(state)) {
                         updateAppDialog?.isLoading = false
                         Toast.makeText(
                             this@MainMobileActivity,

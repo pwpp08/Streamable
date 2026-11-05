@@ -51,8 +51,12 @@
     <string name="update_release_notes">Release notes</string>
     <string name="update_later">Maybe Later</string>
     <string name="update">Update</string>
+    <string name="settings_check_updates">Check for updates now</string>
+    <string name="settings_check_updates_summary">Look for a newer version on GitHub</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_up_to_date">You have the latest version</string>
     <string name="settings_update_check">Automatic update check</string>
-    <string name="settings_update_check_summary">Check for new versions of the app automatically</string>
+    <string name="settings_update_check_summary">Look for new versions on GitHub every time the app starts</string>
 
     <string name="app_layout">App layout</string>
     <string name="app_layout_auto">Auto</string>

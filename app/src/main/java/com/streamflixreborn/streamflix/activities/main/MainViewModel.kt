@@ -2,11 +2,11 @@ package com.streamflixreborn.streamflix.activities.main
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamflixreborn.streamflix.BuildConfig
-import com.streamflixreborn.streamflix.utils.GitGay
 import com.streamflixreborn.streamflix.utils.InAppUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +22,9 @@ class MainViewModel : ViewModel() {
 
     sealed class State {
         data object CheckingUpdate : State()
-        data class SuccessCheckingUpdate(val newReleases: List<GitGay.Release>, val asset: GitGay.Release.Asset) : State()
+        /** Only after a manual check: nothing newer than the installed version. */
+        data object UpToDate : State()
+        data class SuccessCheckingUpdate(val newReleases: List<InAppUpdater.AppRelease>, val asset: InAppUpdater.AppAsset) : State()
 
         data object DownloadingUpdate : State()
         data class SuccessDownloadingUpdate(val apk: File) : State()
@@ -33,36 +35,51 @@ class MainViewModel : ViewModel() {
     }
 
 
-    fun checkUpdate() = viewModelScope.launch(Dispatchers.IO) {
-        // This build is a fork: upstream StreamFlix releases would replace it, so never offer them.
-        if (UPSTREAM_UPDATES_DISABLED || !UserPreferences.updateCheckEnabled) return@launch
+    private var autoChecked = false
+    private var lastHandled: State? = null
+
+    /** True the first time [state] is seen; a state replayed after a screen restart is not new. */
+    fun firstTime(state: State): Boolean {
+        if (lastHandled === state) return false
+        lastHandled = state
+        return true
+    }
+
+    /** [manual] checks even when the startup check is off and reports "up to date". */
+    fun checkUpdate(manual: Boolean = false) = viewModelScope.launch(Dispatchers.IO) {
+        if (!manual) {
+            // Startup check: once per launch, and never when switched off.
+            if (!UserPreferences.updateCheckEnabled || autoChecked) return@launch
+            autoChecked = true
+        }
+        // A check on every resume must not clobber a download or install in progress.
+        if (_state.value is State.DownloadingUpdate || _state.value is State.InstallingUpdate) return@launch
         _state.emit(State.CheckingUpdate)
 
         try {
             val newReleases = InAppUpdater.getNewReleases()
-            if (newReleases.isEmpty()) return@launch
+            if (newReleases.isEmpty()) {
+                if (manual) _state.emit(State.UpToDate)
+                return@launch
+            }
 
-            val asset = newReleases.first().assets
-                .filter { it.name.endsWith(".apk") }
-                .find {
-                    when (BuildConfig.APP_LAYOUT) {
-                        "mobile" -> it.name.endsWith("-mobile.apk")
-                        "tv" -> it.name.endsWith("-tv.apk")
-                        else -> !it.name.endsWith("-mobile.apk") && !it.name.endsWith("-tv.apk")
-                    }
-                }
-                ?: throw Exception("Can't find update APK")
+            val asset = InAppUpdater.pickAsset(
+                assets = newReleases.first().assets,
+                supportedAbis = Build.SUPPORTED_ABIS.toList(),
+                layout = BuildConfig.APP_LAYOUT,
+            ) ?: throw Exception("Can't find update APK")
 
             _state.emit(State.SuccessCheckingUpdate(newReleases, asset))
         } catch (e: Exception) {
             Log.e("MainViewModel", "checkUpdate: ", e)
-            _state.emit(State.FailedUpdate(e))
+            // A failed background check (offline, rate limited) is not worth a message.
+            if (manual) _state.emit(State.FailedUpdate(e))
         }
     }
 
     fun downloadUpdate(
         context: Context,
-        asset: GitGay.Release.Asset,
+        asset: InAppUpdater.AppAsset,
     ) = viewModelScope.launch(Dispatchers.IO) {
         _state.emit(State.DownloadingUpdate)
 
@@ -84,6 +101,8 @@ class MainViewModel : ViewModel() {
 
         try {
             InAppUpdater.installApk(context, Uri.fromFile(apk))
+            // The system installer has the screen now; leave "installing" so later checks can run.
+            _state.emit(State.CheckingUpdate)
         } catch (e: Exception) {
             Log.e("MainViewModel", "installUpdate: ", e)
             _state.emit(State.FailedUpdate(e))
@@ -91,4 +110,3 @@ class MainViewModel : ViewModel() {
     }
 }
 
-private const val UPSTREAM_UPDATES_DISABLED = true
