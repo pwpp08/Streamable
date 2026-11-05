@@ -45,6 +45,20 @@ interface TvShowDao {
     @Query("SELECT * FROM tv_shows")
     fun getAll(): Flow<List<TvShow>>
 
+    /** Shows whose every known season (specials aside) has episodes, all of them watched. */
+    @Query("""
+        SELECT * FROM tv_shows t
+        WHERE EXISTS (SELECT 1 FROM seasons s WHERE s.tvShow = t.id AND s.number > 0)
+          AND NOT EXISTS (
+              SELECT 1 FROM seasons s
+              WHERE s.tvShow = t.id AND s.number > 0 AND (
+                  NOT EXISTS (SELECT 1 FROM episodes e WHERE e.season = s.id)
+                  OR EXISTS (SELECT 1 FROM episodes e WHERE e.season = s.id AND e.isWatched = 0)
+              )
+          )
+    """)
+    fun getFullyWatched(): Flow<List<TvShow>>
+
     @Query("SELECT * FROM tv_shows WHERE lastPlayedAtMillis IS NOT NULL ORDER BY lastPlayedAtMillis DESC LIMIT 10")
     fun getRecentlyWatched(): Flow<List<TvShow>>
 

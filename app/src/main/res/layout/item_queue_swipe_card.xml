@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One swipe card: full poster, a scrim with title / meta / overview, and the decision stamps. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.StreamFlix.Card.Elevated"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:cardCornerRadius="28dp">
+
+    <ImageView
+        android:id="@+id/iv_swipe_poster"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_queue_swipe_scrim"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="56dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="20dp">
+
+        <TextView
+            android:id="@+id/tv_swipe_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="?attr/textAppearanceHeadlineSmallEmphasized"
+            android:textColor="@android:color/white"
+            tools:text="The Bear" />
+
+        <TextView
+            android:id="@+id/tv_swipe_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="#E6FFFFFF"
+            tools:text="Series · 2022 · ★ 8.6" />
+
+        <TextView
+            android:id="@+id/tv_swipe_overview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="#CCFFFFFF"
+            tools:text="A young chef from the fine dining world returns to Chicago to run his family's sandwich shop." />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_swipe_stamp_add"
+        style="@style/Widget.StreamFlix.Queue.Stamp"
+        android:layout_gravity="top|start"
+        android:rotation="-14"
+        android:text="@string/queue_swipe_add"
+        android:textColor="?attr/colorPrimary" />
+
+    <TextView
+        android:id="@+id/tv_swipe_stamp_skip"
+        style="@style/Widget.StreamFlix.Queue.Stamp"
+        android:layout_gravity="top|end"
+        android:rotation="14"
+        android:text="@string/queue_swipe_skip"
+        android:textColor="?attr/colorError" />
+
+    <TextView
+        android:id="@+id/tv_swipe_stamp_seen"
+        style="@style/Widget.StreamFlix.Queue.Stamp"
+        android:layout_gravity="center"
+        android:text="@string/queue_swipe_seen"
+        android:textColor="?attr/colorTertiary" />
+
+</com.google.android.material.card.MaterialCardView>

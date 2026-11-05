@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Queue (phone): large app bar with calendar / import / sort, then the section switch,
+     Spin and Swipe, the kind filter, and the poster grid. -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragments.queue.QueueMobileFragment">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/abl_queue"
+        style="@style/Widget.StreamFlix.Browse.LargeAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/ctl_queue"
+            style="@style/Widget.StreamFlix.Browse.CollapsingToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/browse_large_app_bar_height"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+            app:title="@string/queue_title">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/tb_queue"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/browse_top_bar_height"
+                android:elevation="0dp"
+                android:paddingEnd="@dimen/browse_top_actions_inset"
+                app:layout_collapseMode="pin">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_queue_sort"
+                    style="@style/Widget.StreamFlix.Browse.TopIconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:contentDescription="@string/queue_sort"
+                    app:icon="@drawable/ic_sort" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_queue_import"
+                    style="@style/Widget.StreamFlix.Browse.TopIconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:contentDescription="@string/queue_import"
+                    app:icon="@drawable/ic_queue_import" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_queue_calendar"
+                    style="@style/Widget.StreamFlix.Browse.TopIconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:contentDescription="@string/queue_calendar"
+                    app:icon="@drawable/ic_queue_calendar" />
+            </com.google.android.material.appbar.MaterialToolbar>
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+
+        <!-- Not scrolling: stays pinned under the collapsed bar. -->
+        <LinearLayout
+            android:id="@+id/ll_queue_controls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/browse_gutter"
+            android:paddingEnd="@dimen/browse_gutter"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/tv_queue_stats"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="12dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="12 to watch · 3 in progress · 40 watched" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/tg_queue_section"
+                style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_queue_up_next"
+                    style="@style/Widget.StreamFlix.Queue.SectionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/queue_section_up_next" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_queue_watchlist"
+                    style="@style/Widget.StreamFlix.Queue.SectionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/queue_section_watchlist" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_queue_watched"
+                    style="@style/Widget.StreamFlix.Queue.SectionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/queue_section_watched" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_queue_spin"
+                    style="@style/Widget.StreamFlix.Queue.ToolButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/queue_spin"
+                    app:icon="@drawable/ic_queue_spin" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_queue_swipe"
+                    style="@style/Widget.StreamFlix.Queue.ToolButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/queue_swipe"
+                    app:icon="@drawable/ic_queue_swipe" />
+            </LinearLayout>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/cg_queue_filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:selectionRequired="true"
+                app:singleLine="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_queue_all"
+                    style="@style/Widget.StreamFlix.Chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/queue_filter_all" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_queue_movies"
+                    style="@style/Widget.StreamFlix.Chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/queue_filter_movies" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_queue_shows"
+                    style="@style/Widget.StreamFlix.Chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/queue_filter_shows" />
+            </com.google.android.material.chip.ChipGroup>
+        </LinearLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_queue"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/browse_gutter"
+        android:paddingTop="8dp"
+        android:paddingEnd="@dimen/browse_gutter"
+        android:paddingBottom="@dimen/browse_row_gap"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        tools:listitem="@layout/item_queue_card_mobile" />
+
+    <include
+        android:id="@+id/queue_empty"
+        layout="@layout/layout_browse_empty_state"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

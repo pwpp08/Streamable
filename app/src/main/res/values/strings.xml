@@ -76,7 +76,7 @@
     <string name="main_menu_tv_shows">TV Shows</string>
     <string name="main_menu_all_channels">All Channels</string>
     <string name="main_menu_settings">Settings</string>
-    <string name="main_menu_favorites">Favorites</string>
+    <string name="main_menu_favorites">Queue</string>
     <string name="main_menu_theme_change">Change Theme</string>
     <string name="theme_wallpaper">Wallpaper colours</string>
     <string name="theme_crimson">Crimson</string>
@@ -606,4 +606,83 @@
     <string name="settings_parental_tmdb_disable_blocked">You must unlock parental controls before disabling TMDb.</string>
 
 
+
+    <!-- Queue tab -->
+    <string name="queue_title">Queue</string>
+    <string name="queue_section_up_next">Up next</string>
+    <string name="queue_section_watchlist">Watchlist</string>
+    <string name="queue_section_watched">Watched</string>
+    <string name="queue_section_count">%1$s · %2$d</string>
+    <string name="queue_filter_all">All</string>
+    <string name="queue_filter_movies">Movies</string>
+    <string name="queue_filter_shows">Shows</string>
+    <string name="queue_stats">%1$d to watch · %2$d in progress · %3$d watched</string>
+    <string name="queue_kind_movie">Movie</string>
+    <string name="queue_kind_show">Series</string>
+    <string name="queue_meta_episode">S%1$d · E%2$d</string>
+    <string name="queue_meta_episode_only">Episode %1$d</string>
+    <string name="queue_meta_next_episode">Next: S%1$d · E%2$d</string>
+    <string name="queue_meta_minutes_left">%1$d min left</string>
+    <string name="queue_sort">Sort</string>
+    <string name="queue_sort_recent">Recently added</string>
+    <string name="queue_sort_title">Title A–Z</string>
+    <string name="queue_sort_release">Release date</string>
+    <string name="queue_sort_rating">Rating</string>
+    <string name="queue_spin">Spin</string>
+    <string name="queue_swipe">Swipe</string>
+    <string name="queue_calendar">Calendar</string>
+    <string name="queue_import">Import a list</string>
+    <string name="queue_empty_up_next_title">Nothing in progress</string>
+    <string name="queue_empty_up_next_message">Start a movie or an episode and it waits for you here.</string>
+    <string name="queue_empty_watchlist_title">Your watchlist is empty</string>
+    <string name="queue_empty_watchlist_message">Add titles from their page, swipe through suggestions or paste a list you already have.</string>
+    <string name="queue_empty_tv_message">Add titles on your phone; they show up here once synced.</string>
+    <string name="queue_empty_watched_title">Nothing watched yet</string>
+    <string name="queue_empty_watched_message">Finished titles land here, with your reaction.</string>
+
+    <string name="queue_reaction_title">How was it?</string>
+    <string name="queue_reaction_loved">Loved it</string>
+    <string name="queue_reaction_liked">Liked it</string>
+    <string name="queue_reaction_okay">It was okay</string>
+    <string name="queue_reaction_disliked">Didn’t like it</string>
+    <string name="queue_action_play">Play</string>
+    <string name="queue_action_resume">Resume</string>
+    <string name="queue_action_details">Open details</string>
+    <string name="queue_action_add">Add to Queue</string>
+    <string name="queue_action_remove">Remove from Queue</string>
+    <string name="queue_action_mark_watched">Mark as watched</string>
+    <string name="queue_action_mark_unwatched">Mark as not watched</string>
+    <string name="queue_action_clear_reaction">Clear reaction</string>
+
+    <string name="queue_spin_title">Can’t decide?</string>
+    <string name="queue_spin_message">Spin the wheel and let your watchlist pick.</string>
+    <string name="queue_spin_button">Spin</string>
+    <string name="queue_spin_again">Spin again</string>
+    <string name="queue_spin_result">Tonight it’s…</string>
+    <string name="queue_spin_need_more">Add at least two titles to your watchlist to spin.</string>
+
+    <string name="queue_swipe_title">Swipe to build your Queue</string>
+    <string name="queue_swipe_hint">Right to add · left to skip · up if you’ve seen it</string>
+    <string name="queue_swipe_skip">Skip</string>
+    <string name="queue_swipe_seen">Seen it</string>
+    <string name="queue_swipe_add">Add</string>
+    <string name="queue_swipe_loading">Finding titles for you…</string>
+    <string name="queue_swipe_empty">You’re all caught up. Check back later for new suggestions.</string>
+    <string name="queue_swipe_added">%d added to your Queue</string>
+
+    <string name="queue_calendar_title">Coming up</string>
+    <string name="queue_calendar_empty">No upcoming episodes or premieres for the titles in your Queue.</string>
+    <string name="queue_calendar_today">Today</string>
+    <string name="queue_calendar_tomorrow">Tomorrow</string>
+    <string name="queue_calendar_premiere">Premiere</string>
+
+    <string name="queue_import_title">Import a list</string>
+    <string name="queue_import_message">Paste titles from your notes or a spreadsheet, one per line. A year in brackets helps: The Bear (2022).</string>
+    <string name="queue_import_hint">One title per line</string>
+    <string name="queue_import_start">Import</string>
+    <string name="queue_import_progress">Looking up %1$d of %2$d…</string>
+    <string name="queue_import_done">Added %1$d of %2$d titles.</string>
+    <string name="queue_import_not_found">Not found: %s</string>
+    <string name="queue_close">Close</string>
+    <string name="queue_done">Done</string>
 </resources>

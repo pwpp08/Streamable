@@ -11,7 +11,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.material.loadingindicator.LoadingIndicator
 
 private val ContainerSize = 84.dp
-private val IndicatorSize = 66.dp
+private val IndicatorSize = 60.dp
 
 /**
  * M3 Expressive contained loading indicator (morphing shape on a round container), sized to

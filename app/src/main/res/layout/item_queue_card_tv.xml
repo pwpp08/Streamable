@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Queue poster tile (TV; the root takes focus and FocusScaleAnimator scales it): reaction chip, kind label and resume progress on the artwork. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:focusableInTouchMode="true"
+    android:clickable="true"
+    android:focusable="true"
+    android:paddingBottom="4dp">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_queue_poster"
+        style="@style/Widget.StreamFlix.Browse.PosterCard.Tv"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:duplicateParentState="true"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tv_queue_initial"
+            style="@style/Widget.StreamFlix.Browse.PosterInitial"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="T" />
+
+        <ImageView
+            android:id="@+id/iv_queue_poster"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop" />
+
+        <TextView
+            android:id="@+id/tv_queue_kind"
+            style="@style/Widget.StreamFlix.Browse.ArtworkChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_margin="6dp"
+            tools:text="Series" />
+
+        <TextView
+            android:id="@+id/tv_queue_reaction"
+            style="@style/Widget.StreamFlix.Browse.ArtworkChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="6dp"
+            android:textSize="16sp"
+            android:visibility="gone"
+            tools:text="😍"
+            tools:visibility="visible" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/pb_queue_progress"
+            style="@style/Widget.StreamFlix.Browse.PosterProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"
+            tools:progress="60"
+            tools:visibility="visible" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tv_queue_title"
+        style="@style/Widget.StreamFlix.Browse.CardTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/card_queue_poster"
+        tools:text="Title" />
+
+    <TextView
+        android:id="@+id/tv_queue_meta"
+        style="@style/Widget.StreamFlix.Browse.CardMeta"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintEnd_toEndOf="@id/tv_queue_title"
+        app:layout_constraintStart_toStartOf="@id/tv_queue_title"
+        app:layout_constraintTop_toBottomOf="@id/tv_queue_title"
+        tools:text="S2 · E5" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

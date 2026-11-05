@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Emoji reaction in a connected toggle group. -->
+    <style name="Widget.StreamFlix.Queue.ReactionButton" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="android:checkable">true</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <!-- Full-width, start-aligned action row in the Queue sheet. -->
+    <style name="Widget.StreamFlix.Queue.SheetAction" parent="Widget.Material3Expressive.Button.TextButton">
+        <item name="android:gravity">start|center_vertical</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="iconTint">?attr/colorOnSurfaceVariant</item>
+        <item name="iconPadding">20dp</item>
+        <item name="iconGravity">start</item>
+    </style>
+
+    <!-- Section switch in a connected toggle group: the checked segment fills with primary. -->
+    <style name="Widget.StreamFlix.Queue.SectionButton" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="android:checkable">true</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+    </style>
+
+    <!-- Spin / Swipe: big tonal tools under the section switch. -->
+    <style name="Widget.StreamFlix.Queue.ToolButton" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="android:minHeight">56dp</item>
+        <item name="iconGravity">textStart</item>
+    </style>
+
+    <!-- ADD / SKIP / SEEN label that fades in while a swipe card is dragged. -->
+    <style name="Widget.StreamFlix.Queue.Stamp" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_margin">24dp</item>
+        <item name="android:alpha">0</item>
+        <item name="android:background">@drawable/bg_queue_stamp</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleLargeEmphasized</item>
+    </style>
+
+</resources>

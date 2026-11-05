@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Queue (TV): the list synced from the phone (in progress first, then the watchlist) and Spin. -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragments.queue.QueueTvFragment">
+
+    <TextView
+        android:id="@+id/tv_queue_title"
+        style="@style/Widget.StreamFlix.Browse.TvScreenTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/browse_tv_gutter"
+        android:layout_marginTop="28dp"
+        android:text="@string/queue_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_queue_stats"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="@dimen/browse_tv_gutter"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBaseline_toBaselineOf="@id/tv_queue_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tv_queue_title"
+        tools:text="12 to watch · 3 in progress · 40 watched" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_queue_spin"
+        style="@style/Widget.StreamFlix.Button.Tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/browse_tv_gutter"
+        android:layout_marginTop="16dp"
+        android:text="@string/queue_spin"
+        app:icon="@drawable/ic_queue_spin"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_queue_title" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_queue"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingStart="@dimen/browse_tv_gutter"
+        android:paddingTop="16dp"
+        android:paddingEnd="@dimen/browse_tv_gutter"
+        android:paddingBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_queue_spin"
+        tools:listitem="@layout/item_queue_card_tv" />
+
+    <include
+        android:id="@+id/queue_empty"
+        layout="@layout/layout_browse_empty_state"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_queue_spin" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

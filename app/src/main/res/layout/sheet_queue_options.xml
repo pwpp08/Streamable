@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press sheet for a Queue title: your reaction, then play / details / queue / watched. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.StreamFlix.Browse.PosterCard"
+            android:layout_width="56dp"
+            android:layout_height="84dp">
+
+            <ImageView
+                android:id="@+id/iv_queue_options_poster"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="centerCrop" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_queue_options_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAppearance="?attr/textAppearanceTitleLargeEmphasized"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="The Bear" />
+
+            <TextView
+                android:id="@+id/tv_queue_options_meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Series · 2022" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/queue_reaction_title"
+        android:textAppearance="?attr/textAppearanceTitleSmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/tg_queue_reaction"
+        style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_queue_reaction_loved"
+            style="@style/Widget.StreamFlix.Queue.ReactionButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/queue_reaction_loved"
+            tools:text="L" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_queue_reaction_liked"
+            style="@style/Widget.StreamFlix.Queue.ReactionButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/queue_reaction_liked" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_queue_reaction_okay"
+            style="@style/Widget.StreamFlix.Queue.ReactionButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/queue_reaction_okay" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_queue_reaction_disliked"
+            style="@style/Widget.StreamFlix.Queue.ReactionButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/queue_reaction_disliked" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <TextView
+        android:id="@+id/tv_queue_reaction_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="6dp"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorPrimary"
+        tools:text="Loved it" />
+
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_queue_options_play"
+        style="@style/Widget.StreamFlix.Queue.SheetAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/queue_action_play"
+        app:icon="@drawable/ic_sf_play" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_queue_options_details"
+        style="@style/Widget.StreamFlix.Queue.SheetAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/queue_action_details"
+        app:icon="@drawable/ic_browse_info" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_queue_options_queue"
+        style="@style/Widget.StreamFlix.Queue.SheetAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/queue_action_add"
+        app:icon="@drawable/ic_queue_add" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_queue_options_watched"
+        style="@style/Widget.StreamFlix.Queue.SheetAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/queue_action_mark_watched"
+        app:icon="@drawable/ic_watched" />
+
+</LinearLayout>

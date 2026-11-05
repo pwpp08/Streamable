@@ -43,10 +43,10 @@ import android.widget.ImageView
 import com.streamflixreborn.streamflix.databinding.ItemMovieGridTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieMobileBinding
 import com.streamflixreborn.streamflix.databinding.ItemMovieTvBinding
-import com.streamflixreborn.streamflix.fragments.favorites.FavoritesMobileFragment
-import com.streamflixreborn.streamflix.fragments.favorites.FavoritesMobileFragmentDirections
-import com.streamflixreborn.streamflix.fragments.favorites.FavoritesTvFragment
-import com.streamflixreborn.streamflix.fragments.favorites.FavoritesTvFragmentDirections
+import com.streamflixreborn.streamflix.fragments.queue.QueueMobileFragment
+import com.streamflixreborn.streamflix.fragments.queue.QueueMobileFragmentDirections
+import com.streamflixreborn.streamflix.fragments.queue.QueueTvFragment
+import com.streamflixreborn.streamflix.fragments.queue.QueueTvFragmentDirections
 import com.streamflixreborn.streamflix.fragments.genre.GenreMobileFragment
 import com.streamflixreborn.streamflix.fragments.genre.GenreMobileFragmentDirections
 import com.streamflixreborn.streamflix.fragments.genre.GenreTvFragment
@@ -464,7 +464,7 @@ class MovieViewHolder(
                         }
                         is MovieMobileFragment -> findNavController().navigate(MovieMobileFragmentDirections.actionMovieToMovie(id = movie.id))
                         is TvShowMobileFragment -> findNavController().navigate(TvShowMobileFragmentDirections.actionTvShowToMovie(id = movie.id))
-                        is FavoritesMobileFragment -> findNavController().navigate(FavoritesMobileFragmentDirections.actionFavoritesToMovie(id = movie.id))
+                        is QueueMobileFragment -> findNavController().navigate(QueueMobileFragmentDirections.actionFavoritesToMovie(id = movie.id))
                         // Recommendation rows on the search page.
                         is SearchMobileFragment -> findNavController().navigate(SearchMobileFragmentDirections.actionSearchToMovie(id = movie.id))
                     }
@@ -521,7 +521,7 @@ class MovieViewHolder(
                         is MovieTvFragment -> findNavController().navigate(MovieTvFragmentDirections.actionMovieToMovie(id = movie.id))
                         is TvShowTvFragment -> findNavController().navigate(TvShowTvFragmentDirections.actionTvShowToMovie(id = movie.id))
                         is PeopleTvFragment -> findNavController().navigate(PeopleTvFragmentDirections.actionPeopleToMovie(id = movie.id))
-                        is FavoritesTvFragment -> findNavController().navigate(FavoritesTvFragmentDirections.actionFavoritesToMovie(id = movie.id))
+                        is QueueTvFragment -> findNavController().navigate(QueueTvFragmentDirections.actionFavoritesToMovie(id = movie.id))
                     }
                 }
             }
@@ -617,7 +617,7 @@ class MovieViewHolder(
                         is MoviesMobileFragment -> findNavController().navigate(MoviesMobileFragmentDirections.actionMoviesToMovie(id = movie.id))
                         is PeopleMobileFragment -> findNavController().navigate(PeopleMobileFragmentDirections.actionPeopleToMovie(id = movie.id))
                         is SearchMobileFragment -> findNavController().navigate(SearchMobileFragmentDirections.actionSearchToMovie(id = movie.id))
-                        is FavoritesMobileFragment -> findNavController().navigate(FavoritesMobileFragmentDirections.actionFavoritesToMovie(id = movie.id))
+                        is QueueMobileFragment -> findNavController().navigate(QueueMobileFragmentDirections.actionFavoritesToMovie(id = movie.id))
                     }
                 }
             }
@@ -681,7 +681,7 @@ class MovieViewHolder(
                         is GenreTvFragment -> findNavController().navigate(GenreTvFragmentDirections.actionGenreToMovie(id = movie.id))
                         is SearchTvFragment -> findNavController().navigate(SearchTvFragmentDirections.actionSearchToMovie(id = movie.id))
                         is PeopleTvFragment -> findNavController().navigate(PeopleTvFragmentDirections.actionPeopleToMovie(id = movie.id))
-                        is FavoritesTvFragment -> findNavController().navigate(FavoritesTvFragmentDirections.actionFavoritesToMovie(id = movie.id))
+                        is QueueTvFragment -> findNavController().navigate(QueueTvFragmentDirections.actionFavoritesToMovie(id = movie.id))
                     }
                 }
             }

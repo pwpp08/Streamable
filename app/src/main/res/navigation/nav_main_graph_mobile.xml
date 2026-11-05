@@ -56,9 +56,9 @@
     </fragment>
     <fragment
         android:id="@+id/favorites"
-        android:name="com.streamflixreborn.streamflix.fragments.favorites.FavoritesMobileFragment"
-        android:label="fragment_favorites_mobile"
-        tools:layout="@layout/fragment_favorites_mobile">
+        android:name="com.streamflixreborn.streamflix.fragments.queue.QueueMobileFragment"
+        android:label="fragment_queue_mobile"
+        tools:layout="@layout/fragment_queue_mobile">
         <action
             android:id="@+id/action_favorites_to_movie"
             app:destination="@id/movie" />

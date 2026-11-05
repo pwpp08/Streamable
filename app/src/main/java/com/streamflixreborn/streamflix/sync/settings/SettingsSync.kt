@@ -91,6 +91,9 @@ object SettingsSync {
         Entry("show_all_track_languages", { UserPreferences.showAllTrackLanguages.toString() },
             { UserPreferences.showAllTrackLanguages = it.toBoolean() }),
         Entry("torrent_enabled", { UserPreferences.torrentEnabled.toString() }, { UserPreferences.torrentEnabled = it.toBoolean() }),
+        // Queue reactions and titles marked seen (per provider, inside one document).
+        Entry("queue", { com.streamflixreborn.streamflix.fragments.queue.QueueStore.exportForSync() },
+            { com.streamflixreborn.streamflix.fragments.queue.QueueStore.importFromSync(it) }),
     )
 
     /** The theme id other devices should use: wallpaper colours become the nearest named palette. */
