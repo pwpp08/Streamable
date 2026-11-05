@@ -266,7 +266,7 @@ class PlayerMobileFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch { 
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED).collect { state ->
                 when (state) {
-                    PlayerViewModel.State.LoadingServers -> {}
+                    PlayerViewModel.State.LoadingServers -> binding.nextUi.model.isLoading = true
                     is PlayerViewModel.State.SuccessLoadingServers -> {
                         servers = state.servers
                         nextUi.setServers(servers, currentServer)
@@ -303,6 +303,7 @@ class PlayerMobileFragment : Fragment() {
                     }
 
                     is PlayerViewModel.State.LoadingVideo -> {
+                        binding.nextUi.model.isLoading = true
                         if (pendingSnapshot == null) pendingSnapshot = captureSnapshot()
                         player.setMediaItem(
                             MediaItem.Builder()
@@ -1075,6 +1076,7 @@ class PlayerMobileFragment : Fragment() {
             reportDimState()
             if (_binding == null) return
             if (playbackState == Player.STATE_READY) {
+                binding.nextUi.model.isLoading = false
                 val server = currentServer ?: return
                 if (stickyReportedServerId != server.id) {
                     stickyReportedServerId = server.id

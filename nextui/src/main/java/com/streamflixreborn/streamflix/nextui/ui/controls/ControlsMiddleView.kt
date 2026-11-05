@@ -2,6 +2,7 @@ package com.streamflixreborn.streamflix.nextui.ui.controls
 
 import androidx.annotation.OptIn
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -20,14 +21,19 @@ import androidx.media3.common.util.UnstableApi
 import com.streamflixreborn.streamflix.nextui.buttons.NextButton
 import com.streamflixreborn.streamflix.nextui.buttons.PlayPauseButton
 import com.streamflixreborn.streamflix.nextui.buttons.PreviousButton
+import com.streamflixreborn.streamflix.nextui.components.PlayerLoadingIndicator
 
-/** Previous / play-pause / next. Previous and next are the neighbouring episodes (hidden for movies). */
+/**
+ * Previous / play-pause / next. Previous and next are the neighbouring episodes (hidden for movies).
+ * While a server is being looked up or the stream is loading, play/pause becomes a loading indicator.
+ */
 @OptIn(UnstableApi::class)
 @Composable
 fun ControlsMiddleView(
     player: Player?,
     hasPrevious: Boolean,
     hasNext: Boolean,
+    isLoading: Boolean,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -45,10 +51,19 @@ fun ControlsMiddleView(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (hasPrevious) PreviousButton(onClick = onPreviousClick) else Box(Modifier.size(60.dp))
-        PlayPauseButton(
-            player = player,
-            modifier = Modifier.focusRequester(focusRequester = playPauseFocusRequester),
-        )
+        if (isLoading) {
+            // Keeps the focus target alive so D-pad focus doesn't jump while loading.
+            PlayerLoadingIndicator(
+                modifier = Modifier
+                    .focusRequester(focusRequester = playPauseFocusRequester)
+                    .focusable(),
+            )
+        } else {
+            PlayPauseButton(
+                player = player,
+                modifier = Modifier.focusRequester(focusRequester = playPauseFocusRequester),
+            )
+        }
         if (hasNext) NextButton(onClick = onNextClick) else Box(Modifier.size(60.dp))
     }
 }

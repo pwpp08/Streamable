@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -38,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
+import com.streamflixreborn.streamflix.nextui.components.PlayerLoadingIndicator
 import com.streamflixreborn.streamflix.nextui.components.requestFocusUntilLanded
 import com.streamflixreborn.streamflix.nextui.components.thenIf
 import com.streamflixreborn.streamflix.nextui.extensions.nameRes
@@ -188,6 +187,7 @@ private fun NextUiContent(player: Player, model: NextUiModel, callbacks: NextUiC
     }
 
     val controlsShown = controlsVisibilityState.controlsVisible && !controlsVisibilityState.controlsLocked
+    val isLoading = model.isLoading || mediaPresentationState.isBuffering
     val hostBottomPadding = if (controlsShown) 150.dp else 24.dp
 
     Box(
@@ -239,12 +239,9 @@ private fun NextUiContent(player: Player, model: NextUiModel, callbacks: NextUiC
                     .background(Color.Black.copy(alpha = 0.3f)),
             )
         }
-        if (mediaPresentationState.isBuffering) {
-            CircularProgressIndicator(
-                Modifier
-                    .align(Alignment.Center)
-                    .size(72.dp),
-            )
+        // With controls up, the middle row shows the indicator in place of play/pause instead.
+        if (isLoading && !controlsShown) {
+            PlayerLoadingIndicator(Modifier.align(Alignment.Center))
         }
         PlayerGestureIndicators(tapGestureState = tapGestureState)
         DpadSeekIndicator(
@@ -328,6 +325,7 @@ private fun NextUiContent(player: Player, model: NextUiModel, callbacks: NextUiC
                     controlsVisibilityState.controlsVisible -> ControlsMiddleView(
                         player = player,
                         hasPrevious = model.hasPrevious,
+                        isLoading = isLoading,
                         hasNext = model.hasNext,
                         onPreviousClick = {
                             controlsVisibilityState.showControls()

@@ -88,6 +88,9 @@ class NextUiModel {
     var seekIncrementMs by mutableStateOf(10_000L)
     var autoHideSeconds by mutableIntStateOf(4)
     var isTv by mutableStateOf(false)
+
+    /** Host-driven: looking up servers or resolving a stream. Buffering is picked up on its own. */
+    var isLoading by mutableStateOf(true)
     var message by mutableStateOf<Message?>(null)
         private set
 
