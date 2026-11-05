@@ -39,6 +39,9 @@ import androidx.core.content.ContextCompat
 import android.app.AlertDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import com.streamflixreborn.streamflix.downloads.DownloadUtil
+import com.streamflixreborn.streamflix.downloads.SeasonDownloads
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -784,6 +787,35 @@ class TvShowViewHolder(
 
         bindTvShowTrailer(binding.btnTvShowTrailer)
         bindTvShowFavorite(binding.btnTvShowFavorite)
+        bindTvShowDownload(binding.btnTvShowDownload)
+    }
+
+    /** Download tile: pick a season (or all) and queue its episodes at 1080p. */
+    private fun bindTvShowDownload(button: View) {
+        val seasons = tvShow.seasons.sortedBy { it.number }
+        button.isVisible = DownloadUtil.isSupported(context) && seasons.isNotEmpty()
+        button.setOnClickListener {
+            val popup = android.widget.PopupMenu(context, button)
+            seasons.forEachIndexed { index, season ->
+                popup.menu.add(0, index, index, season.title?.takeIf { it.isNotBlank() }
+                    ?: context.getString(R.string.downloads_season_n, season.number))
+            }
+            if (seasons.size > 1) popup.menu.add(0, seasons.size, seasons.size, context.getString(R.string.downloads_all_seasons))
+            popup.setOnMenuItemClickListener { item ->
+                val chosen = if (item.itemId == seasons.size) seasons else listOf(seasons[item.itemId])
+                MainScope().launch {
+                    val queued = withContext(Dispatchers.IO) { SeasonDownloads.downloadSeasons(context, tvShow, chosen) }
+                    android.widget.Toast.makeText(
+                        context,
+                        if (queued > 0) context.getString(R.string.downloads_season_started, queued)
+                        else context.getString(R.string.downloads_season_nothing_new),
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                }
+                true
+            }
+            popup.show()
+        }
     }
 
     private fun displayTvShowTv(binding: ContentTvShowTvBinding) {

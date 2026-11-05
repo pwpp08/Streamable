@@ -598,6 +598,13 @@
                 app:iconSpaceReserved="false">
 
                 <SwitchPreferenceCompat
+                    android:key="RECOMMENDATIONS_ENABLED"
+                    android:title="@string/settings_recommendations_title"
+                    android:summary="@string/settings_recommendations_summary"
+                    android:defaultValue="true"
+                    app:iconSpaceReserved="false" />
+
+                <SwitchPreferenceCompat
                     android:key="ENABLE_RECENTLY_WATCHED"
                     android:title="@string/settings_enable_recently_watched_title"
                     android:summary="@string/settings_enable_recently_watched_summary"

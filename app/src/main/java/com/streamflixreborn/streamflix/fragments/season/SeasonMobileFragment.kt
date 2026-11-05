@@ -16,7 +16,10 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.database.AppDatabase
+import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.FragmentSeasonMobileBinding
+import com.streamflixreborn.streamflix.downloads.DownloadUtil
+import com.streamflixreborn.streamflix.downloads.SeasonDownloads
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.ui.SpacingItemDecoration
 import com.streamflixreborn.streamflix.utils.CacheUtils
@@ -43,6 +46,7 @@ class SeasonMobileFragment : Fragment() {
     }
 
     private val appAdapter = AppAdapter()
+    private var currentEpisodes: List<Episode> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -111,6 +115,18 @@ class SeasonMobileFragment : Fragment() {
 
 
     private fun initializeSeason() {
+        binding.btnSeasonDownload.apply {
+            visibility = if (DownloadUtil.isSupported(requireContext())) View.VISIBLE else View.GONE
+            setOnClickListener {
+                val queued = SeasonDownloads.downloadEpisodes(requireContext(), currentEpisodes)
+                Toast.makeText(
+                    requireContext(),
+                    if (queued > 0) getString(R.string.downloads_season_started, queued)
+                    else getString(R.string.downloads_season_nothing_new),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
         binding.tvSeasonTitle.text = args.seasonTitle
         binding.tvSeasonShowTitle.text = args.tvShowTitle
         Glide.with(this)
@@ -130,6 +146,7 @@ class SeasonMobileFragment : Fragment() {
     }
 
     private fun displaySeason(episodes: List<Episode>) {
+        currentEpisodes = episodes
         appAdapter.submitList(episodes.onEach { episode ->
             episode.itemType = AppAdapter.Type.EPISODE_MOBILE_ITEM
         })

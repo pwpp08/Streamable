@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import com.streamflixreborn.streamflix.providers.TmdbProvider
+import com.streamflixreborn.streamflix.recommend.Recommender
 import com.streamflixreborn.streamflix.sync.ContinueWatchingAggregator
 import com.streamflixreborn.streamflix.utils.ProfileManager
 import java.util.concurrent.ConcurrentHashMap
@@ -333,8 +334,14 @@ class HomeViewModel : ViewModel() {
                     })
 
                 val rowsConfig = HomeRowsStore.load()
+                val arranged = rowsConfig?.apply(categories) { HomeRowsConfig.keyForCategory(it.name) } ?: categories
                 State.SuccessLoading(
-                    rowsConfig?.apply(categories) { HomeRowsConfig.keyForCategory(it.name) } ?: categories
+                    // A saved layout predates this row; put it first among the provider rows, not last.
+                    if (rowsConfig != null && rowsConfig.rows.none { it.key == HomeRowsConfig.keyForCategory(Category.RECOMMENDED) }) {
+                        liftRecommended(arranged)
+                    } else {
+                        arranged
+                    }
                 )
             }
 
@@ -462,7 +469,9 @@ class HomeViewModel : ViewModel() {
         val appContext = StreamFlixApp.instance.applicationContext
         val cachedCategories = HomeCacheStore.read(appContext, provider)
         if (!cachedCategories.isNullOrEmpty()) {
-            _state.emit(State.SuccessLoading(cachedCategories))
+            _state.emit(State.SuccessLoading(
+                if (wantsRecommendations(provider)) cachedCategories else withRecommendations(cachedCategories, null)
+            ))
         } else {
             _state.emit(State.Loading)
         }
@@ -470,15 +479,50 @@ class HomeViewModel : ViewModel() {
         loadUserDataCache(provider)
 
         try {
-            val categories = provider.getHome()
+            val fresh = provider.getHome()
+            // Keep the last recommendations on screen while the new ones are worked out.
+            val previous = cachedCategories?.firstOrNull { it.name == Category.RECOMMENDED }
+                ?.takeIf { wantsRecommendations(provider) }
+            val categories = withRecommendations(fresh, previous)
             HomeCacheStore.write(appContext, provider, categories)
             _state.emit(State.SuccessLoading(categories))
+
+            if (wantsRecommendations(provider)) {
+                val language = (provider as TmdbProvider).language
+                Recommender.category(appContext, Category.RECOMMENDED, language)?.let { recommended ->
+                    val updated = withRecommendations(fresh, recommended)
+                    HomeCacheStore.write(appContext, provider, updated)
+                    _state.emit(State.SuccessLoading(updated))
+                }
+            }
         } catch (e: Exception) {
             Log.e("HomeViewModel", "getHome: ", e)
             if (cachedCategories.isNullOrEmpty()) {
                 _state.emit(State.FailedLoading(e))
             }
         }
+    }
+
+    private fun liftRecommended(categories: List<Category>): List<Category> {
+        val recommended = categories.firstOrNull { it.name == Category.RECOMMENDED } ?: return categories
+        val rest = categories.filter { it !== recommended }
+        val libraryRows = setOf(
+            Category.FEATURED, Category.CONTINUE_WATCHING, Category.RECENTLY_WATCHED,
+            Category.FAVORITE_MOVIES, Category.FAVORITE_TV_SHOWS,
+        )
+        val at = rest.indexOfFirst { it.name !in libraryRows }.let { if (it < 0) rest.size else it }
+        return rest.take(at) + recommended + rest.drop(at)
+    }
+
+    private fun wantsRecommendations(provider: Provider) =
+        provider is TmdbProvider && UserPreferences.recommendationsEnabled
+
+    /** [categories] with [recommended] right after the carousel (or first), or without any such row when null. */
+    private fun withRecommendations(categories: List<Category>, recommended: Category?): List<Category> {
+        val rest = categories.filter { it.name != Category.RECOMMENDED }
+        if (recommended == null) return rest
+        val at = if (rest.firstOrNull()?.name == Category.FEATURED) 1 else 0
+        return rest.take(at) + recommended + rest.drop(at)
     }
 
     private fun refreshOtherProvidersContinueWatching(provider: Provider) {

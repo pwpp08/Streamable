@@ -2,7 +2,7 @@
 <!--
     Phone TV-show header. Sits over the fragment's backdrop (iv_tv_show_banner, 1:1): the spacer is
     0.7 of that height, so the poster rises out of the backdrop's fade into the surface.
-    Mirrors content_tv_show_mobile (no download / watched / play-on-TV actions for a whole show).
+    The Download tile queues a season (or every season) at 1080p.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -227,6 +227,15 @@
             android:text="@string/details_action_favorite"
             app:icon="@drawable/ic_ud_favorite_toggle" />
 
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_tv_show_download"
+            style="@style/Widget.StreamFlix.Details.ActionTile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/downloads_show_button"
+            app:icon="@drawable/ic_download" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_tv_show_trailer"

@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="downloads_title">Downloads</string>
+    <string name="downloads_season_button">Download all</string>
+    <string name="downloads_show_button">Download</string>
+    <string name="downloads_all_seasons">All seasons</string>
+    <string name="downloads_season_n">Season %1$d</string>
+    <string name="downloads_season_started">Downloading %1$d episodes</string>
+    <string name="downloads_season_nothing_new">Everything here is already downloaded or queued</string>
     <string name="downloads_channel_name">Downloads</string>
     <string name="downloads_empty">No downloads yet. Use the download button on a movie or an episode to watch it offline.</string>
     <string name="downloads_storage">Used %1$s · Free %2$s</string>

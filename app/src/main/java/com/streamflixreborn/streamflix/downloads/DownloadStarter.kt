@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -53,6 +54,8 @@ object DownloadStarter {
     private const val PREPARE_TIMEOUT_MS = 30_000L
     private const val MAX_SUBTITLE_BYTES = 5L * 1024 * 1024
     private const val STOP_REASON_PAUSED = 1
+    private const val MAX_CONCURRENT_RESOLVES = 2
+    private const val START_GAP_MS = 1_500L
 
     data class Target(
         val providerName: String,
@@ -95,6 +98,22 @@ object DownloadStarter {
                 DownloadTracker.setResolveFailed(id, baseMeta, e.message)
             } finally {
                 jobs.remove(id)
+            }
+        }
+    }
+
+    /**
+     * Queues many titles (a season). They start one after another, never more than
+     * [MAX_CONCURRENT_RESOLVES] resolving at once, so a servers' rate limit is not hit; the
+     * download manager itself runs two at a time.
+     */
+    fun startAll(context: Context, targets: List<Target>) {
+        val app = context.applicationContext
+        scope.launch {
+            for (target in targets) {
+                while (jobs.values.count { it.isActive } >= MAX_CONCURRENT_RESOLVES) delay(500)
+                start(app, target)
+                delay(START_GAP_MS)
             }
         }
     }

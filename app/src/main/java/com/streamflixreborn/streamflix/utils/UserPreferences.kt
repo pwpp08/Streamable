@@ -206,6 +206,13 @@ object UserPreferences {
             Key.MULTIPLE_PROFILES.setBoolean(value)
         }
 
+    /** The "Recommended for you" row on Home (TMDb sources only). */
+    var recommendationsEnabled: Boolean
+        get() = Key.RECOMMENDATIONS_ENABLED.getBoolean() ?: true
+        set(value) {
+            Key.RECOMMENDATIONS_ENABLED.setBoolean(value)
+        }
+
     var autoplay: Boolean
         get() = Key.AUTOPLAY.getBoolean() ?: true
         set(value) {
@@ -679,6 +686,7 @@ object UserPreferences {
         DOH_PROVIDER_URL,
         AUTOPLAY,
         MULTIPLE_PROFILES,
+        RECOMMENDATIONS_ENABLED,
         PROVIDER_CACHE,
         KEEP_SCREEN_ON_WHEN_PAUSED,
         IDLE_DIM_ENABLED,

@@ -474,6 +474,8 @@
     <string name="tmdb_category_hulu">Popular on Hulu</string>
     <string name="tmdb_category_apple">Popular on Apple TV+</string>
     <string name="tmdb_category_hbo">Popular on HBO</string>
+    <string name="settings_recommendations_title">Recommended for you</string>
+    <string name="settings_recommendations_summary">Suggest movies and shows based on what you watch. Gets better the more you watch. Works with TMDb sources.</string>
     <string name="settings_enable_recently_watched_title">Show Recently Watched on Home</string>
     <string name="settings_enable_recently_watched_summary">Display the list of your recently watched movies and TV shows on the home screen.</string>
     <string name="settings_clear_recently_watched_title">Clear Recently Watched History</string>

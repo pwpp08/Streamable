@@ -52,5 +52,6 @@ class Category(
         const val RECENTLY_WATCHED = "Recently Watched"
         const val FAVORITE_MOVIES = "Favorite movies"
         const val FAVORITE_TV_SHOWS = "Favorite TV shows"
+        const val RECOMMENDED = "Recommended for you"
     }
 }

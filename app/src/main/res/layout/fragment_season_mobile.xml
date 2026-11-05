@@ -40,16 +40,30 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginEnd="12dp"
         android:layout_marginBottom="4dp"
         android:ellipsize="end"
         android:maxLines="2"
         android:textAppearance="?attr/textAppearanceHeadlineMediumEmphasized"
         android:textColor="?attr/colorOnSurface"
         app:layout_constraintBottom_toBottomOf="@id/iv_season_banner"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_season_download"
         app:layout_constraintStart_toStartOf="parent"
         tools:text="Season #" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_season_download"
+        style="@style/Widget.StreamFlix.Button.Tonal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="4dp"
+        android:text="@string/downloads_season_button"
+        android:visibility="gone"
+        app:icon="@drawable/ic_download"
+        app:layout_constraintBottom_toBottomOf="@id/iv_season_banner"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="visible" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_episodes"

@@ -31,6 +31,11 @@ class ProfilesController(private val host: SettingsHost) : SettingsController {
         host.onClick("key_profile_manage") { showManagementDialog() }
         host.onClick("key_profile_add") { showCreateDialog() }
 
+        host.find<TwoStatePreference>("RECOMMENDATIONS_ENABLED")?.setOnPreferenceChangeListener { _, newValue ->
+            UserPreferences.recommendationsEnabled = newValue as Boolean
+            true
+        }
+
         host.find<TwoStatePreference>("ENABLE_RECENTLY_WATCHED")?.setOnPreferenceChangeListener { _, newValue ->
             UserPreferences.setRecentlyWatchedEnabled(newValue as Boolean)
             true
