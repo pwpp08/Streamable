@@ -68,7 +68,7 @@
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/tg_queue_reaction"
-        style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
+        style="@style/Widget.StreamFlix.ToggleGroup.Connected"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"

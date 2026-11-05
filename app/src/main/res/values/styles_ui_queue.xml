@@ -53,4 +53,12 @@
         <item name="android:textAppearance">?attr/textAppearanceTitleLargeEmphasized</item>
     </style>
 
+
+    <!-- Full-screen dialog that keeps the app theme (only window attributes change). -->
+    <style name="ThemeOverlay.StreamFlix.FullscreenDialog" parent="">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">?attr/app_background_color</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+    </style>
 </resources>

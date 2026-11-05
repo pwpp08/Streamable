@@ -175,10 +175,14 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
             val season = ep.season?.id?.let { seasons[it] } ?: ep.season
             val episode = ep.copy(tvShow = show, season = season)
             val history = ep.watchHistory
+            val allEpisodes = database.episodeDao().getByTvShowId(showId)
+            val seasonEpisodes = allEpisodes.filter { it.season?.id == ep.season?.id }.sortedBy { it.number }
             upNext += QueueEntry.of(show, reactions, inQueue = showId in favShowIds).copy(
                 episode = episode,
                 seasonNumber = season?.number,
                 episodeNumber = ep.number,
+                episodesLeft = allEpisodes.count { !it.isWatched },
+                seasonWatched = seasonEpisodes.map { it.isWatched }.takeIf { it.isNotEmpty() },
                 progress = if (inProgress) history?.let { percent(it.lastPlaybackPositionMillis, it.durationMillis) } else null,
                 sortTime = history?.lastEngagementTimeUtcMillis
                     ?: ep.watchedDate?.timeInMillis
@@ -250,6 +254,12 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
             val movie = entry.movie ?: Movie(id = entry.id, title = entry.title, poster = entry.poster)
             database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, movie, inQueue), inQueue)
         }
+    }
+
+    /** The tick in Up next: the shown episode (or film) counts as watched, so the next one comes up. */
+    fun markNextWatched(context: Context, entry: QueueEntry) = viewModelScope.launch(Dispatchers.IO) {
+        val item = entry.episode ?: entry.movie ?: return@launch
+        WatchStateActions.setWatched(context, item, true)
     }
 
     fun setReaction(entry: QueueEntry, reaction: Reaction?) {

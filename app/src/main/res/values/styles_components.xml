@@ -57,4 +57,12 @@
     <!-- Search -->
     <style name="Widget.StreamFlix.SearchBar" parent="Widget.Material3Expressive.SearchBar" />
 
+
+    <!-- Connected button groups: the joined sides stay squared on every button, checked or not. -->
+    <style name="Widget.StreamFlix.ButtonGroup.Connected" parent="Widget.Material3Expressive.MaterialButtonGroup.Connected">
+        <item name="innerCornerSize">8dp</item>
+    </style>
+    <style name="Widget.StreamFlix.ToggleGroup.Connected" parent="Widget.Material3Expressive.MaterialButtonToggleGroup">
+        <item name="innerCornerSize">8dp</item>
+    </style>
 </resources>

@@ -39,6 +39,8 @@ class NextUiBinder(
         model.isTv = isTv
         model.seekIncrementMs = 10_000L
         model.gesturesEnabled = UserPreferences.playerGestures
+        // Every video opens in Auto fit; a change from the player's button lasts for this video only.
+        UserPreferences.playerResize = UserPreferences.PlayerResize.Auto
         model.initialContentScale = UserPreferences.playerResize.contentScale
         model.isPictureInPictureSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             !isTv &&

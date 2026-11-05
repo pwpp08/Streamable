@@ -83,7 +83,7 @@ class NextUiModel {
     var picker by mutableStateOf<Picker?>(null)
     var isPictureInPictureSupported by mutableStateOf(false)
     var isInPictureInPictureMode by mutableStateOf(false)
-    var initialContentScale by mutableStateOf(VideoContentScale.BEST_FIT)
+    var initialContentScale by mutableStateOf(VideoContentScale.AUTO)
     var gesturesEnabled by mutableStateOf(true)
     var seekIncrementMs by mutableStateOf(10_000L)
     var autoHideSeconds by mutableIntStateOf(4)

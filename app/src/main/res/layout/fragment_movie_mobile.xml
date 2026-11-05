@@ -45,4 +45,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Back, floating over the backdrop (last, so it stays above the list and the loading screen). -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_movie_back"
+        style="@style/Widget.StreamFlix.Details.BackButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:contentDescription="@string/details_back"
+        app:icon="@drawable/ic_sf_arrow_back"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -607,9 +607,11 @@
 
 
 
+    <string name="details_back">Back</string>
+
     <!-- Queue tab -->
     <string name="queue_title">Queue</string>
-    <string name="queue_section_up_next">Up next</string>
+    <string name="queue_section_up_next">In progress</string>
     <string name="queue_section_watchlist">Watchlist</string>
     <string name="queue_section_watched">Watched</string>
     <string name="queue_section_count">%1$s · %2$d</string>
@@ -623,6 +625,11 @@
     <string name="queue_meta_episode_only">Episode %1$d</string>
     <string name="queue_meta_next_episode">Next: S%1$d · E%2$d</string>
     <string name="queue_meta_minutes_left">%1$d min left</string>
+    <string name="queue_progress_episode">S%1$dE%2$d</string>
+    <plurals name="queue_progress_episodes_left">
+        <item quantity="one">%d episode left</item>
+        <item quantity="other">%d episodes left</item>
+    </plurals>
     <string name="queue_sort">Sort</string>
     <string name="queue_sort_recent">Recently added</string>
     <string name="queue_sort_title">Title A–Z</string>
@@ -633,7 +640,7 @@
     <string name="queue_calendar">Calendar</string>
     <string name="queue_import">Import a list</string>
     <string name="queue_empty_up_next_title">Nothing in progress</string>
-    <string name="queue_empty_up_next_message">Start a movie or an episode and it waits for you here.</string>
+    <string name="queue_empty_up_next_message">Start a movie or a show and it waits for you here.</string>
     <string name="queue_empty_watchlist_title">Your watchlist is empty</string>
     <string name="queue_empty_watchlist_message">Add titles from their page, swipe through suggestions or paste a list you already have.</string>
     <string name="queue_empty_tv_message">Add titles on your phone; they show up here once synced.</string>
@@ -654,11 +661,8 @@
     <string name="queue_action_mark_unwatched">Mark as not watched</string>
     <string name="queue_action_clear_reaction">Clear reaction</string>
 
-    <string name="queue_spin_title">Can’t decide?</string>
-    <string name="queue_spin_message">Spin the wheel and let your watchlist pick.</string>
     <string name="queue_spin_button">Spin</string>
-    <string name="queue_spin_again">Spin again</string>
-    <string name="queue_spin_result">Tonight it’s…</string>
+    <string name="queue_spin_hint">Swipe the wheel or press Spin</string>
     <string name="queue_spin_need_more">Add at least two titles to your watchlist to spin.</string>
 
     <string name="queue_swipe_title">Swipe to build your Queue</string>

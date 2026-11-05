@@ -81,7 +81,7 @@
 
             <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/tg_queue_section"
-                style="@style/Widget.Material3Expressive.MaterialButtonToggleGroup"
+                style="@style/Widget.StreamFlix.ToggleGroup.Connected"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:selectionRequired="true"

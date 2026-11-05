@@ -41,8 +41,14 @@ class QueueMobileFragment : Fragment() {
             section = { viewModel.state.value.section },
             onClick = ::onEntryClick,
             onLongClick = { QueueOptions.show(this, it, viewModel, isTv = false) },
+            onMarkWatched = { viewModel.markNextWatched(requireContext().applicationContext, it) },
         )
-        binding.rvQueue.layoutManager = GridLayoutManager(requireContext(), BrowseCards.gridSpanCount(requireContext()))
+        val spanCount = BrowseCards.gridSpanCount(requireContext())
+        binding.rvQueue.layoutManager = GridLayoutManager(requireContext(), spanCount).apply {
+            spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int) = if (adapter.isRow(position)) spanCount else 1
+            }
+        }
         binding.rvQueue.adapter = adapter
         binding.rvQueue.addItemDecoration(SpacingItemDecoration(resources.getDimensionPixelSize(R.dimen.browse_row_item_gap)))
 
