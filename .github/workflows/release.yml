@@ -52,4 +52,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" Streamable-*.apk \
-            --title "Streamable ${GITHUB_REF_NAME#v}" \n            --notes "$(git log -1 --format=%B "$GITHUB_SHA")"
+            --title "Streamable ${GITHUB_REF_NAME#v}" \
+            --notes "$(git log -1 --format=%B "$GITHUB_SHA")"
