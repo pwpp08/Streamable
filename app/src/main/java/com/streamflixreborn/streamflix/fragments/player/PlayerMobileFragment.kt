@@ -88,6 +88,7 @@ import com.streamflixreborn.streamflix.fragments.player.engine.ProgressSaver
 import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
 import com.streamflixreborn.streamflix.fragments.player.engine.SkipSegmentController
 import com.streamflixreborn.streamflix.fragments.player.engine.StreamDataSourceFactory
+import com.streamflixreborn.streamflix.fragments.player.engine.AutoFitController
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleStyler
 import com.streamflixreborn.streamflix.fragments.player.engine.PlaybackSnapshot
 import com.streamflixreborn.streamflix.fragments.player.engine.TrackPreferences
@@ -112,6 +113,24 @@ class PlayerMobileFragment : Fragment() {
     private val viewModel by viewModelsFactory { PlayerViewModel(args.videoType, args.id) }
 
     private lateinit var player: ExoPlayer
+    private var autoFit: AutoFitController? = null
+
+    /** Debug builds only: a clip pushed to the app's external files dir (sf_test.mp4) replaces the stream, for emulator checks. */
+    private fun debugTestClip(): android.net.Uri? {
+        if (!com.streamflixreborn.streamflix.BuildConfig.DEBUG) return null
+        val file = java.io.File(requireContext().getExternalFilesDir(null), "sf_test.mp4")
+        return if (file.exists()) android.net.Uri.fromFile(file) else null
+    }
+
+    private fun startAutoFit() {
+        val controller = autoFit ?: AutoFitController(
+            playerView = binding.pvPlayer,
+            scope = viewLifecycleOwner.lifecycleScope,
+            player = { if (::player.isInitialized) player else null },
+        ).also { autoFit = it }
+        controller.start()
+        controller.setScale(UserPreferences.playerResize.contentScale)
+    }
     private lateinit var dataSources: StreamDataSourceFactory
     private lateinit var mediaSession: MediaSession
     private var analytics: PlaybackAnalytics? = null
@@ -456,6 +475,8 @@ class PlayerMobileFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        autoFit?.stop()
+        autoFit = null
         super.onDestroyView()
         (activity as? IdleDimHost)?.idleDimmer?.setPlaying(false)
         nextEpisodePrefetchJob?.cancel()
@@ -588,21 +609,13 @@ class PlayerMobileFragment : Fragment() {
             override fun onPictureInPicture() = enterPIPMode()
 
             override fun onVideoContentScaleChanged(scale: VideoContentScale) {
-                UserPreferences.playerResize = when (scale) {
-                    VideoContentScale.STRETCH -> UserPreferences.PlayerResize.Fill
-                    VideoContentScale.CROP -> UserPreferences.PlayerResize.Zoom
-                    VideoContentScale.BEST_FIT -> UserPreferences.PlayerResize.Fit
-                }
+                UserPreferences.playerResize = UserPreferences.PlayerResize.of(scale)
                 binding.pvPlayer.resizeMode = UserPreferences.playerResize.resizeMode
+                autoFit?.setScale(scale)
             }
 
             override fun onVideoTransform(scale: VideoContentScale, zoom: Float, offsetX: Float, offsetY: Float) {
-                binding.pvPlayer.videoSurfaceView?.apply {
-                    scaleX = zoom
-                    scaleY = zoom
-                    translationX = offsetX
-                    translationY = offsetY
-                }
+                autoFit?.setUserTransform(zoom, offsetX, offsetY)
             }
         }
         binding.settings.onHidden = { nextUi.refreshGestureSetting() }
@@ -668,6 +681,8 @@ class PlayerMobileFragment : Fragment() {
             )
         }
         binding.pvPlayer.resizeMode = UserPreferences.playerResize.resizeMode
+        startAutoFit()
+        SubtitleStyler.anchorToScreen(binding.pvPlayer)
         SubtitleStyler.apply(binding.pvPlayer.subtitleView)
         upNext.reset()
         skipSegments.load(UserPreferences.currentProvider, args.videoType)
@@ -874,8 +889,8 @@ class PlayerMobileFragment : Fragment() {
         player.setMediaItem(
             // A downloaded title keeps its stream keys and cache key (offline playback).
             (OfflineMediaProvider.mediaItemBuilder(video) ?: MediaItem.Builder()
-                .setUri(video.source.toUri())
-                .setMimeType(video.type))
+                .setUri(debugTestClip() ?: video.source.toUri())
+                .setMimeType(if (debugTestClip() != null) null else video.type))
                 .setSubtitleConfigurations(video.subtitles.map { subtitle ->
                     MediaItem.SubtitleConfiguration.Builder(subtitle.file.toUri())
                         .setMimeType(subtitle.file.toSubtitleMimeType())

@@ -52,6 +52,24 @@ object SubtitleStyler {
         return if (isCustomised(custom)) custom else presetStyle(UserPreferences.subtitlePreset)
     }
 
+    /**
+     * Media3 keeps the subtitle view inside the video frame, so any zoom or crop of the picture also
+     * cuts the subtitles. Moving it up to the player view makes it span the screen, so a cue sits at
+     * the chosen margin from the bottom of the screen whatever the picture does.
+     */
+    fun anchorToScreen(playerView: androidx.media3.ui.PlayerView) {
+        val subtitleView = playerView.subtitleView ?: return
+        if (subtitleView.parent === playerView) return
+        (subtitleView.parent as? android.view.ViewGroup)?.removeView(subtitleView)
+        playerView.addView(
+            subtitleView,
+            android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
+        )
+    }
+
     fun apply(subtitleView: SubtitleView?) {
         subtitleView ?: return
         subtitleView.setStyle(effectiveStyle())

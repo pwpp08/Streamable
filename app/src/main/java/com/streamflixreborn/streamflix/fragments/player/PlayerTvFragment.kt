@@ -89,6 +89,7 @@ import com.streamflixreborn.streamflix.fragments.player.engine.PlayerFactory
 import com.streamflixreborn.streamflix.fragments.player.engine.ProgressSaver
 import com.streamflixreborn.streamflix.fragments.player.engine.SkipSegmentController
 import com.streamflixreborn.streamflix.fragments.player.engine.StreamDataSourceFactory
+import com.streamflixreborn.streamflix.fragments.player.engine.AutoFitController
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleStyler
 import com.streamflixreborn.streamflix.fragments.player.engine.PlaybackSnapshot
 import com.streamflixreborn.streamflix.fragments.player.engine.TrackPreferences
@@ -113,6 +114,17 @@ class PlayerTvFragment : Fragment() {
     private val viewModel by viewModelsFactory { PlayerViewModel(args.videoType, args.id) }
 
     private lateinit var player: ExoPlayer
+    private var autoFit: AutoFitController? = null
+
+    private fun startAutoFit() {
+        val controller = autoFit ?: AutoFitController(
+            playerView = binding.pvPlayer,
+            scope = viewLifecycleOwner.lifecycleScope,
+            player = { if (::player.isInitialized) player else null },
+        ).also { autoFit = it }
+        controller.start()
+        controller.setScale(UserPreferences.playerResize.contentScale)
+    }
     private lateinit var dataSources: StreamDataSourceFactory
     private lateinit var mediaSession: MediaSession
     private var analytics: PlaybackAnalytics? = null
@@ -484,6 +496,8 @@ class PlayerTvFragment : Fragment() {
     }
 
         override fun onDestroyView() {
+            autoFit?.stop()
+            autoFit = null
             super.onDestroyView()
             (activity as? IdleDimHost)?.idleDimmer?.setPlaying(false)
             nextEpisodePrefetchJob?.cancel()
@@ -606,11 +620,7 @@ class PlayerTvFragment : Fragment() {
 
             override fun onVideoContentScaleChanged(scale: VideoContentScale) {
                 binding.nextUi.model.initialContentScale = scale
-                UserPreferences.playerResize = when (scale) {
-                    VideoContentScale.STRETCH -> UserPreferences.PlayerResize.Fill
-                    VideoContentScale.CROP -> UserPreferences.PlayerResize.Zoom
-                    VideoContentScale.BEST_FIT -> UserPreferences.PlayerResize.Fit
-                }
+                UserPreferences.playerResize = UserPreferences.PlayerResize.of(scale)
                 updatePlayerScale()
             }
         }
@@ -704,12 +714,9 @@ class PlayerTvFragment : Fragment() {
             // underlying surface can leave stale geometry behind after a quality switch, which is what
             // causes smaller variants to render in the top-left corner.
             binding.pvPlayer.resizeMode = playerResize.resizeMode
+            autoFit?.setScale(playerResize.contentScale)
 
             videoSurfaceView?.apply {
-                scaleX = 1f
-                scaleY = 1f
-                translationX = 0f
-                translationY = 0f
                 pivotX = width / 2f
                 pivotY = height / 2f
 
@@ -788,6 +795,8 @@ class PlayerTvFragment : Fragment() {
             }
             setupEpisodeNavigationButtons()
             binding.pvPlayer.resizeMode = UserPreferences.playerResize.resizeMode
+            startAutoFit()
+            SubtitleStyler.anchorToScreen(binding.pvPlayer)
             SubtitleStyler.apply(binding.pvPlayer.subtitleView)
             upNext.reset()
             skipSegments.load(UserPreferences.currentProvider, args.videoType)

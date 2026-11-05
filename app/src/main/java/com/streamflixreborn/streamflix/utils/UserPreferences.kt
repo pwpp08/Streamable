@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.media3.ui.AspectRatioFrameLayout
+import com.streamflixreborn.streamflix.nextui.model.VideoContentScale
 import androidx.media3.ui.CaptionStyleCompat
 import com.streamflixreborn.streamflix.StreamFlixApp
 import com.streamflixreborn.streamflix.BuildConfig
@@ -505,22 +506,42 @@ object UserPreferences {
             Key.SUBDL_API_KEY.setString(value)
         }
 
+    /**
+     * [resizeMode] is the PlayerView's own mode. Auto and Zoom (crop) stay on FIT there: the picture is
+     * scaled by AutoFitController from the detected content area, which is what lets it ignore black
+     * bars that are part of the video and keeps the subtitles' frame at the screen size.
+     */
     enum class PlayerResize(
         val stringRes: Int,
         val resizeMode: Int,
+        val contentScale: VideoContentScale,
     ) {
-        Fit(R.string.player_aspect_ratio_fit, AspectRatioFrameLayout.RESIZE_MODE_FIT),
-        Fill(R.string.player_aspect_ratio_fill, AspectRatioFrameLayout.RESIZE_MODE_FILL),
-        Zoom(R.string.player_aspect_ratio_zoom, AspectRatioFrameLayout.RESIZE_MODE_ZOOM),
-        Stretch43(R.string.player_aspect_ratio_zoom_4_3, AspectRatioFrameLayout.RESIZE_MODE_FIT),
-        StretchVertical(R.string.player_aspect_ratio_stretch_vertical, AspectRatioFrameLayout.RESIZE_MODE_FIT),
-        SuperZoom(R.string.player_aspect_ratio_super_zoom, AspectRatioFrameLayout.RESIZE_MODE_FIT);
+        Auto(R.string.player_aspect_ratio_auto, AspectRatioFrameLayout.RESIZE_MODE_FIT, VideoContentScale.AUTO),
+        Fit(R.string.player_aspect_ratio_fit, AspectRatioFrameLayout.RESIZE_MODE_FIT, VideoContentScale.BEST_FIT),
+        Fill(R.string.player_aspect_ratio_fill, AspectRatioFrameLayout.RESIZE_MODE_FILL, VideoContentScale.STRETCH),
+        Zoom(R.string.player_aspect_ratio_zoom, AspectRatioFrameLayout.RESIZE_MODE_FIT, VideoContentScale.CROP),
+        Stretch43(R.string.player_aspect_ratio_zoom_4_3, AspectRatioFrameLayout.RESIZE_MODE_FIT, VideoContentScale.BEST_FIT),
+        StretchVertical(R.string.player_aspect_ratio_stretch_vertical, AspectRatioFrameLayout.RESIZE_MODE_FIT, VideoContentScale.BEST_FIT),
+        SuperZoom(R.string.player_aspect_ratio_super_zoom, AspectRatioFrameLayout.RESIZE_MODE_FIT, VideoContentScale.BEST_FIT);
+
+        companion object {
+            fun of(scale: VideoContentScale): PlayerResize = when (scale) {
+                VideoContentScale.AUTO -> Auto
+                VideoContentScale.BEST_FIT -> Fit
+                VideoContentScale.STRETCH -> Fill
+                VideoContentScale.CROP -> Zoom
+            }
+        }
     }
 
+    /** Auto fit unless the user picked something else; the old numeric mode is only a fallback for older saves. */
     var playerResize: PlayerResize
-        get() = PlayerResize.entries.find { it.resizeMode == Key.PLAYER_RESIZE.getInt() && it.name == Key.PLAYER_RESIZE_NAME.getString() }
-            ?: PlayerResize.entries.find { it.resizeMode == Key.PLAYER_RESIZE.getInt() }
-            ?: PlayerResize.Fit
+        get() = PlayerResize.entries.find { it.name == Key.PLAYER_RESIZE_NAME.getString() }
+            ?: when (Key.PLAYER_RESIZE.getInt()) {
+                AspectRatioFrameLayout.RESIZE_MODE_FILL -> PlayerResize.Fill
+                AspectRatioFrameLayout.RESIZE_MODE_ZOOM -> PlayerResize.Zoom
+                else -> PlayerResize.Auto
+            }
         set(value) {
             Key.PLAYER_RESIZE.setInt(value.resizeMode)
             Key.PLAYER_RESIZE_NAME.setString(value.name)

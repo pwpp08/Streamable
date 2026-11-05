@@ -2,6 +2,7 @@
 <resources>
     <!-- Defaults. The app overrides these by name (res/values*/strings_nextui.xml) with its own translations. -->
     <string name="back">Back</string>
+    <string name="auto_fit">Auto fit</string>
     <string name="best_fit">Best fit</string>
     <string name="stretch">Stretch</string>
     <string name="crop">Crop</string>

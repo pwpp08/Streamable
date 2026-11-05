@@ -58,6 +58,7 @@ class VideoZoomAndContentScaleState(
         private const val MAX_ZOOM = 4f
         private const val CONTENT_SCALE_INDICATOR_DURATION_MS = 1000L
         private val CYCLE = listOf(
+            VideoContentScale.AUTO,
             VideoContentScale.BEST_FIT,
             VideoContentScale.CROP,
             VideoContentScale.STRETCH,

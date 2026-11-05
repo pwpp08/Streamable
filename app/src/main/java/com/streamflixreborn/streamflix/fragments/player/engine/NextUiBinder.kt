@@ -17,7 +17,6 @@ import com.streamflixreborn.streamflix.nextui.Picker
 import com.streamflixreborn.streamflix.nextui.PickerAction
 import com.streamflixreborn.streamflix.nextui.PickerItem
 import com.streamflixreborn.streamflix.nextui.UpNext
-import com.streamflixreborn.streamflix.nextui.model.VideoContentScale
 import com.streamflixreborn.streamflix.utils.UserPreferences
 
 /**
@@ -40,7 +39,7 @@ class NextUiBinder(
         model.isTv = isTv
         model.seekIncrementMs = 10_000L
         model.gesturesEnabled = UserPreferences.playerGestures
-        model.initialContentScale = UserPreferences.playerResize.toContentScale()
+        model.initialContentScale = UserPreferences.playerResize.contentScale
         model.isPictureInPictureSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             !isTv &&
             context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
@@ -216,11 +215,5 @@ class NextUiBinder(
     ) {
         settings.toggleLanguageFilter()
         reopen()
-    }
-
-    private fun UserPreferences.PlayerResize.toContentScale() = when (this) {
-        UserPreferences.PlayerResize.Fill -> VideoContentScale.STRETCH
-        UserPreferences.PlayerResize.Zoom -> VideoContentScale.CROP
-        else -> VideoContentScale.BEST_FIT
     }
 }
