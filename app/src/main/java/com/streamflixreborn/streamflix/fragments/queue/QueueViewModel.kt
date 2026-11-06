@@ -45,7 +45,6 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
 
     enum class Section { UP_NEXT, WATCHLIST, WATCHED }
     enum class Filter { ALL, MOVIES, SHOWS }
-    enum class Sort { RECENT, TITLE, RELEASE, RATING }
 
     data class Lists(
         val upNext: List<QueueEntry> = emptyList(),
@@ -58,14 +57,14 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
         val lists: Lists,
         val section: Section,
         val filter: Filter,
-        val sort: Sort,
+        val sort: QueueSort,
         val rating: RatingFilter,
         val visible: List<QueueEntry>,
     )
 
     private val section = MutableStateFlow(Section.WATCHLIST)
     private val filter = MutableStateFlow(Filter.ALL)
-    private val sort = MutableStateFlow(Sort.RECENT)
+    private val sort = MutableStateFlow(QueueSort.RECENT)
     private val rating = MutableStateFlow<RatingFilter>(RatingFilter.Everything)
 
     private data class Sources(
@@ -110,25 +109,18 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
             } && (section != Section.WATCHED || rating.matches(it))
         }
         // Up next always follows what you touched last.
-        val sorted = if (section == Section.UP_NEXT) filtered else sorted(filtered, sort)
+        val sorted = if (section == Section.UP_NEXT) filtered else QueueSorting.sort(filtered, sort)
         UiState(lists, section, filter, sort, rating, sorted)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        UiState(Lists(), Section.WATCHLIST, Filter.ALL, Sort.RECENT, RatingFilter.Everything, emptyList()),
+        UiState(Lists(), Section.WATCHLIST, Filter.ALL, QueueSort.RECENT, RatingFilter.Everything, emptyList()),
     )
 
     fun setSection(value: Section) { section.value = value }
     fun setFilter(value: Filter) { filter.value = value }
-    fun setSort(value: Sort) { sort.value = value }
+    fun setSort(value: QueueSort) { sort.value = value }
     fun setRating(value: RatingFilter) { rating.value = value }
-
-    private fun sorted(items: List<QueueEntry>, sort: Sort): List<QueueEntry> = when (sort) {
-        Sort.RECENT -> items.sortedByDescending { it.sortTime }
-        Sort.TITLE -> items.sortedBy { it.title.lowercase() }
-        Sort.RELEASE -> items.sortedByDescending { it.releasedMillis ?: Long.MIN_VALUE }
-        Sort.RATING -> items.sortedByDescending { it.rating ?: -1.0 }
-    }
 
     private fun build(
         src: Sources,
@@ -223,6 +215,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                 if (!added.add(s.key)) return@forEach
                 val isTv = s.key.startsWith("t:")
                 val id = s.key.substringAfter(':')
+                val knownMovie = if (isTv) null else database.movieDao().getById(id)
                 add(
                     QueueEntry(
                         key = s.key,
@@ -231,10 +224,13 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                         title = s.title,
                         poster = s.poster,
                         year = s.year,
+                        rating = s.rating ?: if (isTv) shows[id]?.rating else knownMovie?.rating,
+                        releasedMillis = s.releasedMillis
+                            ?: if (isTv) shows[id]?.released?.timeInMillis else knownMovie?.released?.timeInMillis,
                         reaction = reactions[s.key],
                         watched = true,
                         sortTime = s.atMillis,
-                        movie = if (isTv) null else database.movieDao().getById(id),
+                        movie = knownMovie,
                         tvShow = if (isTv) shows[id] else null,
                     ),
                 )
@@ -268,7 +264,9 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
     fun setReaction(entry: QueueEntry, reaction: Reaction?) {
         QueueStore.setReaction(entry.key, reaction)
         // Reacting means you've seen it.
-        if (reaction != null && !entry.watched) QueueStore.setSeen(entry.key, entry.title, entry.poster, entry.year, true)
+        if (reaction != null && !entry.watched) {
+            QueueStore.setSeen(entry.key, entry.title, entry.poster, entry.year, true, entry.releasedMillis, entry.rating)
+        }
     }
 
     fun setWatched(context: Context, entry: QueueEntry, watched: Boolean) = viewModelScope.launch(Dispatchers.IO) {
@@ -276,7 +274,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
         if (!entry.isTv && movie != null) {
             WatchStateActions.setWatched(context, movie, watched)
         }
-        QueueStore.setSeen(entry.key, entry.title, entry.poster, entry.year, watched)
+        QueueStore.setSeen(entry.key, entry.title, entry.poster, entry.year, watched, entry.releasedMillis, entry.rating)
     }
 
     // ---- Calendar ------------------------------------------------------------------------------
@@ -395,7 +393,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                 when (match) {
                     is Movie -> {
                         if (target is ImportTarget.Rated) {
-                            markRated(QueueStore.key(false, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction)
+                            markRated(QueueStore.key(false, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction, match.released?.timeInMillis, match.rating)
                         } else {
                             database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, match, true), true)
                         }
@@ -403,7 +401,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                     }
                     is TvShow -> {
                         if (target is ImportTarget.Rated) {
-                            markRated(QueueStore.key(true, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction)
+                            markRated(QueueStore.key(true, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction, match.released?.timeInMillis, match.rating)
                         } else {
                             database.tvShowDao().upsertFavorite(ArtworkRepair.resolveTvShowForFavorite(context, match, true), true)
                         }
@@ -416,8 +414,16 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
             ImportResult(added, notFound)
         }
 
-    private fun markRated(key: String, title: String, poster: String?, year: String?, reaction: Reaction) {
-        QueueStore.setSeen(key, title, poster, year, true)
+    private fun markRated(
+        key: String,
+        title: String,
+        poster: String?,
+        year: String?,
+        reaction: Reaction,
+        releasedMillis: Long? = null,
+        rating: Double? = null,
+    ) {
+        QueueStore.setSeen(key, title, poster, year, true, releasedMillis, rating)
         QueueStore.setReaction(key, reaction)
     }
 

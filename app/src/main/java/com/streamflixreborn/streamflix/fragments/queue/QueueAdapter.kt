@@ -88,8 +88,8 @@ class QueueAdapter(
         v.title.text = entry.title
         v.initial.text = entry.title.trim().take(1).uppercase()
         bindKindChip(v.kind, entry)
-        v.reaction.isVisible = entry.reaction != null
-        v.reaction.text = entry.reaction?.emoji
+        // The rating is shown in the sheet and the Watched filter, not on the artwork.
+        v.reaction.isVisible = false
         v.progress.isVisible = entry.progress != null
         v.progress.progress = entry.progress ?: 0
         v.meta.text = meta(context, entry)
@@ -98,18 +98,15 @@ class QueueAdapter(
             .joinToString(", ")
     }
 
-    /** "Movie" / "Series", or a tinted "Soon · Nov 12" while the title is not out yet. */
+    /** Only a tinted "Soon · Nov 12" while the title is not out yet; released titles carry no label. */
     private fun bindKindChip(chip: TextView, entry: QueueEntry) {
         val released = entry.releasedMillis
-        if (released != null && ReleaseStatus.isUnreleased(released)) {
+        chip.isVisible = released != null && ReleaseStatus.isUnreleased(released)
+        if (released != null && chip.isVisible) {
             val date = Calendar.getInstance().apply { timeInMillis = released }
             chip.text = chip.context.getString(R.string.browse_coming_soon, ReleaseStatus.shortDate(chip.context, date))
             chip.backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorPrimaryContainer))
             chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnPrimaryContainer))
-        } else {
-            chip.setText(if (entry.isTv) R.string.queue_kind_show else R.string.queue_kind_movie)
-            chip.backgroundTintList = null
-            chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnSurface))
         }
     }
 

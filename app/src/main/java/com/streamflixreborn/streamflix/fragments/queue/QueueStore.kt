@@ -41,6 +41,8 @@ object QueueStore {
         val poster: String?,
         val year: String?,
         val atMillis: Long,
+        val releasedMillis: Long? = null,
+        val rating: Double? = null,
     )
 
     private val _revision = MutableStateFlow(0)
@@ -72,16 +74,34 @@ object QueueStore {
                 poster = o.optString("p").ifBlank { null },
                 year = o.optString("y").ifBlank { null },
                 atMillis = o.optLong("at"),
+                releasedMillis = o.optLong("rd", -1L).takeIf { it >= 0 },
+                rating = o.optDouble("rt", -1.0).takeIf { it > 0 },
             )
         }.toList()
     }
 
     fun isSeen(key: String): Boolean = providerData().optJSONObject(SEEN)?.has(key) == true
 
-    fun setSeen(key: String, title: String, poster: String?, year: String?, seen: Boolean) = edit { data ->
+    fun setSeen(
+        key: String,
+        title: String,
+        poster: String?,
+        year: String?,
+        seen: Boolean,
+        releasedMillis: Long? = null,
+        rating: Double? = null,
+    ) = edit { data ->
         val json = data.optJSONObject(SEEN) ?: JSONObject().also { data.put(SEEN, it) }
         if (seen) {
-            json.put(key, JSONObject().put("t", title).put("p", poster.orEmpty()).put("y", year.orEmpty()).put("at", System.currentTimeMillis()))
+            json.put(
+                key,
+                JSONObject().put("t", title).put("p", poster.orEmpty()).put("y", year.orEmpty())
+                    .put("at", System.currentTimeMillis())
+                    .apply {
+                        if (releasedMillis != null) put("rd", releasedMillis)
+                        if (rating != null && rating > 0) put("rt", rating)
+                    },
+            )
         } else {
             json.remove(key)
         }

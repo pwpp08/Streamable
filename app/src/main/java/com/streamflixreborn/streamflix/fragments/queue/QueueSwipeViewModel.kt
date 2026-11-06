@@ -73,13 +73,14 @@ class QueueSwipeViewModel(private val database: AppDatabase) : ViewModel() {
     private suspend fun add(context: Context, item: AppAdapter.Item, seen: Boolean) {
         when (item) {
             is Movie -> if (seen) {
-                QueueStore.setSeen(QueueStore.key(false, item.id), item.title, item.poster, item.released?.format("yyyy"), true)
+                QueueStore.setSeen(QueueStore.key(false, item.id), item.title, item.poster, item.released?.format("yyyy"), true, item.released?.timeInMillis, item.rating)
+                WatchEvents.movieWatched(item)
             } else {
                 database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, item, true), true)
             }
 
             is TvShow -> if (seen) {
-                QueueStore.setSeen(QueueStore.key(true, item.id), item.title, item.poster, item.released?.format("yyyy"), true)
+                QueueStore.setSeen(QueueStore.key(true, item.id), item.title, item.poster, item.released?.format("yyyy"), true, item.released?.timeInMillis, item.rating)
             } else {
                 database.tvShowDao().upsertFavorite(ArtworkRepair.resolveTvShowForFavorite(context, item, true), true)
             }

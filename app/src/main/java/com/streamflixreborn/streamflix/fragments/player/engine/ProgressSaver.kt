@@ -6,6 +6,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.media3.common.Player
 import com.streamflixreborn.streamflix.database.AppDatabase
+import com.streamflixreborn.streamflix.fragments.queue.WatchEvents
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.Season
@@ -104,6 +105,7 @@ class ProgressSaver(
             is Video.Type.Episode -> database.episodeDao().getById(videoType.id)
         }
 
+        val wasWatched = watchItem?.isWatched == true
         when {
             snapshot.hasStarted && !snapshot.hasFinished -> {
                 watchItem?.isWatched = false
@@ -128,6 +130,8 @@ class ProgressSaver(
                 (watchItem as? Movie)?.let {
                     database.movieDao().update(it)
                     UserDataCache.syncMovieToCache(appContext, provider, it)
+                    // Finished just now: ask how it was (once; the screen on top shows the popup).
+                    if (snapshot.hasFinished && !wasWatched) WatchEvents.movieWatched(it)
                 }
             }
 
