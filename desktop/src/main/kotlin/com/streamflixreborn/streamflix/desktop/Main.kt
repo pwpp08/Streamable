@@ -88,23 +88,22 @@ private val tabSpecs = listOf(
 )
 
 fun main() {
+    // A crash leaves a trace in the data folder instead of vanishing.
+    Thread.setDefaultUncaughtExceptionHandler { t, e ->
+        runCatching {
+            val dir = java.io.File(System.getenv("APPDATA") ?: System.getProperty("user.home"), "StreamFlix").apply { mkdirs() }
+            java.io.File(dir, "crash.log").appendText("${java.util.Date()} [${t.name}]\n${e.stackTraceToString()}\n\n")
+        }
+        e.printStackTrace()
+    }
     Automation.startIfEnabled()
     Runtime.getRuntime().addShutdownHook(Thread { Library.flush() })
 
     application {
-        val windowState = rememberWindowState(size = DpSize(1440.dp, 900.dp))
+        // True full screen: no title bar, and the taskbar is hidden (Alt+F4 or Settings to quit).
+        val windowState = rememberWindowState(placement = WindowPlacement.Fullscreen, size = DpSize(1440.dp, 900.dp))
         val icon = remember { BitmapPainter(useResource("streamflix.png", ::loadImageBitmap)) }
-        var amoled by remember { mutableStateOf(UserPreferences.themeMode == "amoled") }
-        var lastPlacement by remember { mutableStateOf(WindowPlacement.Floating) }
-
-        fun toggleFullscreen() {
-            if (windowState.placement == WindowPlacement.Fullscreen) {
-                windowState.placement = lastPlacement
-            } else {
-                lastPlacement = windowState.placement
-                windowState.placement = WindowPlacement.Fullscreen
-            }
-        }
+        var themeMode by remember { mutableStateOf(UserPreferences.themeMode) }
 
         Window(
             onCloseRequest = {
@@ -112,11 +111,11 @@ fun main() {
                 exitApplication()
             },
             state = windowState,
+            undecorated = true,
             title = "StreamFlix",
             icon = icon,
             onPreviewKeyEvent = { e ->
-                e.type == KeyEventType.KeyDown && Nav.playing == null &&
-                    ((e.isAltPressed && e.key == Key.DirectionLeft) || e.key == Key.Escape) && Nav.back()
+                e.type == KeyEventType.KeyDown && Nav.playing == null && ((e.isAltPressed && e.key == Key.DirectionLeft) || e.key == Key.Escape) && Nav.back()
             },
         ) {
             window.minimumSize = java.awt.Dimension(1000, 640)
@@ -126,14 +125,13 @@ fun main() {
                     .crossfade(true)
                     .build()
             }
-            StreamFlixTheme(amoled) {
+            StreamFlixTheme(themeMode) {
                 Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
                     val playing = Nav.playing
                     if (playing != null) {
-                        PlayerScreen(playing, windowState.placement == WindowPlacement.Fullscreen, ::toggleFullscreen)
+                        PlayerScreen(playing)
                     } else {
-                        if (windowState.placement == WindowPlacement.Fullscreen) windowState.placement = lastPlacement
-                        AppShell(onThemeChanged = { amoled = UserPreferences.themeMode == "amoled" })
+                        AppShell(onThemeChanged = { themeMode = UserPreferences.themeMode })
                     }
                 }
             }
@@ -153,11 +151,7 @@ private fun AppShell(onThemeChanged: () -> Unit) {
         NavigationRail(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             modifier = Modifier.fillMaxHeight(),
-            header = {
-                Spacer(Modifier.height(12.dp))
-                Text("SF", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primaryContainer)
-                Spacer(Modifier.height(20.dp))
-            },
+            header = { Spacer(Modifier.height(12.dp)) },
         ) {
             tabSpecs.forEach { spec ->
                 val selected = Nav.tab == spec.screen

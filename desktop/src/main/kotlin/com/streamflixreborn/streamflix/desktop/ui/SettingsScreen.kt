@@ -1,6 +1,14 @@
 package com.streamflixreborn.streamflix.desktop.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +41,11 @@ import com.streamflixreborn.streamflix.desktop.data.Repo
 import com.streamflixreborn.streamflix.desktop.player.VlcEngine
 import com.streamflixreborn.streamflix.utils.UserPreferences
 
+/** The ten most spoken subtitle languages (plus Hungarian), as VLC names them. */
+private val SUBTITLE_LANGUAGES = listOf(
+    "English", "Spanish", "French", "German", "Portuguese", "Italian", "Russian", "Arabic", "Turkish", "Hungarian",
+)
+
 @Composable
 private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
     Column(Modifier.padding(bottom = 28.dp)) {
@@ -63,26 +76,40 @@ fun SettingsScreen(onThemeChanged: () -> Unit) {
             ScreenHeader("Settings")
 
             SettingsGroup("Playback") {
-                SettingRow("Maximum quality", "4K first when a server has it; 1080p is the minimum.") {
-                    ConnectedToggle(listOf(2160, 1440, 1080), UserPreferences.maxResolution, { if (it == 2160) "4K" else "${it}p" }) {
-                        UserPreferences.maxResolution = it
-                    }
+                SettingRow("Upgrade to 4K in the background", "Playback starts at 1080p. A 4K server is tested quietly and, only if it holds up, swapped in without a break.") {
+                    Switch(UserPreferences.upgrade4k, { UserPreferences.upgrade4k = it })
                 }
                 SettingRow("Play the next episode automatically") {
                     Switch(UserPreferences.autoplayNext, { UserPreferences.autoplayNext = it })
                 }
                 var subLang by remember { mutableStateOf(UserPreferences.subtitleLanguage) }
-                SettingRow("Subtitles on by default", "Language to switch on when a server offers it (e.g. English). Empty = off.") {
-                    OutlinedTextField(subLang, { subLang = it; UserPreferences.subtitleLanguage = it.trim() }, singleLine = true, modifier = Modifier.width(200.dp))
+                SettingRow("Subtitles", "Switched on automatically when a server offers this language.") {
+                    var open by remember { mutableStateOf(false) }
+                    Box {
+                        OutlinedButton(onClick = { open = true }) {
+                            Text(subLang.ifBlank { "Off" })
+                            Spacer(Modifier.width(8.dp))
+                            Icon(Icons.Rounded.ArrowDropDown, null)
+                        }
+                        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                            listOf("") .plus(SUBTITLE_LANGUAGES).forEach { lang ->
+                                DropdownMenuItem(
+                                    text = { Text(lang.ifBlank { "Off" }) },
+                                    trailingIcon = { if (lang == subLang) Icon(Icons.Rounded.Check, null) },
+                                    onClick = { subLang = lang; UserPreferences.subtitleLanguage = lang; open = false },
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
             SettingsGroup("Appearance") {
-                SettingRow("Amoled black", "True black backgrounds, as in the phone app’s Amoled palette.") {
-                    Switch(UserPreferences.themeMode == "amoled", {
-                        UserPreferences.themeMode = if (it) "amoled" else "dark"
+                SettingRow("Colours", "The same palettes as the phone app.") {
+                    ConnectedToggle(listOf("sage", "crimson", "amoled"), UserPreferences.themeMode, { it.replaceFirstChar(Char::uppercase) }) {
+                        UserPreferences.themeMode = it
                         onThemeChanged()
-                    })
+                    }
                 }
             }
 
@@ -109,6 +136,12 @@ fun SettingsScreen(onThemeChanged: () -> Unit) {
                 SettingRow("StreamFlix for desktop", "Version ${BuildConfig.VERSION_NAME}") {}
                 SettingRow("Data folder", StreamFlixApp.instance.dataDir.path) {
                     Button(onClick = { runCatching { java.awt.Desktop.getDesktop().open(StreamFlixApp.instance.dataDir) } }) { Text("Open") }
+                }
+                SettingRow("Quit StreamFlix", "Or press Alt+F4.") {
+                    TextButton(onClick = {
+                        com.streamflixreborn.streamflix.desktop.data.Library.flush()
+                        kotlin.system.exitProcess(0)
+                    }) { Text("Quit") }
                 }
             }
             Spacer(Modifier.height(48.dp))

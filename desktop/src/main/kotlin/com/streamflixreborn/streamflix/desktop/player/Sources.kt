@@ -50,9 +50,9 @@ data class Source(
 }
 
 /**
- * Resolves a title's servers several at a time and ranks them: 4K first, then the sharpest
- * picture down to 1080p, then streams of unknown height (usually adaptive), then the
- * provider's order. Anything known to be below 1080p is never picked automatically.
+ * Resolves a title's servers several at a time. Playback starts on a 1080p server (known
+ * height first, then streams of unknown height, then the provider's order); anything known to
+ * be below 1080p is never picked automatically. 4K servers are tried later, in the background.
  */
 object Sources {
     private const val TAG = "Sources"
@@ -87,12 +87,16 @@ object Sources {
         HlsPlaylistParser.maxHeight(text)
     }.getOrNull()
 
+    /** Ready sources whose master playlist advertises 4K, best provider order first. */
+    fun fourK(sources: List<Source>): List<Source> =
+        sources.filter { (it.height ?: 0) >= 2160 }.sortedBy { it.order }
+
     /** Ready and at least 1080p (or of unknown height). */
     fun eligible(source: Source): Boolean =
         source.state is Source.State.Ready && (source.height ?: UserPreferences.MIN_RESOLUTION) >= UserPreferences.MIN_RESOLUTION
 
     fun rank(sources: List<Source>): List<Source> {
-        val cap = UserPreferences.maxResolution
+        val cap = UserPreferences.START_RESOLUTION
         return sources.filter(::eligible).sortedWith(
             compareByDescending<Source> { s -> s.height?.let { minOf(it, cap) } ?: (UserPreferences.MIN_RESOLUTION - 1) }
                 .thenBy { it.order },
@@ -109,7 +113,7 @@ object Sources {
         onUpdate: (Source) -> Unit,
         firstPick: CompletableDeferred<Source?>,
     ) = coroutineScope {
-        val cap = UserPreferences.maxResolution
+        val cap = UserPreferences.START_RESOLUTION
         val results = java.util.concurrent.ConcurrentHashMap<Int, Source>()
         val gate = Semaphore(4)
         var firstReadyAt = 0L

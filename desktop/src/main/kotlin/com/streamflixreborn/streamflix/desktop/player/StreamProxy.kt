@@ -25,7 +25,12 @@ import java.util.concurrent.Executors
 object StreamProxy {
     private const val TAG = "StreamProxy"
 
-    private class Session(val headers: Map<String, String>, val data: ByteArray? = null, val dataBase: String? = null)
+    private class Session(
+        val headers: Map<String, String>,
+        val data: ByteArray? = null,
+        val dataBase: String? = null,
+        val client: okhttp3.OkHttpClient = NetworkClient.default,
+    )
 
     private val sessions = ConcurrentHashMap<String, Session>()
 
@@ -43,9 +48,17 @@ object StreamProxy {
     private fun unb64(s: String) = String(Base64.getUrlDecoder().decode(s))
 
     /** The URL VLC should open for [video]. */
-    fun register(video: Video): String {
+    /**
+     * [isolated] gives the stream its own connection pool and request queue, so a background
+     * 4K test can't starve the stream that is playing.
+     */
+    fun register(video: Video, isolated: Boolean = false): String {
         val id = UUID.randomUUID().toString().take(8)
         val headers = video.headers.orEmpty()
+        val client = if (isolated) NetworkClient.default.newBuilder()
+            .dispatcher(okhttp3.Dispatcher().apply { maxRequests = 32; maxRequestsPerHost = 16 })
+            .connectionPool(okhttp3.ConnectionPool())
+            .build() else NetworkClient.default
         val src = video.source
         return when {
             src.startsWith("data:") -> {
@@ -53,11 +66,11 @@ object StreamProxy {
                 val meta = src.substring(5, comma)
                 val payload = src.substring(comma + 1)
                 val bytes = if (meta.endsWith(";base64")) Base64.getMimeDecoder().decode(payload) else java.net.URLDecoder.decode(payload, Charsets.UTF_8).toByteArray()
-                sessions[id] = Session(headers, data = bytes, dataBase = headers["Referer"])
+                sessions[id] = Session(headers, data = bytes, dataBase = headers["Referer"], client = client)
                 "$base/d/$id/index.m3u8"
             }
             else -> {
-                sessions[id] = Session(headers)
+                sessions[id] = Session(headers, client = client)
                 proxied(id, src)
             }
         }
@@ -116,7 +129,7 @@ object StreamProxy {
         ex.requestHeaders.getFirst("Range")?.let { builder.header("Range", it) }
         if (ex.requestMethod == "HEAD") builder.head()
 
-        NetworkClient.default.newCall(builder.build()).execute().use { response ->
+        session.client.newCall(builder.build()).execute().use { response ->
             val type = response.header("Content-Type").orEmpty()
             val body = response.body
             val looksPlaylist = isPlaylistUrl(url) || type.contains("mpegurl", true)

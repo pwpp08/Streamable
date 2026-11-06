@@ -37,17 +37,22 @@ data class Track(val id: Int, val name: String)
 class PlayerController(val request: PlayRequest) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Swing)
 
-    val frames = VideoFrames()
-    private val player: EmbeddedMediaPlayer? = VlcEngine.factory?.mediaPlayers()?.newEmbeddedMediaPlayer()?.also { mp ->
-        mp.videoSurface().set(VlcEngine.factory!!.videoSurfaces().newVideoSurface(frames, frames, true))
-    }
+    /** The picture being shown; moves to another VLC player when the 4K upgrade takes over. */
+    @Volatile var frames = VideoFrames()
+        private set
+    private var player: EmbeddedMediaPlayer? = null
+
+    private fun newPlayer(target: VideoFrames): EmbeddedMediaPlayer? =
+        VlcEngine.factory?.mediaPlayers()?.newEmbeddedMediaPlayer()?.also { mp ->
+            mp.videoSurface().set(VlcEngine.factory!!.videoSurfaces().newVideoSurface(target, target, true))
+        }
 
     // ---- State the UI reads ----------------------------------------------------------------
     var status by mutableStateOf("Finding a server…")
         private set
     var loading by mutableStateOf(true)
         private set
-    var error by mutableStateOf<String?>(if (player == null) "VLC isn’t available: ${VlcEngine.error ?: "not found"}" else null)
+    var error by mutableStateOf<String?>(if (VlcEngine.factory == null) "VLC isn’t available: ${VlcEngine.error ?: "not found"}" else null)
         private set
     var playing by mutableStateOf(false)
         private set
@@ -102,23 +107,31 @@ class PlayerController(val request: PlayRequest) {
                 "sources=" + sources.joinToString { it.server.name + "=" + it.label }
         }
         com.streamflixreborn.streamflix.desktop.Automation.pause = { togglePause() }
-        player?.events()?.addMediaPlayerEventListener(object : MediaPlayerEventAdapter() {
-            override fun playing(mediaPlayer: MediaPlayer) { playing = true }
-            override fun paused(mediaPlayer: MediaPlayer) { playing = false }
-            override fun stopped(mediaPlayer: MediaPlayer) { playing = false }
-            override fun buffering(mediaPlayer: MediaPlayer, newCache: Float) { buffering = newCache }
+        player = newPlayer(frames)?.also(::attach)
+        if (player != null) start()
+    }
+
+    /** Wires a VLC player's events to the UI state; only the player on screen gets through. */
+    private fun attach(mp: EmbeddedMediaPlayer) {
+        mp.events().addMediaPlayerEventListener(object : MediaPlayerEventAdapter() {
+            override fun playing(mediaPlayer: MediaPlayer) { if (mediaPlayer === player) playing = true }
+            override fun paused(mediaPlayer: MediaPlayer) { if (mediaPlayer === player) playing = false }
+            override fun stopped(mediaPlayer: MediaPlayer) { if (mediaPlayer === player) playing = false }
+            override fun buffering(mediaPlayer: MediaPlayer, newCache: Float) { if (mediaPlayer === player) buffering = newCache }
             override fun timeChanged(mediaPlayer: MediaPlayer, newTime: Long) {
+                if (mediaPlayer !== player) return
                 timeMs = newTime
                 if (!started && newTime > 0) onStarted(mediaPlayer)
             }
-            override fun lengthChanged(mediaPlayer: MediaPlayer, newLength: Long) { lengthMs = newLength }
+            override fun lengthChanged(mediaPlayer: MediaPlayer, newLength: Long) { if (mediaPlayer === player) lengthMs = newLength }
             override fun videoOutput(mediaPlayer: MediaPlayer, newCount: Int) {
-                if (newCount > 0) mediaPlayer.submit { videoHeight = mediaPlayer.video().videoDimension()?.height ?: 0 }
+                if (newCount > 0 && mediaPlayer === player) mediaPlayer.submit { videoHeight = mediaPlayer.video().videoDimension()?.height ?: 0 }
             }
             override fun elementaryStreamAdded(mediaPlayer: MediaPlayer, type: uk.co.caprica.vlcj.media.TrackType, id: Int) {
-                mediaPlayer.submit { refreshTracks(mediaPlayer) }
+                if (mediaPlayer === player) mediaPlayer.submit { refreshTracks(mediaPlayer) }
             }
             override fun finished(mediaPlayer: MediaPlayer) {
+                if (mediaPlayer !== player) return
                 scope.launch {
                     // A dropped stream also "finishes"; only the last minute counts as the end.
                     if (lengthMs > 0 && lengthMs - timeMs < 60_000) {
@@ -130,10 +143,10 @@ class PlayerController(val request: PlayRequest) {
                 }
             }
             override fun error(mediaPlayer: MediaPlayer) {
+                if (mediaPlayer !== player) return
                 scope.launch { failover("Playback error") }
             }
         })
-        if (player != null) start()
     }
 
     private fun start() {
@@ -178,7 +191,9 @@ class PlayerController(val request: PlayRequest) {
         }
     }
 
-    fun play(source: Source, startMs: Long = timeMs) {
+    fun play(source: Source, startMs: Long = timeMs, manual: Boolean = false) {
+        upgrading?.cancel()
+        guard?.cancel()
         val mp = player ?: return
         val video = source.video ?: return
         tried += source.server.id
@@ -192,7 +207,8 @@ class PlayerController(val request: PlayRequest) {
         proxyUrl?.let(StreamProxy::release)
         val url = StreamProxy.register(video)
         proxyUrl = url
-        val cap = UserPreferences.maxResolution.takeIf { it > 0 } ?: 2160
+        // Playback starts at 1080p; only a server picked by hand may go straight to 4K.
+        val cap = if (manual) 2160 else UserPreferences.START_RESOLUTION
         val options = mutableListOf(
             ":adaptive-logic=highest",
             ":avcodec-hw=" + VlcEngine.hwDecoder,
@@ -221,6 +237,8 @@ class PlayerController(val request: PlayRequest) {
             status = ""
             watchdog?.cancel()
         }
+        guardQuality()
+        maybeUpgrade()
         mp.submit {
             // Subtitles follow the setting: the preferred language if there is one, else off.
             val pref = UserPreferences.subtitleLanguage
@@ -229,6 +247,186 @@ class PlayerController(val request: PlayRequest) {
             mp.subpictures().setTrack(match?.id() ?: -1)
             refreshTracks(mp)
         }
+    }
+
+    private var guard: Job? = null
+
+    /** A stream that turns out to be well below 1080p (adaptive ones sometimes start low) is dropped. */
+    private fun guardQuality() {
+        val src = current ?: return
+        guard?.cancel()
+        guard = scope.launch {
+            repeat(12) {
+                delay(1_000)
+                val d = player?.video()?.videoDimension()
+                if (d != null && d.height > 0) {
+                    val sharp = d.width >= 1800 || d.height >= 1000
+                    if (!sharp && Sources.rank(sources).any { it.server.id !in tried }) {
+                        failover("${src.server.name} is only ${d.height}p")
+                    }
+                    return@launch
+                }
+            }
+        }
+    }
+
+    // ---- Background 4K upgrade ---------------------------------------------------------------
+
+    private var upgrading: Job? = null
+    private val upgradeTried = mutableSetOf<String>()
+
+    private class Probe {
+        @Volatile var playing = false
+        @Volatile var failed = false
+        @Volatile var time = 0L
+        @Volatile var beats = 0
+    }
+
+    /**
+     * Once the 1080p picture has settled, tests 4K servers one at a time on a second, muted
+     * player. A server only counts if it reaches real 4K and then holds real-time speed for
+     * a while; then the second player is lined up with the first and swapped in.
+     */
+    private fun maybeUpgrade() {
+        if (!UserPreferences.upgrade4k || VlcEngine.factory == null) return
+        val cur = current ?: return
+        upgrading?.cancel()
+        upgrading = scope.launch {
+            delay(8_000)
+            if (videoHeight >= 2000) return@launch
+            var tests = 0
+            var waited = 0
+            while (isActive && tests < 3 && waited < 45) {
+                val cand = Sources.fourK(sources.toList()).firstOrNull { it.server.id !in upgradeTried && it.server.id != current?.server?.id }
+                if (cand == null) {
+                    if (sources.none { it.state is Source.State.Pending }) break
+                    delay(2_000)
+                    waited++
+                    continue
+                }
+                upgradeTried += cand.server.id
+                tests++
+                if (current === cur && tryUpgrade(cand, cur)) return@launch
+            }
+        }
+    }
+
+    private suspend fun waitFor(timeoutMs: Long, cond: () -> Boolean): Boolean {
+        val end = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < end) {
+            if (cond()) return true
+            delay(100)
+        }
+        return cond()
+    }
+
+    private suspend fun tryUpgrade(src: Source, from: Source): Boolean {
+        val video = src.video ?: return false
+        val target = VideoFrames()
+        val mp = newPlayer(target) ?: return false
+        val probe = Probe()
+        mp.events().addMediaPlayerEventListener(object : MediaPlayerEventAdapter() {
+            override fun playing(mediaPlayer: MediaPlayer) { probe.playing = true }
+            override fun timeChanged(mediaPlayer: MediaPlayer, newTime: Long) { probe.time = newTime; probe.beats++ }
+            override fun error(mediaPlayer: MediaPlayer) { probe.failed = true }
+            override fun finished(mediaPlayer: MediaPlayer) { probe.failed = true }
+        })
+        attach(mp)
+        val url = StreamProxy.register(video, isolated = true)
+        var swapped = false
+        return try {
+            Log.i("Player", "4K test: ${src.server.name}")
+            val options = arrayOf(
+                ":adaptive-logic=highest", ":avcodec-hw=" + VlcEngine.hwDecoder, ":adaptive-maxheight=2160", ":network-caching=2500",
+                ":start-time=${timeMs / 1000.0}",
+            )
+            mp.media().play(url, *options)
+            mp.audio().isMute = true
+            video.subtitles.forEach { sub ->
+                mp.media().slaves().add(MediaSlaveType.SUBTITLE, MediaSlavePriority.LOWEST, StreamProxy.registerSubtitle(video, sub.file))
+            }
+
+            // 1. It has to start, and reach real 4K.
+            fun is4k() = mp.video().videoDimension()?.let { it.height >= 2000 || it.width >= 3600 } == true
+            waitFor(25_000) { probe.failed || (probe.playing && probe.beats > 2 && is4k()) }
+            if (probe.failed || !is4k()) return false
+
+            // 2. It has to keep up in real time for a while.
+            val t0 = probe.time
+            val w0 = System.nanoTime()
+            waitFor(12_000) { probe.failed }
+            val advanced = probe.time - t0
+            val wall = (System.nanoTime() - w0) / 1_000_000
+            if (probe.failed || advanced < wall * (System.getProperty("streamflix.upgradeRatio")?.toDoubleOrNull() ?: 0.92)) {
+                Log.i("Player", "4K test failed: ${src.server.name} advanced $advanced in $wall ms")
+                return false
+            }
+
+            // 3. Line it up with what's playing, then swap.
+            var lead = 2_500L
+            repeat(4) {
+                if (current !== from) return false
+                val want = timeMs + lead
+                val seenFrames = target.version.get()
+                probe.beats = 0
+                mp.controls().setTime(want)
+                waitFor(10_000) {
+                    probe.failed || (probe.beats > 1 && kotlin.math.abs(probe.time - want) < 2_500 && target.version.get() > seenFrames)
+                }
+                if (probe.failed || probe.beats <= 1) return false
+                val drift = probe.time - timeMs
+                if (kotlin.math.abs(drift) <= 400) {
+                    swapTo(mp, target, url, src)
+                    swapped = true
+                    return true
+                }
+                lead = (lead - drift).coerceIn(500L, 9_000L)
+            }
+            false
+        } finally {
+            if (!swapped) {
+                runCatching { mp.controls().stop() }
+                Thread { runCatching { mp.release() } }.start()
+                StreamProxy.release(url)
+            }
+        }
+    }
+
+    private fun swapTo(mp: EmbeddedMediaPlayer, target: VideoFrames, url: String, src: Source) {
+        val old = player
+        val oldFrames = frames
+        val oldUrl = proxyUrl
+        val wasPlaying = playing
+        val prevSubtitle = subtitleTracks.firstOrNull { it.id == subtitleTrack }?.name
+        Log.i("Player", "switching to 4K: ${src.server.name}")
+        mp.audio().setVolume(volume)
+        mp.audio().isMute = muted
+        if (!wasPlaying) mp.controls().pause()
+        player = mp
+        frames = target
+        proxyUrl = url
+        current = src
+        tried += src.server.id
+        playing = wasPlaying
+        lengthMs = mp.status().length().takeIf { it > 0 } ?: lengthMs
+        videoHeight = mp.video().videoDimension()?.height ?: videoHeight
+        mp.submit {
+            // Keep the subtitle choice: the same track by name, else the language setting.
+            val subs = mp.subpictures().trackDescriptions().filter { it.id() >= 0 }
+            val pref = UserPreferences.subtitleLanguage
+            val match = if (prevSubtitle != null) subs.firstOrNull { it.description() == prevSubtitle }
+            else if (pref.isBlank()) null else subs.firstOrNull { it.description().contains(pref, ignoreCase = true) }
+            mp.subpictures().setTrack(match?.id() ?: -1)
+            refreshTracks(mp)
+        }
+        old?.audio()?.isMute = true
+        Thread {
+            Thread.sleep(1_500)
+            runCatching { old?.controls()?.stop() }
+            runCatching { old?.release() }
+            oldUrl?.let(StreamProxy::release)
+            oldFrames.clear()
+        }.start()
     }
 
     private fun refreshTracks(mp: MediaPlayer) {
@@ -348,6 +546,8 @@ class PlayerController(val request: PlayRequest) {
 
     fun release() {
         saveProgress(final = true)
+        upgrading?.cancel()
+        guard?.cancel()
         resolving?.cancel()
         scope.cancel()
         player?.let { mp ->

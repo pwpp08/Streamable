@@ -61,10 +61,18 @@ object UserPreferences {
         get() = get("PROVIDER_LANGUAGE")
         set(value) = set("PROVIDER_LANGUAGE", value)
 
-    /** Highest stream height to pick. Desktop screens take 2160p. */
+    /** Tallest stream the extractors may offer; the player itself starts at [START_RESOLUTION]. */
     var maxResolution: Int
-        get() = (get("MAX_RESOLUTION")?.toIntOrNull() ?: 2160).coerceAtLeast(MIN_RESOLUTION)
-        set(value) = set("MAX_RESOLUTION", value.toString())
+        get() = 2160
+        set(@Suppress("UNUSED_PARAMETER") value) = Unit
+
+    /** Height playback starts at. 4K is only ever reached by the background upgrade. */
+    const val START_RESOLUTION = 1080
+
+    /** Whether to look for a working 4K server in the background and switch to it. */
+    var upgrade4k: Boolean
+        get() = bool("UPGRADE_4K", true)
+        set(value) = set("UPGRADE_4K", value.toString())
 
     var serverAutoSubtitlesDisabled: Boolean
         get() = bool("SERVER_AUTO_SUBTITLES_DISABLED", true)
@@ -119,7 +127,7 @@ object UserPreferences {
         set(value) = set("VOLUME", value.toString())
 
     var themeMode: String
-        get() = get("THEME_MODE") ?: "dark"
+        get() = get("THEME_MODE")?.takeIf { it in setOf("sage", "crimson", "amoled") } ?: "sage"
         set(value) = set("THEME_MODE", value)
 
     var autoplayNext: Boolean

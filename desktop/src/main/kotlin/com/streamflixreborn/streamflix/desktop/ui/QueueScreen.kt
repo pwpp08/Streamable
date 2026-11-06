@@ -105,11 +105,12 @@ fun <T> ConnectedToggle(options: List<T>, selected: T, label: (T) -> String, onS
 @Composable
 fun QueueScreen() {
     val library by Library.items.collectAsState()
-    var section by remember { mutableStateOf(QueueSection.IN_PROGRESS) }
+    var section by remember { mutableStateOf(QueueSection.WATCHLIST) }
     var spinning by remember { mutableStateOf(false) }
 
     val inProgress = library.values.filter { it.inProgress }.sortedByDescending { it.lastPlayedAt }
-    val watchlist = library.values.filter { it.inQueue && !it.watched && !it.inProgress }.sortedByDescending { it.queuedAt }
+    // Each list stands on its own, as on the phone: the Queue is everything you added, whether or not you started it.
+    val watchlist = library.values.filter { it.inQueue }.sortedByDescending { it.queuedAt }
     val watched = library.values.filter { it.watched }.sortedByDescending { it.watchedAt }
     val list = when (section) {
         QueueSection.IN_PROGRESS -> inProgress

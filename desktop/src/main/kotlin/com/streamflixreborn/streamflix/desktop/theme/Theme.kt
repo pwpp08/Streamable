@@ -15,6 +15,44 @@ import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// The Android app's Sage palette (res/values/colors_m3.xml, dark): the default.
+private val Sage = darkColorScheme(
+    primary = Color(0xFFB7D09B),
+    onPrimary = Color(0xFF223609),
+    primaryContainer = Color(0xFF44572F),
+    onPrimaryContainer = Color(0xFFD3EDB5),
+    inversePrimary = Color(0xFF506939),
+    secondary = Color(0xFFBFCBAD),
+    onSecondary = Color(0xFF2A3420),
+    secondaryContainer = Color(0xFF404A35),
+    onSecondaryContainer = Color(0xFFDBE7C8),
+    tertiary = Color(0xFFF0E6BF),
+    onTertiary = Color(0xFF363114),
+    tertiaryContainer = Color(0xFF4E472A),
+    onTertiaryContainer = Color(0xFFFFF8E6),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF0D110C),
+    onBackground = Color(0xFFE1E4D9),
+    surface = Color(0xFF0D110C),
+    onSurface = Color(0xFFE1E4D9),
+    surfaceVariant = Color(0xFF44483D),
+    onSurfaceVariant = Color(0xFFC5C8BA),
+    surfaceDim = Color(0xFF0D110C),
+    surfaceBright = Color(0xFF333730),
+    surfaceContainerLowest = Color(0xFF080C07),
+    surfaceContainerLow = Color(0xFF161A14),
+    surfaceContainer = Color(0xFF1A1E18),
+    surfaceContainerHigh = Color(0xFF242822),
+    surfaceContainerHighest = Color(0xFF2F332C),
+    inverseSurface = Color(0xFFE1E4D9),
+    inverseOnSurface = Color(0xFF2F312B),
+    outline = Color(0xFF8F9285),
+    outlineVariant = Color(0xFF44483D),
+)
+
 // The Android app's Crimson palette (res/values/colors_m3.xml, dark), seed #E50914.
 private val Crimson = darkColorScheme(
     primary = Color(0xFFFFB4AA),
@@ -53,8 +91,8 @@ private val Crimson = darkColorScheme(
     outlineVariant = Color(0xFF534341),
 )
 
-/** Amoled: the same accents on true black, as in the app's Amoled palette. */
-private val Amoled = Crimson.copy(
+/** Amoled: Sage accents on true black. */
+private val Amoled = Sage.copy(
     background = Color.Black,
     surface = Color.Black,
     surfaceDim = Color.Black,
@@ -105,9 +143,9 @@ private val AppShapes = Shapes(
 )
 
 @Composable
-fun StreamFlixTheme(amoled: Boolean = false, content: @Composable () -> Unit) {
+fun StreamFlixTheme(mode: String = "sage", content: @Composable () -> Unit) {
     MaterialExpressiveTheme(
-        colorScheme = if (amoled) Amoled else Crimson,
+        colorScheme = when (mode) { "crimson" -> Crimson; "amoled" -> Amoled; else -> Sage },
         typography = AppTypography,
         shapes = AppShapes,
         motionScheme = MotionScheme.expressive(),

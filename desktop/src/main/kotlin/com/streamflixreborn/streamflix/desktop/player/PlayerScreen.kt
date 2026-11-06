@@ -106,19 +106,23 @@ private fun formatTime(ms: Long): String {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun PlayerScreen(request: PlayRequest, fullscreen: Boolean, onToggleFullscreen: () -> Unit) {
+fun PlayerScreen(request: PlayRequest) {
     val controller = remember(request) { PlayerController(request) }
     DisposableEffect(controller) { onDispose { controller.release() } }
 
     var frameTick by remember { mutableLongStateOf(0L) }
     LaunchedEffect(controller) {
         var seen = -1L
+        var seenFrames: VideoFrames? = null
         while (true) {
             withFrameNanos { }
-            val v = controller.frames.version.get()
-            if (v != seen) {
+            val f = controller.frames
+            val v = f.version.get()
+            // The picture can move to another VLC player (the 4K upgrade); redraw when it does.
+            if (v != seen || f !== seenFrames) {
                 seen = v
-                frameTick = v
+                seenFrames = f
+                frameTick++
             }
         }
     }
@@ -165,9 +169,8 @@ fun PlayerScreen(request: PlayRequest, fullscreen: Boolean, onToggleFullscreen: 
                     Key.DirectionUp -> { controller.changeVolume(controller.volume + 5); true }
                     Key.DirectionDown -> { controller.changeVolume(controller.volume - 5); true }
                     Key.M -> { controller.toggleMute(); true }
-                    Key.F -> { onToggleFullscreen(); true }
                     Key.N -> { next?.let(Nav::play); true }
-                    Key.Escape -> { if (fullscreen) onToggleFullscreen() else Nav.back(); true }
+                    Key.Escape -> { Nav.back(); true }
                     else -> false
                 }
             }
@@ -176,7 +179,6 @@ fun PlayerScreen(request: PlayRequest, fullscreen: Boolean, onToggleFullscreen: 
             .pointerInput(controller) {
                 detectTapGestures(
                     onTap = { controller.togglePause(); lastMove = System.currentTimeMillis() },
-                    onDoubleTap = { onToggleFullscreen() },
                 )
             },
     ) {
@@ -316,9 +318,6 @@ fun PlayerScreen(request: PlayRequest, fullscreen: Boolean, onToggleFullscreen: 
                             Spacer(Modifier.width(6.dp))
                             Text(fit.label, color = Color.White)
                         }
-                        IconButton(onClick = onToggleFullscreen) {
-                            Icon(if (fullscreen) Icons.Rounded.FullscreenExit else Icons.Rounded.Fullscreen, "Fullscreen", tint = Color.White)
-                        }
                     }
                 }
             }
@@ -392,7 +391,7 @@ private fun ServerMenu(controller: PlayerController, open: Boolean, onOpen: (Boo
                     enabled = src.video != null,
                     onClick = {
                         onOpen(false)
-                        controller.play(src)
+                        controller.play(src, manual = true)
                     },
                 )
             }
