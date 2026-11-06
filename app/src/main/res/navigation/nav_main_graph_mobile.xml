@@ -67,6 +67,11 @@
             app:destination="@id/tv_show" />
     </fragment>
     <fragment
+        android:id="@+id/queue_swipe"
+        android:name="com.streamflixreborn.streamflix.fragments.queue.QueueSwipeFragment"
+        android:label="fragment_queue_swipe"
+        tools:layout="@layout/fragment_queue_swipe" />
+    <fragment
         android:id="@+id/search"
         android:name="com.streamflixreborn.streamflix.fragments.search.SearchMobileFragment"
         android:label="fragment_search_mobile"

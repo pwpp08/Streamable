@@ -32,14 +32,9 @@ object QueueOptions {
             Reaction.LIKED to binding.btnQueueReactionLiked,
             Reaction.OKAY to binding.btnQueueReactionOkay,
             Reaction.DISLIKED to binding.btnQueueReactionDisliked,
+            Reaction.HATED to binding.btnQueueReactionHated,
         )
-        fun label(reaction: Reaction?) = when (reaction) {
-            Reaction.LOVED -> context.getString(R.string.queue_reaction_loved)
-            Reaction.LIKED -> context.getString(R.string.queue_reaction_liked)
-            Reaction.OKAY -> context.getString(R.string.queue_reaction_okay)
-            Reaction.DISLIKED -> context.getString(R.string.queue_reaction_disliked)
-            null -> ""
-        }
+        fun label(reaction: Reaction?) = reaction?.let { context.getString(it.labelRes) }.orEmpty()
         buttons.forEach { (reaction, button) ->
             button.text = reaction.emoji
             button.isChecked = entry.reaction == reaction
@@ -59,11 +54,16 @@ object QueueOptions {
         }
 
         val canPlay = QueueNavigator.canPlay(entry)
-        binding.btnQueueOptionsPlay.isVisible = canPlay
-        binding.btnQueueOptionsPlay.setText(if (entry.progress != null) R.string.queue_action_resume else R.string.queue_action_play)
+        binding.btnQueueOptionsPlay.isEnabled = canPlay
+        val releaseLabel = QueueNavigator.releaseLabel(context, entry)
+        if (releaseLabel != null) {
+            binding.btnQueueOptionsPlay.text = releaseLabel
+        } else {
+            binding.btnQueueOptionsPlay.setText(if (entry.progress != null) R.string.queue_action_resume else R.string.queue_action_play)
+        }
         binding.btnQueueOptionsPlay.setOnClickListener {
             dialog.dismiss()
-            QueueNavigator.play(context, fragment.findNavController(), entry)
+            QueueNavigator.playResolving(fragment, entry)
         }
         binding.btnQueueOptionsDetails.setOnClickListener {
             dialog.dismiss()

@@ -1,6 +1,7 @@
 package com.streamflixreborn.streamflix.fragments.queue
 
 import android.os.Bundle
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +12,7 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.database.AppDatabase
@@ -42,6 +44,7 @@ class QueueMobileFragment : Fragment() {
             onClick = ::onEntryClick,
             onLongClick = { QueueOptions.show(this, it, viewModel, isTv = false) },
             onMarkWatched = { viewModel.markNextWatched(requireContext().applicationContext, it) },
+            onPosterClick = ::onPosterClick,
         )
         val spanCount = BrowseCards.gridSpanCount(requireContext())
         binding.rvQueue.layoutManager = GridLayoutManager(requireContext(), spanCount).apply {
@@ -72,11 +75,17 @@ class QueueMobileFragment : Fragment() {
                 },
             )
         }
+        buildRatingChips()
+        binding.cgQueueRating.setOnCheckedStateChangeListener { _, ids ->
+            if (syncingRatingChips) return@setOnCheckedStateChangeListener
+            val chosen = ids.firstOrNull()?.let { id -> binding.cgQueueRating.findViewById<Chip>(id)?.tag as? RatingFilter }
+            viewModel.setRating(chosen ?: RatingFilter.Everything)
+        }
         binding.btnQueueSort.setOnClickListener { showSortDialog() }
         binding.btnQueueSpin.setOnClickListener {
             QueueSpinDialog.show(this, viewModel.state.value.lists.watchlist.filterFor(viewModel.state.value.filter), isTv = false)
         }
-        binding.btnQueueSwipe.setOnClickListener { QueueSwipeDialog.show(this, viewModel) }
+        binding.btnQueueSwipe.setOnClickListener { findNavController().navigate(R.id.queue_swipe) }
         binding.btnQueueCalendar.setOnClickListener { QueueCalendarDialog.show(this, viewModel) }
         binding.btnQueueImport.setOnClickListener { QueueImportDialog.show(this, viewModel) }
 
@@ -85,17 +94,52 @@ class QueueMobileFragment : Fragment() {
         }
     }
 
+    /** Up next: a show opens its seasons; a film (or anything else) goes where tapping would play. */
     private fun onEntryClick(entry: QueueEntry) {
-        if (viewModel.state.value.section == Section.UP_NEXT && QueueNavigator.canPlay(entry)) {
-            QueueNavigator.play(requireContext(), findNavController(), entry)
-        } else {
-            QueueNavigator.openDetails(findNavController(), entry)
+        when {
+            viewModel.state.value.section == Section.UP_NEXT && entry.isTv -> QueueShowDialog.show(this, entry)
+            viewModel.state.value.section == Section.UP_NEXT && QueueNavigator.canPlay(entry) ->
+                QueueNavigator.play(requireContext(), findNavController(), entry)
+            else -> QueueNavigator.openDetails(findNavController(), entry)
         }
+    }
+
+    /** The poster in an Up next row starts the next episode (or resumes the film). */
+    private fun onPosterClick(entry: QueueEntry) {
+        if (QueueNavigator.canPlay(entry)) QueueNavigator.play(requireContext(), findNavController(), entry)
+        else QueueNavigator.openDetails(findNavController(), entry)
+    }
+
+    private var syncingRatingChips = false
+
+    private fun buildRatingChips() {
+        val group = binding.cgQueueRating
+        group.removeAllViews()
+        val options = listOf<Pair<RatingFilter, String>>(
+            RatingFilter.Unrated to getString(R.string.queue_filter_unrated),
+        ) + QueueStore.Reaction.entries.map { RatingFilter.Only(it) to "${it.emoji} ${getString(it.labelRes)}" }
+        options.forEach { (filter, label) ->
+            group.addView(
+                Chip(ContextThemeWrapper(requireContext(), R.style.Widget_StreamFlix_Queue_FilterChip), null, 0).apply {
+                    id = View.generateViewId()
+                    text = label
+                    tag = filter
+                    isCheckable = true
+                },
+            )
+        }
+    }
+
+    private fun syncRatingChips(selected: RatingFilter) {
+        syncingRatingChips = true
+        val group = binding.cgQueueRating
+        val match = (0 until group.childCount).map { group.getChildAt(it) }.firstOrNull { it.tag == selected }
+        if (match != null) group.check(match.id) else group.clearCheck()
+        syncingRatingChips = false
     }
 
     private fun render(state: QueueViewModel.UiState) {
         val lists = state.lists
-        binding.tvQueueStats.text = getString(R.string.queue_stats, lists.watchlist.size, lists.upNext.size, lists.watched.size)
         binding.btnQueueUpNext.text = sectionLabel(R.string.queue_section_up_next, lists.upNext.size)
         binding.btnQueueWatchlist.text = sectionLabel(R.string.queue_section_watchlist, lists.watchlist.size)
         binding.btnQueueWatched.text = sectionLabel(R.string.queue_section_watched, lists.watched.size)
@@ -106,6 +150,8 @@ class QueueMobileFragment : Fragment() {
         }
         if (binding.tgQueueSection.checkedButtonId != checked) binding.tgQueueSection.check(checked)
         binding.btnQueueSort.isVisible = state.section != Section.UP_NEXT
+        binding.llQueueRating.isVisible = state.section == Section.WATCHED
+        syncRatingChips(state.rating)
 
         adapter.submitList(state.visible)
         val empty = lists.loaded && state.visible.isEmpty()

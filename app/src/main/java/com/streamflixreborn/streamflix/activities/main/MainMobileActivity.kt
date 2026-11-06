@@ -16,6 +16,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
+import com.streamflixreborn.streamflix.fragments.queue.ReactionPrompt
+import com.streamflixreborn.streamflix.fragments.queue.WatchEvents
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
@@ -169,6 +171,12 @@ class MainMobileActivity : FragmentActivity(), IdleDimHost {
         }
 
         lifecycleScope.launch {
+            WatchEvents.movieWatched
+                .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+                .collect { movie -> ReactionPrompt.show(this@MainMobileActivity, movie) }
+        }
+
+        lifecycleScope.launch {
             ProviderChangeNotifier.providerChangeFlow
                 .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
                 .collect {
@@ -294,17 +302,20 @@ class MainMobileActivity : FragmentActivity(), IdleDimHost {
         val showBottomNav =
             UserPreferences.currentProvider != null && isTopLevelProviderDestination(destinationId)
         navigationBar.visibility = if (showBottomNav) View.VISIBLE else View.GONE
+        // The Queue screen has its own toolbar; the global search / remote / downloads row stays off it.
+        val showTopRow = destinationId != R.id.favorites
         binding.btnMainSearch.visibility = if (
+            showTopRow &&
             UserPreferences.currentProvider != null &&
             isTopLevelProviderDestination(destinationId) &&
             destinationId != R.id.search
         ) View.VISIBLE else View.GONE
         binding.btnMainRemote.visibility = if (
-            showBottomNav && CloudSyncManager.currentUserId() != null
+            showTopRow && showBottomNav && CloudSyncManager.currentUserId() != null
         ) View.VISIBLE else View.GONE
         // Downloads (phone only): BottomNavigationView holds at most 5 items, so it sits in the top bar.
         binding.btnMainDownloads.visibility = if (
-            showBottomNav && destinationId != R.id.downloads && DownloadUtil.isSupported(this)
+            showTopRow && showBottomNav && destinationId != R.id.downloads && DownloadUtil.isSupported(this)
         ) View.VISIBLE else View.GONE
     }
 

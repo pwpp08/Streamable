@@ -1,6 +1,8 @@
 package com.streamflixreborn.streamflix.fragments.queue
 
 import android.content.Context
+import androidx.annotation.StringRes
+import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.StreamFlixApp
 import com.streamflixreborn.streamflix.utils.ProfileManager
 import com.streamflixreborn.streamflix.utils.UserPreferences
@@ -19,11 +21,13 @@ object QueueStore {
     private const val REACTIONS = "r"
     private const val SEEN = "s"
 
-    enum class Reaction(val emoji: String) {
-        LOVED("😍"),
-        LIKED("👍"),
-        OKAY("😐"),
-        DISLIKED("👎");
+    /** Best to worst; the order is the order of the rating buttons and filter chips. */
+    enum class Reaction(val emoji: String, @StringRes val labelRes: Int) {
+        LOVED("😍", R.string.queue_reaction_loved),
+        LIKED("👍", R.string.queue_reaction_liked),
+        OKAY("😐", R.string.queue_reaction_okay),
+        DISLIKED("👎", R.string.queue_reaction_disliked),
+        HATED("😡", R.string.queue_reaction_hated);
 
         companion object {
             fun of(name: String?): Reaction? = entries.firstOrNull { it.name == name }

@@ -12,6 +12,8 @@ import com.streamflixreborn.streamflix.sync.settings.SettingsSync
 import androidx.activity.viewModels
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
+import com.streamflixreborn.streamflix.fragments.queue.ReactionPrompt
+import com.streamflixreborn.streamflix.fragments.queue.WatchEvents
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
@@ -126,6 +128,12 @@ class MainTvActivity : FragmentActivity(), IdleDimHost {
                     binding.vNavMainSpacer.visibility = View.GONE
                 }
             }
+        }
+
+        lifecycleScope.launch {
+            WatchEvents.movieWatched
+                .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)
+                .collect { movie -> ReactionPrompt.show(this@MainTvActivity, movie) }
         }
 
         lifecycleScope.launch {

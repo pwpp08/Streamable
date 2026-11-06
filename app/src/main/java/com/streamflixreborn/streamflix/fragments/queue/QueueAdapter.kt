@@ -1,6 +1,7 @@
 package com.streamflixreborn.streamflix.fragments.queue
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.text.SpannableStringBuilder
 import android.view.LayoutInflater
 import android.view.View
@@ -12,13 +13,16 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Calendar
 import com.bumptech.glide.Glide
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.ItemQueueCardMobileBinding
 import com.streamflixreborn.streamflix.databinding.ItemQueueCardTvBinding
 import com.streamflixreborn.streamflix.databinding.ItemQueueProgressMobileBinding
 import com.streamflixreborn.streamflix.ui.motion.FocusScaleAnimator
+import com.streamflixreborn.streamflix.utils.ReleaseStatus
 import com.streamflixreborn.streamflix.utils.loadMoviePoster
 import com.streamflixreborn.streamflix.utils.loadTvShowPoster
 
@@ -32,6 +36,8 @@ class QueueAdapter(
     private val onClick: (QueueEntry) -> Unit,
     private val onLongClick: (QueueEntry) -> Unit,
     private val onMarkWatched: (QueueEntry) -> Unit = {},
+    /** Up next rows: the poster itself plays, the rest of the row opens [onClick]. */
+    private val onPosterClick: (QueueEntry) -> Unit = {},
 ) : ListAdapter<QueueEntry, RecyclerView.ViewHolder>(Diff) {
 
     /** The same views from either tile layout. */
@@ -81,7 +87,7 @@ class QueueAdapter(
         val context = v.itemView.context
         v.title.text = entry.title
         v.initial.text = entry.title.trim().take(1).uppercase()
-        v.kind.setText(if (entry.isTv) R.string.queue_kind_show else R.string.queue_kind_movie)
+        bindKindChip(v.kind, entry)
         v.reaction.isVisible = entry.reaction != null
         v.reaction.text = entry.reaction?.emoji
         v.progress.isVisible = entry.progress != null
@@ -90,6 +96,21 @@ class QueueAdapter(
         loadPoster(v.poster, entry)
         v.itemView.contentDescription = listOfNotNull(entry.title, v.meta.text?.toString()?.takeIf { it.isNotBlank() })
             .joinToString(", ")
+    }
+
+    /** "Movie" / "Series", or a tinted "Soon · Nov 12" while the title is not out yet. */
+    private fun bindKindChip(chip: TextView, entry: QueueEntry) {
+        val released = entry.releasedMillis
+        if (released != null && ReleaseStatus.isUnreleased(released)) {
+            val date = Calendar.getInstance().apply { timeInMillis = released }
+            chip.text = chip.context.getString(R.string.browse_coming_soon, ReleaseStatus.shortDate(chip.context, date))
+            chip.backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorPrimaryContainer))
+            chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnPrimaryContainer))
+        } else {
+            chip.setText(if (entry.isTv) R.string.queue_kind_show else R.string.queue_kind_movie)
+            chip.backgroundTintList = null
+            chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnSurface))
+        }
     }
 
     private fun bindRow(b: ItemQueueProgressMobileBinding, entry: QueueEntry) {
@@ -124,6 +145,9 @@ class QueueAdapter(
         b.pbProgressMovie.isVisible = season == null && entry.progress != null
         b.pbProgressMovie.progress = entry.progress ?: 0
 
+        b.cardProgressPoster.setOnClickListener { onPosterClick(entry) }
+        b.cardProgressPoster.setOnLongClickListener { onLongClick(entry); true }
+        b.cardProgressPoster.contentDescription = context.getString(R.string.queue_action_play_title, entry.title)
         b.btnProgressWatched.setOnClickListener {
             it.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
             onMarkWatched(entry)
@@ -166,6 +190,7 @@ class QueueAdapter(
         override fun areContentsTheSame(oldItem: QueueEntry, newItem: QueueEntry) =
             oldItem.title == newItem.title &&
                 oldItem.poster == newItem.poster &&
+                oldItem.releasedMillis == newItem.releasedMillis &&
                 oldItem.reaction == newItem.reaction &&
                 oldItem.progress == newItem.progress &&
                 oldItem.seasonNumber == newItem.seasonNumber &&

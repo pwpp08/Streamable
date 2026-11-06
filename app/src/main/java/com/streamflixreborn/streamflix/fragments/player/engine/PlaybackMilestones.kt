@@ -31,6 +31,10 @@ class SkipSegmentController(
 
     val hasData get() = segments?.isEmpty == false
 
+    private companion object {
+        const val REWIND_RESET_MS = 3_000L
+    }
+
     fun load(provider: Provider?, videoType: Video.Type) {
         loadJob?.cancel()
         segments = null
@@ -42,6 +46,10 @@ class SkipSegmentController(
 
     fun onTick(positionMs: Long, durationMs: Long) {
         val mode = UserPreferences.skipSegmentsMode
+        // Rewinding to before a segment you already skipped offers it again.
+        if (mode != UserPreferences.SkipSegmentsMode.AUTO && handled.isNotEmpty()) {
+            handled.removeAll { positionMs < it.start() - REWIND_RESET_MS }
+        }
         val segment = segments?.skippableAt(positionMs, durationMs)
         if (mode == UserPreferences.SkipSegmentsMode.OFF || segment == null || segment in handled) {
             hide()

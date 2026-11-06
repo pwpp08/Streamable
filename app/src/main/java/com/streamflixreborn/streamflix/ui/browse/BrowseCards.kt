@@ -1,15 +1,19 @@
 package com.streamflixreborn.streamflix.ui.browse
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.view.View
 import android.widget.TextView
 import com.google.android.material.carousel.MaskableFrameLayout
+import com.google.android.material.color.MaterialColors
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.models.WatchItem
 import com.streamflixreborn.streamflix.ui.motion.FocusScaleAnimator
 import com.streamflixreborn.streamflix.ui.motion.PressScale
 import com.streamflixreborn.streamflix.ui.motion.Spring
 import com.streamflixreborn.streamflix.ui.motion.springAlpha
+import com.streamflixreborn.streamflix.utils.ReleaseStatus
+import java.util.Calendar
 import java.util.Locale
 import kotlin.math.max
 
@@ -28,6 +32,25 @@ object BrowseCards {
         val value = ratingValue(rating)
         chip.text = value?.let { chip.context.getString(R.string.browse_rating_star, it) }
         chip.visibility = if (value == null) View.GONE else View.VISIBLE
+    }
+
+    /**
+     * Rating chip that turns into a tinted "Soon · Nov 12" while the title is not out yet, so it is
+     * obvious on the poster. The default look is restored whenever the chip is rebound.
+     */
+    fun bindRating(chip: TextView, rating: Double?, released: Calendar?) {
+        if (!ReleaseStatus.isUnreleased(released) || released == null) {
+            chip.backgroundTintList = null
+            chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnSurface))
+            bindRating(chip, rating)
+            return
+        }
+        chip.text = chip.context.getString(R.string.browse_coming_soon, ReleaseStatus.shortDate(chip.context, released))
+        chip.backgroundTintList = ColorStateList.valueOf(
+            MaterialColors.getColor(chip, com.google.android.material.R.attr.colorPrimaryContainer),
+        )
+        chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnPrimaryContainer))
+        chip.visibility = View.VISIBLE
     }
 
     /** First letter or digit of [title], shown on the tonal placeholder. */

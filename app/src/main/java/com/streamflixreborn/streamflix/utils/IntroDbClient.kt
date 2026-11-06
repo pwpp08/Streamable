@@ -27,6 +27,15 @@ object IntroDbClient {
     private const val TAG = "IntroDbClient"
     private const val BASE_URL = "https://api.theintrodb.org/v2/media"
 
+    /** How far before a known intro end the skip is offered when the intro start is unknown. */
+    const val OPEN_START_LEAD_MS = 90_000L
+
+    /** Nothing is offered in the last moments of a segment: skipping would land on the same spot. */
+    const val END_GUARD_MS = 1_500L
+
+    /** Longer "intros" are bad crowd-sourced data (or a whole scene), not something to offer a skip for. */
+    private const val MAX_SKIPPABLE_MS = 5 * 60_000L
+
     enum class SegmentType(val key: String) {
         RECAP("recap"),
         INTRO("intro"),
@@ -35,8 +44,15 @@ object IntroDbClient {
     }
 
     data class Segment(val type: SegmentType, val startMs: Long?, val endMs: Long?) {
-        fun start(): Long = startMs ?: 0L
+        /**
+         * When the database only knows where the intro ends ("start": null) it does not mean the
+         * intro runs from 0:00, so the skip offer starts a typical intro's length before the end.
+         */
+        fun start(): Long = startMs ?: if (endMs != null) (endMs - OPEN_START_LEAD_MS).coerceAtLeast(0L) else 0L
         fun end(durationMs: Long): Long = endMs ?: durationMs.takeIf { it > 0 } ?: Long.MAX_VALUE
+
+        /** Intro or recap that a viewer can be offered a skip for. */
+        val isSkippable get() = type == SegmentType.INTRO || type == SegmentType.RECAP
     }
 
     data class Segments(val segments: List<Segment>) {
@@ -48,11 +64,11 @@ object IntroDbClient {
             .filter { durationMs <= 0 || (it in (durationMs / 2) until durationMs) }
             .minOrNull()
 
-        /** Intro or recap that [positionMs] is inside of (and not about to end). */
-        fun skippableAt(positionMs: Long, durationMs: Long): Segment? = segments.firstOrNull {
-            (it.type == SegmentType.INTRO || it.type == SegmentType.RECAP) &&
-                positionMs >= it.start() && positionMs < it.end(durationMs) - 1_000
-        }
+        /** Intro or recap that [positionMs] is inside of (and not about to end), earliest first. */
+        fun skippableAt(positionMs: Long, durationMs: Long): Segment? = segments
+            .filter { it.isSkippable }
+            .sortedBy { it.start() }
+            .firstOrNull { positionMs >= it.start() && positionMs < it.end(durationMs) - END_GUARD_MS }
 
         val isEmpty get() = segments.isEmpty()
     }
@@ -117,6 +133,9 @@ object IntroDbClient {
                 val end = item.optLongOrNull("end_ms")
                 if (start == null && end == null) return@mapNotNull null
                 if (start != null && end != null && end <= start) return@mapNotNull null
+                val skippable = type == SegmentType.INTRO || type == SegmentType.RECAP
+                if (skippable && end != null && end <= 0L) return@mapNotNull null
+                if (skippable && start != null && end != null && end - start > MAX_SKIPPABLE_MS) return@mapNotNull null
                 Segment(type, start, end)
             }
         }

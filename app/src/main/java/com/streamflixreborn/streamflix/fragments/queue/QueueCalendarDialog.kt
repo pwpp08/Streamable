@@ -55,7 +55,7 @@ object QueueCalendarDialog {
                         item.episodeTitle?.takeIf { it.isNotBlank() },
                     ).joinToString(" · ")
                 } else {
-                    context.getString(R.string.queue_calendar_premiere)
+                    context.getString(R.string.queue_calendar_release)
                 }
                 Glide.with(row.ivCalendarPoster).load(item.entry.poster).centerCrop().into(row.ivCalendarPoster)
                 row.root.setOnClickListener {

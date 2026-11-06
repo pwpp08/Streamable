@@ -43,7 +43,12 @@ object QueueSpinDialog {
             binding.tvQueueSpinOverview.text = entry.overview
             binding.tvQueueSpinOverview.isVisible = !entry.overview.isNullOrBlank()
             binding.tvQueueSpinInitial.text = entry.title.take(1).uppercase()
-            binding.btnQueueSpinPlay.isVisible = QueueNavigator.canPlay(entry)
+            // Always there: Play, or when the title is not out yet, its release date (disabled).
+            val unreleased = QueueNavigator.isUnreleased(entry)
+            binding.btnQueueSpinPlay.isVisible = true
+            binding.btnQueueSpinPlay.isEnabled = !unreleased
+            binding.btnQueueSpinPlay.text = QueueNavigator.releaseLabel(context, entry)
+                ?: context.getString(R.string.queue_action_play)
             val request = Glide.with(binding.ivQueueSpinBackdrop).load(entry.banner ?: entry.poster).centerCrop()
             if (settled) request.transition(DrawableTransitionOptions.withCrossFade(180)).into(binding.ivQueueSpinBackdrop)
             else request.into(binding.ivQueueSpinBackdrop)
@@ -62,7 +67,7 @@ object QueueSpinDialog {
         binding.wheelQueue.onSelected = { index -> pool.getOrNull(index)?.let { showEntry(it, settled = false) } }
         binding.wheelQueue.onSettled = { index ->
             pool.getOrNull(index)?.let { showEntry(it, settled = true) }
-            if (isTv) (if (binding.btnQueueSpinPlay.isVisible) binding.btnQueueSpinPlay else binding.btnQueueSpinDetails).requestFocus()
+            if (isTv) (if (binding.btnQueueSpinPlay.isEnabled) binding.btnQueueSpinPlay else binding.btnQueueSpinDetails).requestFocus()
         }
 
         val movies = entries.count { !it.isTv }
@@ -85,8 +90,10 @@ object QueueSpinDialog {
         binding.btnQueueSpinClose.setOnClickListener { dialog.dismiss() }
         binding.btnQueueSpinPlay.setOnClickListener {
             val chosen = current ?: return@setOnClickListener
-            dialog.dismiss()
-            QueueNavigator.play(context, fragment.findNavController(), chosen)
+            binding.btnQueueSpinPlay.isEnabled = false
+            QueueNavigator.playResolving(fragment, chosen) { busy ->
+                if (!busy) dialog.dismiss()
+            }
         }
         binding.btnQueueSpinDetails.setOnClickListener {
             val chosen = current ?: return@setOnClickListener

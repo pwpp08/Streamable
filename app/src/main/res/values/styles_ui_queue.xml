@@ -9,6 +9,20 @@
         <item name="android:insetBottom">0dp</item>
     </style>
 
+    <!-- One of the five ratings in the "How was it?" popup: emoji over a short label. -->
+    <style name="Widget.StreamFlix.Queue.RatingChoice" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="android:textSize">11sp</item>
+        <item name="android:minHeight">76dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:maxLines">3</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingStart">2dp</item>
+        <item name="android:paddingEnd">2dp</item>
+        <item name="android:layout_marginStart">2dp</item>
+        <item name="android:layout_marginEnd">2dp</item>
+    </style>
+
     <!-- Full-width, start-aligned action row in the Queue sheet. -->
     <style name="Widget.StreamFlix.Queue.SheetAction" parent="Widget.Material3Expressive.Button.TextButton">
         <item name="android:gravity">start|center_vertical</item>
@@ -23,13 +37,70 @@
     <!-- Section switch in a connected toggle group: the checked segment fills with primary. -->
     <style name="Widget.StreamFlix.Queue.SectionButton" parent="Widget.Material3Expressive.Button.TonalButton">
         <item name="android:checkable">true</item>
-        <item name="android:minHeight">48dp</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
         <item name="android:maxLines">1</item>
         <item name="android:ellipsize">end</item>
         <item name="android:paddingStart">8dp</item>
         <item name="android:paddingEnd">8dp</item>
+    </style>
+
+    <!-- Icon action in the Queue header row. -->
+    <style name="Widget.StreamFlix.Queue.HeaderIcon" parent="Widget.Material3Expressive.Button.IconButton.Standard">
+        <item name="iconTint">?attr/colorOnSurfaceVariant</item>
+        <item name="iconSize">22dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+    </style>
+
+    <!-- Compact filter chip (kind and rating filters). -->
+    <style name="Widget.StreamFlix.Queue.FilterChip" parent="Widget.StreamFlix.Chip">
+        <item name="chipMinHeight">32dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+    </style>
+
+    <!-- Swipe page actions: one line, icon on the left, so "Seen it" never wraps. -->
+    <style name="Widget.StreamFlix.Queue.SwipeAction.Base" parent="">
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">6dp</item>
+        <item name="iconSize">18dp</item>
+    </style>
+    <style name="Widget.StreamFlix.Queue.SwipeAction.Outlined" parent="Widget.StreamFlix.Button.Outlined">
+        <item name="android:maxLines">1</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">6dp</item>
+        <item name="iconSize">18dp</item>
+    </style>
+    <style name="Widget.StreamFlix.Queue.SwipeAction.Tonal" parent="Widget.StreamFlix.Button.Tonal">
+        <item name="android:maxLines">1</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">6dp</item>
+        <item name="iconSize">18dp</item>
+    </style>
+    <style name="Widget.StreamFlix.Queue.SwipeAction.Filled" parent="Widget.StreamFlix.Button">
+        <item name="android:maxLines">1</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">6dp</item>
+        <item name="iconSize">18dp</item>
     </style>
 
     <!-- Spin / Swipe: big tonal tools under the section switch. -->

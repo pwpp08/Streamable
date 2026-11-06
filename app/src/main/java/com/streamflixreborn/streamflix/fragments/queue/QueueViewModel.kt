@@ -59,12 +59,14 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
         val section: Section,
         val filter: Filter,
         val sort: Sort,
+        val rating: RatingFilter,
         val visible: List<QueueEntry>,
     )
 
     private val section = MutableStateFlow(Section.WATCHLIST)
     private val filter = MutableStateFlow(Filter.ALL)
     private val sort = MutableStateFlow(Sort.RECENT)
+    private val rating = MutableStateFlow<RatingFilter>(RatingFilter.Everything)
 
     private data class Sources(
         val favMovies: List<Movie>,
@@ -94,7 +96,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
         build(src, watchingEpisodes, nextEpisodes, allShows)
     }.flowOn(Dispatchers.IO)
 
-    val state: StateFlow<UiState> = combine(lists, section, filter, sort) { lists, section, filter, sort ->
+    val state: StateFlow<UiState> = combine(lists, section, filter, sort, rating) { lists, section, filter, sort, rating ->
         val base = when (section) {
             Section.UP_NEXT -> lists.upNext
             Section.WATCHLIST -> lists.watchlist
@@ -105,20 +107,21 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                 Filter.ALL -> true
                 Filter.MOVIES -> !it.isTv
                 Filter.SHOWS -> it.isTv
-            }
+            } && (section != Section.WATCHED || rating.matches(it))
         }
         // Up next always follows what you touched last.
         val sorted = if (section == Section.UP_NEXT) filtered else sorted(filtered, sort)
-        UiState(lists, section, filter, sort, sorted)
+        UiState(lists, section, filter, sort, rating, sorted)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        UiState(Lists(), Section.WATCHLIST, Filter.ALL, Sort.RECENT, emptyList()),
+        UiState(Lists(), Section.WATCHLIST, Filter.ALL, Sort.RECENT, RatingFilter.Everything, emptyList()),
     )
 
     fun setSection(value: Section) { section.value = value }
     fun setFilter(value: Filter) { filter.value = value }
     fun setSort(value: Sort) { sort.value = value }
+    fun setRating(value: RatingFilter) { rating.value = value }
 
     private fun sorted(items: List<QueueEntry>, sort: Sort): List<QueueEntry> = when (sort) {
         Sort.RECENT -> items.sortedByDescending { it.sortTime }
@@ -276,59 +279,6 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
         QueueStore.setSeen(entry.key, entry.title, entry.poster, entry.year, watched)
     }
 
-    /** Adds a title found while swiping; [seen] puts it under Watched instead. */
-    fun addFromSwipe(context: Context, item: AppAdapter.Item, seen: Boolean) = viewModelScope.launch(Dispatchers.IO) {
-        when (item) {
-            is Movie -> if (seen) {
-                QueueStore.setSeen(QueueStore.key(false, item.id), item.title, item.poster, item.released?.format("yyyy"), true)
-            } else {
-                database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, item, true), true)
-            }
-            is TvShow -> if (seen) {
-                QueueStore.setSeen(QueueStore.key(true, item.id), item.title, item.poster, item.released?.format("yyyy"), true)
-            } else {
-                database.tvShowDao().upsertFavorite(ArtworkRepair.resolveTvShowForFavorite(context, item, true), true)
-            }
-            else -> Unit
-        }
-    }
-
-    // ---- Swipe ---------------------------------------------------------------------------------
-
-    /** Titles to swipe through: recommendations first (TMDb providers), then the provider's home rows. */
-    suspend fun swipeCandidates(context: Context): List<AppAdapter.Item> = withContext(Dispatchers.IO) {
-        val provider = UserPreferences.currentProvider ?: return@withContext emptyList()
-        val known = state.value.lists.let { l -> (l.upNext + l.watchlist + l.watched).map { it.key }.toSet() } +
-            QueueSwipeMemory.skipped(context)
-        val recommended = if (provider is TmdbProvider) {
-            Recommender.category(context, "queue-swipe", provider.language)?.list.orEmpty()
-        } else {
-            emptyList()
-        }
-        val home = runCatching { provider.getHome() }
-            .onFailure { Log.w(TAG, "swipe: home failed: ${it.message}") }
-            .getOrNull().orEmpty()
-            .flatMap { it.list }
-            .shuffled()
-        (recommended + home)
-            .filter { it is Movie || it is TvShow }
-            .distinctBy { keyOf(it) }
-            .filter { keyOf(it) !in known && posterOf(it) != null }
-            .take(60)
-    }
-
-    fun keyOf(item: AppAdapter.Item): String = when (item) {
-        is Movie -> QueueStore.key(false, item.id)
-        is TvShow -> QueueStore.key(true, item.id)
-        else -> ""
-    }
-
-    private fun posterOf(item: AppAdapter.Item): String? = when (item) {
-        is Movie -> item.poster ?: item.banner
-        is TvShow -> item.poster ?: item.banner
-        else -> null
-    }
-
     // ---- Calendar ------------------------------------------------------------------------------
 
     data class Upcoming(
@@ -339,18 +289,27 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
         val episodeTitle: String?,
     )
 
-    private var upcomingCache: Pair<Long, List<Upcoming>>? = null
+    private data class UpcomingCache(val at: Long, val signature: Set<String>, val items: List<Upcoming>)
 
-    /** Next episodes of the shows in your Queue, and Watchlist films not out yet, soonest first. */
+    private var upcomingCache: UpcomingCache? = null
+
+    /**
+     * Upcoming episodes (the next few of the season on air) of the shows in your Queue, and Watchlist
+     * films not out yet, soonest first. Cached for a while, but not across changes to the Queue.
+     */
     suspend fun upcoming(): List<Upcoming> = withContext(Dispatchers.IO) {
-        upcomingCache?.takeIf { System.currentTimeMillis() - it.first < 30 * 60_000L }?.let { return@withContext it.second }
+        val lists = state.value.lists
+        val signature = (lists.upNext + lists.watchlist + lists.watched).map { it.key }.toSet()
+        upcomingCache
+            ?.takeIf { System.currentTimeMillis() - it.at < 30 * 60_000L && it.signature == signature }
+            ?.let { return@withContext it.items }
         val provider = UserPreferences.currentProvider
         val language = provider?.language
-        val lists = state.value.lists
         val today = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
         }
-        val shows = (lists.upNext + lists.watchlist + lists.watched).filter { it.isTv }.distinctBy { it.key }.take(40)
+        // Shows you are following come first; finished shows can still return with a new season.
+        val shows = (lists.upNext + lists.watchlist + lists.watched).filter { it.isTv }.distinctBy { it.key }.take(60)
         val gate = Semaphore(6)
         val episodes = coroutineScope {
             shows.map { entry ->
@@ -361,16 +320,26 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                                 entry.id.toIntOrNull()
                             } else {
                                 TmdbUtils.getTvShow(entry.title, entry.year?.toIntOrNull(), language)?.id?.toIntOrNull()
-                            } ?: return@runCatching null
+                            } ?: return@runCatching emptyList<Upcoming>()
                             val next = TMDb3.TvSeries.details(seriesId = tmdbId, language = language).nextEpisodeToAir
-                                ?: return@runCatching null
-                            val date = parseDate(next.airDate) ?: return@runCatching null
-                            if (date.before(today)) return@runCatching null
-                            Upcoming(entry, date, next.seasonNumber, next.episodeNumber, next.name)
-                        }.getOrNull()
+                                ?: return@runCatching emptyList<Upcoming>()
+                            val firstDate = parseDate(next.airDate) ?: return@runCatching emptyList<Upcoming>()
+                            val first = Upcoming(entry, firstDate, next.seasonNumber, next.episodeNumber, next.name)
+                            // The rest of that season that has an air date, so a weekly show lists several weeks.
+                            val more = runCatching {
+                                TMDb3.TvSeasons.details(seriesId = tmdbId, seasonNumber = next.seasonNumber, language = language)
+                                    .episodes.orEmpty()
+                                    .filter { it.episodeNumber > next.episodeNumber }
+                                    .mapNotNull { ep ->
+                                        parseDate(ep.airDate)?.let { Upcoming(entry, it, ep.seasonNumber, ep.episodeNumber, ep.name) }
+                                    }
+                                    .take(MAX_EPISODES_PER_SHOW - 1)
+                            }.getOrDefault(emptyList())
+                            (listOf(first) + more).filter { !it.date.before(today) }
+                        }.getOrDefault(emptyList())
                     }
                 }
-            }.awaitAll().filterNotNull()
+            }.awaitAll().flatten()
         }
         val films = lists.watchlist.filter { !it.isTv }.mapNotNull { entry ->
             val released = entry.releasedMillis ?: return@mapNotNull null
@@ -378,7 +347,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
             Upcoming(entry, Calendar.getInstance().apply { timeInMillis = released }, null, null, null)
         }
         val result = (episodes + films).sortedBy { it.date.timeInMillis }
-        upcomingCache = System.currentTimeMillis() to result
+        upcomingCache = UpcomingCache(System.currentTimeMillis(), signature, result)
         result
     }
 
@@ -395,8 +364,23 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
 
     data class ImportResult(val added: List<String>, val notFound: List<String>)
 
-    /** Looks each pasted line up with the current provider and adds the best match to the Watchlist. */
-    suspend fun import(context: Context, text: String, onProgress: (done: Int, total: Int) -> Unit): ImportResult =
+    /** Where imported titles go: the Watchlist, or straight to Watched with this rating. */
+    sealed interface ImportTarget {
+        data object Watchlist : ImportTarget
+        data class Rated(val reaction: Reaction) : ImportTarget
+    }
+
+    /**
+     * Looks each pasted line up with the current provider and adds the best match to [target]:
+     * the Watchlist, or Watched with the chosen rating (so a list of favourites can be brought in
+     * as "Loved", then another as "Liked").
+     */
+    suspend fun import(
+        context: Context,
+        text: String,
+        target: ImportTarget = ImportTarget.Watchlist,
+        onProgress: (done: Int, total: Int) -> Unit,
+    ): ImportResult =
         withContext(Dispatchers.IO) {
             val provider = UserPreferences.currentProvider ?: return@withContext ImportResult(emptyList(), emptyList())
             val lines = text.lines().map(::cleanLine).filter { it.first.isNotBlank() }.distinct().take(100)
@@ -410,11 +394,19 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                     ?.takeIf { score(it, title, year) > 0 }
                 when (match) {
                     is Movie -> {
-                        database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, match, true), true)
+                        if (target is ImportTarget.Rated) {
+                            markRated(QueueStore.key(false, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction)
+                        } else {
+                            database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, match, true), true)
+                        }
                         added += match.title
                     }
                     is TvShow -> {
-                        database.tvShowDao().upsertFavorite(ArtworkRepair.resolveTvShowForFavorite(context, match, true), true)
+                        if (target is ImportTarget.Rated) {
+                            markRated(QueueStore.key(true, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction)
+                        } else {
+                            database.tvShowDao().upsertFavorite(ArtworkRepair.resolveTvShowForFavorite(context, match, true), true)
+                        }
                         added += match.title
                     }
                     else -> notFound += title
@@ -423,6 +415,11 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
             withContext(Dispatchers.Main) { onProgress(lines.size, lines.size) }
             ImportResult(added, notFound)
         }
+
+    private fun markRated(key: String, title: String, poster: String?, year: String?, reaction: Reaction) {
+        QueueStore.setSeen(key, title, poster, year, true)
+        QueueStore.setReaction(key, reaction)
+    }
 
     /** "1. The Bear (2022)" → ("The Bear", 2022). */
     private fun cleanLine(raw: String): Pair<String, Int?> {
@@ -461,6 +458,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
 
     companion object {
         private const val TAG = "QueueViewModel"
+        private const val MAX_EPISODES_PER_SHOW = 4
     }
 }
 
