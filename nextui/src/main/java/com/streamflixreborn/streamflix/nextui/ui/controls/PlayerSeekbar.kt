@@ -27,7 +27,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -74,8 +81,19 @@ internal fun PlayerSeekbar(
         onDispose { onValueChangeFinished() }
     }
     var isFocused by remember { mutableStateOf(value = false) }
+    val focusManager = LocalFocusManager.current
+    // The slider would also step its value on Up/Down; here those keys only move focus.
     val focusModifier = modifier
         .fillMaxWidth()
+        .onPreviewKeyEvent { event ->
+            val direction = when (event.key) {
+                Key.DirectionUp -> FocusDirection.Up
+                Key.DirectionDown -> FocusDirection.Down
+                else -> return@onPreviewKeyEvent false
+            }
+            if (event.type == KeyEventType.KeyDown) focusManager.moveFocus(direction)
+            true
+        }
         .onFocusChanged {
             if (isFocused && !it.isFocused) onValueChangeFinished()
             isFocused = it.isFocused

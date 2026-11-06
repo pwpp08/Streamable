@@ -11,13 +11,16 @@
     android:focusable="true"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingTop="6dp"
-    android:paddingBottom="6dp">
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
 
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_progress_poster"
         style="@style/Widget.StreamFlix.Browse.PosterCard"
-        android:layout_width="92dp"
-        android:layout_height="138dp">
+        android:layout_width="72dp"
+        android:layout_height="108dp"
+        android:clickable="true"
+        android:focusable="true">
 
         <TextView
             android:id="@+id/tv_progress_initial"
@@ -37,8 +40,8 @@
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
@@ -48,7 +51,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceTitleLargeEmphasized"
+            android:textAppearance="?attr/textAppearanceTitleMediumEmphasized"
             android:textColor="?attr/colorOnSurface"
             tools:text="The Bear" />
 
@@ -56,10 +59,10 @@
             android:id="@+id/tv_progress_episode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="1dp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="S3E7 Legacy" />
 
@@ -67,7 +70,7 @@
             android:id="@+id/tv_progress_left"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="22 episodes left" />
 
@@ -75,31 +78,32 @@
             android:id="@+id/spv_progress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp" />
+            android:layout_marginTop="8dp" />
 
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/pb_progress_movie"
             style="@style/Widget.StreamFlix.LinearProgressIndicator"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="8dp"
             android:visibility="gone" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_progress_watched"
         style="@style/Widget.StreamFlix.Button.Icon.Tonal"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:layout_width="44dp"
+        android:layout_height="34dp"
         android:contentDescription="@string/queue_action_mark_watched"
         android:insetLeft="0dp"
         android:insetTop="0dp"
         android:insetRight="0dp"
         android:insetBottom="0dp"
         android:padding="0dp"
+        app:cornerRadius="10dp"
         app:icon="@drawable/ic_ud_check"
         app:iconGravity="textStart"
         app:iconPadding="0dp"
-        app:iconSize="28dp" />
+        app:iconSize="20dp" />
 
 </LinearLayout>

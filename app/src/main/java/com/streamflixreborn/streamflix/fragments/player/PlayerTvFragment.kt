@@ -90,6 +90,9 @@ import com.streamflixreborn.streamflix.fragments.player.engine.ProgressSaver
 import com.streamflixreborn.streamflix.fragments.player.engine.SkipSegmentController
 import com.streamflixreborn.streamflix.fragments.player.engine.StreamDataSourceFactory
 import com.streamflixreborn.streamflix.fragments.player.engine.AutoFitController
+import com.streamflixreborn.streamflix.fragments.player.engine.AutoSubtitleFetch
+import com.streamflixreborn.streamflix.fragments.player.engine.SideloadedSubtitles
+import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleFileParser
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleStyler
 import com.streamflixreborn.streamflix.fragments.player.engine.PlaybackSnapshot
 import com.streamflixreborn.streamflix.fragments.player.engine.TrackPreferences
@@ -112,6 +115,40 @@ class PlayerTvFragment : Fragment() {
     private val args by navArgs<PlayerTvFragmentArgs>()
     private val database by lazy { AppDatabase.getInstance(requireContext()) }
     private val viewModel by viewModelsFactory { PlayerViewModel(args.videoType, args.id) }
+
+    private val sideloadedSubtitles by lazy {
+        SideloadedSubtitles(
+            player = { if (::player.isInitialized) player else null },
+            subtitleView = { _binding?.pvPlayer?.subtitleView },
+        )
+    }
+    private val autoSubtitleFetch = AutoSubtitleFetch()
+
+    private fun maybeFetchAutoSubtitle() {
+        autoSubtitleFetch.next(sideloadedSubtitles.isActive)?.let { viewModel.downloadSubtitle(it) }
+    }
+
+    /**
+     * A subtitle picked from OpenSubtitles / SubDL is drawn over the video; the stream itself is
+     * left alone (no reload, no server change, no seek).
+     */
+    private fun showSideloadedSubtitle(uri: Uri, name: String?) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val lines = withContext(Dispatchers.IO) {
+                runCatching {
+                    val bytes = requireContext().contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    bytes?.let { SubtitleFileParser.parse(SubtitleFileParser.decode(it)) }
+                }.getOrNull()
+            }
+            if (_binding == null) return@launch
+            if (lines.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), R.string.player_subtitle_unsupported, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            sideloadedSubtitles.show(lines, name)
+            showPlayerMessage(name ?: getString(R.string.player_subtitle_loaded))
+        }
+    }
 
     private lateinit var player: ExoPlayer
     private var autoFit: AutoFitController? = null
@@ -142,6 +179,15 @@ class PlayerTvFragment : Fragment() {
     private var frameRateMatcher: FrameRateMatcher? = null
     private lateinit var progressHandler: android.os.Handler
     private lateinit var progressRunnable: Runnable
+    /** Checks the intro/recap window more often than the 1 s progress tick, so the pill is on time. */
+    private val skipRunnable: Runnable = object : Runnable {
+        override fun run() {
+            if (_binding != null && ::player.isInitialized && player.playbackState == Player.STATE_READY) {
+                skipSegments.onTick(player.currentPosition, player.duration)
+            }
+            if (::progressHandler.isInitialized) progressHandler.postDelayed(this, 250)
+        }
+    }
     private lateinit var nextUi: NextUiBinder
 
     private var servers = listOf<Video.Server>()
@@ -335,45 +381,17 @@ class PlayerTvFragment : Fragment() {
                             PlayerViewModel.SubtitleState.Loading -> {}
                             is PlayerViewModel.SubtitleState.SuccessOpenSubtitles -> {
                                 binding.settings.openSubtitles = state.subtitles
+                                autoSubtitleFetch.onResults(state.subtitles)
+                                maybeFetchAutoSubtitle()
                             }
 
                             is PlayerViewModel.SubtitleState.FailedOpenSubtitles -> {}
 
                             PlayerViewModel.SubtitleState.DownloadingOpenSubtitle -> {}
                             is PlayerViewModel.SubtitleState.SuccessDownloadingOpenSubtitle -> {
-                                val fileName =
-                                    state.uri.getFileName(requireContext()) ?: state.uri.toString()
-                                val currentPosition = player.currentPosition
-                                val currentSubtitleConfigurations =
-                                    player.currentMediaItem?.localConfiguration?.subtitleConfigurations?.map {
-                                        MediaItem.SubtitleConfiguration.Builder(it.uri)
-                                            .setMimeType(it.mimeType)
-                                            .setLabel(it.label)
-                                            .setLanguage(it.language)
-                                            .setSelectionFlags(0)
-                                            .build()
-                                    } ?: listOf()
-                                player.setMediaItem(
-                                    MediaItem.Builder()
-                                        .setUri(player.currentMediaItem?.localConfiguration?.uri)
-                                        .setMimeType(player.currentMediaItem?.localConfiguration?.mimeType)
-                                        .setSubtitleConfigurations(
-                                            currentSubtitleConfigurations
-                                                    + MediaItem.SubtitleConfiguration.Builder(state.uri)
-                                                .setMimeType(fileName.toSubtitleMimeType())
-                                                .setLabel(fileName)
-                                                .setLanguage(state.subtitle.languageName)
-                                                .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
-                                                .build()
-                                        )
-                                        .setMediaMetadata(player.mediaMetadata)
-                                        .build()
-                                )
-                                UserPreferences.subtitleName =
-                                    (state.subtitle.languageName ?: fileName).substringBefore(" ")
-                                TrackPreferences.preferSideloadedSubtitle(player)
-                                player.seekTo(currentPosition)
-                                player.play()
+                                val label = state.subtitle.subFileName ?: state.subtitle.languageName
+                                UserPreferences.subtitleName = (state.subtitle.languageName ?: label.orEmpty()).substringBefore(" ")
+                                showSideloadedSubtitle(state.uri, label)
                             }
 
                             is PlayerViewModel.SubtitleState.FailedDownloadingOpenSubtitle -> {
@@ -392,46 +410,9 @@ class PlayerTvFragment : Fragment() {
 
                             PlayerViewModel.SubtitleState.DownloadingSubDLSubtitle -> {}
                             is PlayerViewModel.SubtitleState.SuccessDownloadingSubDLSubtitle -> {
-                                val fileName =
-                                    state.uri.getFileName(requireContext()) ?: state.uri.toString()
-                                val currentPosition = player.currentPosition
-                                val currentSubtitleConfigurations =
-                                    player.currentMediaItem?.localConfiguration?.subtitleConfigurations?.map {
-                                        MediaItem.SubtitleConfiguration.Builder(it.uri)
-                                            .setMimeType(it.mimeType)
-                                            .setLabel(it.label)
-                                            .setLanguage(it.language)
-                                            .setSelectionFlags(0)
-                                            .build()
-                                    } ?: listOf()
-                                player.setMediaItem(
-                                    MediaItem.Builder()
-                                        .setUri(player.currentMediaItem?.localConfiguration?.uri)
-                                        .setMimeType(player.currentMediaItem?.localConfiguration?.mimeType)
-                                        .setSubtitleConfigurations(
-                                            currentSubtitleConfigurations
-                                                    + MediaItem.SubtitleConfiguration.Builder(state.uri)
-                                                .setMimeType(fileName.toSubtitleMimeType())
-                                                .setLabel(
-                                                    state.subtitle.releaseName
-                                                        ?: state.subtitle.name ?: fileName
-                                                )
-                                                .setLanguage(
-                                                    state.subtitle.lang ?: state.subtitle.language
-                                                    ?: "Unknown"
-                                                )
-                                                .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
-                                                .build()
-                                        )
-                                        .setMediaMetadata(player.mediaMetadata)
-                                        .build()
-                                )
-                                UserPreferences.subtitleName =
-                                    (state.subtitle.releaseName ?: state.subtitle.name
-                                    ?: fileName).substringBefore(" ")
-                                TrackPreferences.preferSideloadedSubtitle(player)
-                                player.seekTo(currentPosition)
-                                player.play()
+                                val label = state.subtitle.releaseName ?: state.subtitle.name
+                                UserPreferences.subtitleName = (label ?: "").substringBefore(" ")
+                                showSideloadedSubtitle(state.uri, label)
                             }
 
                             is PlayerViewModel.SubtitleState.FailedDownloadingSubDLSubtitle -> {
@@ -498,6 +479,7 @@ class PlayerTvFragment : Fragment() {
 
         override fun onDestroyView() {
             autoFit?.stop()
+            sideloadedSubtitles.release()
             autoFit = null
             super.onDestroyView()
             (activity as? IdleDimHost)?.idleDimmer?.setPlaying(false)
@@ -1230,6 +1212,8 @@ class PlayerTvFragment : Fragment() {
 
         override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
             autoSubtitles?.onTracksChanged(tracks)
+            autoSubtitleFetch.onTracks(tracks)
+            maybeFetchAutoSubtitle()
             matchFrameRate()
         }
 
@@ -1292,19 +1276,18 @@ class PlayerTvFragment : Fragment() {
                 if (player.isPlaying) {
                     val position = player.currentPosition
                     val duration = player.duration
-                    // The fixed +85 s button is only a fallback when there is no segment data.
-                    showSkipIntroButton(false) // no guessed fixed jump: only real intro data offers a skip
-                    skipSegments.onTick(position, duration)
                     updateNextEpisodeOverlay(position, duration)
                 }
                 progressHandler.postDelayed(progressRunnable, 1000)
             }
             progressHandler.post(progressRunnable)
+        progressHandler.post(skipRunnable)
         }
 
         private fun stopProgressHandler() {
             if (::progressHandler.isInitialized) {
                 progressHandler.removeCallbacks(progressRunnable)
+            progressHandler.removeCallbacks(skipRunnable)
             }
         }
 

@@ -106,6 +106,14 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:contentDescription="@string/queue_reaction_disliked" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_queue_reaction_hated"
+            style="@style/Widget.StreamFlix.Queue.ReactionButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/queue_reaction_hated" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <TextView

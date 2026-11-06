@@ -261,7 +261,7 @@ class TvShowViewHolder(
         binding.tvTvShowInitial.text = BrowseCards.initial(tvShow.title)
         setPoster(binding.ivTvShowPoster)
         bindRibbons(binding.ivTvShowFavoriteRibbon, binding.ivTvShowWatchedRibbon)
-        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating)
+        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating, tvShow.released)
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             isVisible = !text.isNullOrEmpty()
@@ -312,7 +312,7 @@ class TvShowViewHolder(
         binding.tvTvShowInitial.text = BrowseCards.initial(tvShow.title)
         setPoster(binding.ivTvShowPoster)
         bindRibbons(binding.ivTvShowFavoriteRibbon, binding.ivTvShowWatchedRibbon)
-        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating)
+        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating, tvShow.released)
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             isVisible = !text.isNullOrEmpty()
@@ -356,7 +356,7 @@ class TvShowViewHolder(
         binding.tvTvShowInitial.text = BrowseCards.initial(tvShow.title)
         setPoster(binding.ivTvShowPoster)
         bindRibbons(binding.ivTvShowFavoriteRibbon, binding.ivTvShowWatchedRibbon)
-        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating)
+        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating, tvShow.released)
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             isVisible = !text.isNullOrEmpty()
@@ -406,7 +406,7 @@ class TvShowViewHolder(
         binding.tvTvShowInitial.text = BrowseCards.initial(tvShow.title)
         setPoster(binding.ivTvShowPoster)
         bindRibbons(binding.ivTvShowFavoriteRibbon, binding.ivTvShowWatchedRibbon)
-        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating)
+        BrowseCards.bindRating(binding.tvTvShowRating, tvShow.rating, tvShow.released)
         binding.tvTvShowQuality.apply {
             text = tvShow.quality ?: ""
             isVisible = !text.isNullOrEmpty()

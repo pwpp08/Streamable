@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.utils
 
+import com.streamflixreborn.streamflix.fragments.queue.WatchEvents
 import android.content.Context
 import android.util.Log
 import com.streamflixreborn.streamflix.adapters.AppAdapter
@@ -173,6 +174,7 @@ object WatchStateActions {
                     if (watched) Rules.markWatched(movie, now) else Rules.markUnwatched(movie)
                     if (stored != null) dao.update(movie) else dao.insert(movie)
                     UserDataCache.syncMovieToCache(context, provider, movie)
+                    if (watched) WatchEvents.movieWatched(movie)
                 }
 
                 is Episode -> {

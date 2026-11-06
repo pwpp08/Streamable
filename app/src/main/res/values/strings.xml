@@ -117,8 +117,8 @@
     <string name="favorites_moving_selected">Moving selected — OK to stop</string>
 
     <string name="option_episode_open_tv_show">Go to TV show</string>
-    <string name="option_show_favorite">Add to favorites</string>
-    <string name="option_show_unfavorite">Remove from favorites</string>
+    <string name="option_show_favorite">Add to Queue</string>
+    <string name="option_show_unfavorite">Remove from Queue</string>
     <string name="option_show_watched">Mark as watched</string>
     <string name="option_show_mark_all_previous_watched">Mark as watched until here</string>
     <string name="option_show_mark_all_previous_unwatched">Mark as unwatched until here</string>
@@ -616,6 +616,7 @@
     <string name="queue_section_watched">Watched</string>
     <string name="queue_section_count">%1$s · %2$d</string>
     <string name="queue_filter_all">All</string>
+    <string name="queue_filter_unrated">Not rated</string>
     <string name="queue_filter_movies">Movies</string>
     <string name="queue_filter_shows">Shows</string>
     <string name="queue_stats">%1$d to watch · %2$d in progress · %3$d watched</string>
@@ -652,6 +653,9 @@
     <string name="queue_reaction_liked">Liked it</string>
     <string name="queue_reaction_okay">It was okay</string>
     <string name="queue_reaction_disliked">Didn’t like it</string>
+    <string name="queue_reaction_hated">Hated it</string>
+    <string name="queue_reaction_prompt">How was %s?</string>
+    <string name="queue_reaction_skip">Not now</string>
     <string name="queue_action_play">Play</string>
     <string name="queue_action_resume">Resume</string>
     <string name="queue_action_details">Open details</string>
@@ -667,6 +671,9 @@
 
     <string name="queue_swipe_title">Swipe to build your Queue</string>
     <string name="queue_swipe_hint">Right to add · left to skip · up if you’ve seen it</string>
+    <string name="queue_swipe_hint_left">‹ Skip</string>
+    <string name="queue_swipe_hint_up">↑ Seen it</string>
+    <string name="queue_swipe_hint_right">Add ›</string>
     <string name="queue_swipe_skip">Skip</string>
     <string name="queue_swipe_seen">Seen it</string>
     <string name="queue_swipe_add">Add</string>
@@ -679,14 +686,28 @@
     <string name="queue_calendar_today">Today</string>
     <string name="queue_calendar_tomorrow">Tomorrow</string>
     <string name="queue_calendar_premiere">Premiere</string>
+    <string name="queue_calendar_release">Movie release</string>
 
     <string name="queue_import_title">Import a list</string>
     <string name="queue_import_message">Paste titles from your notes or a spreadsheet, one per line. A year in brackets helps: The Bear (2022).</string>
     <string name="queue_import_hint">One title per line</string>
     <string name="queue_import_start">Import</string>
+    <string name="queue_import_target_title">Add them as</string>
+    <string name="queue_import_target_watchlist">To watch</string>
+    <string name="queue_import_done_rated">Added %1$d of %2$d titles as “%3$s”.</string>
     <string name="queue_import_progress">Looking up %1$d of %2$d…</string>
     <string name="queue_import_done">Added %1$d of %2$d titles.</string>
     <string name="queue_import_not_found">Not found: %s</string>
+    <string name="queue_show_error">Couldn’t load this show’s seasons. Check your connection and try again.</string>
+    <string name="queue_season_stats">%1$d%% · %2$d of %3$d episodes watched</string>
+    <string name="queue_season_stats_empty">No episodes yet</string>
+    <string name="queue_season_title">Season %1$d</string>
+    <string name="queue_season_specials">Specials</string>
+    <string name="queue_episode_title">E%1$d · %2$s</string>
+    <string name="queue_episode_aired">Aired %1$s</string>
+    <string name="queue_episode_airs">Airs %1$s</string>
+    <string name="queue_no_episode">Couldn’t find an episode to play. Opening the show instead.</string>
+    <string name="queue_action_play_title">Play %1$s</string>
     <string name="queue_close">Close</string>
     <string name="queue_done">Done</string>
 </resources>

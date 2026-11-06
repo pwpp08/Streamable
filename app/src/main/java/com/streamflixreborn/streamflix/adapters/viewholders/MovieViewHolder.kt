@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.adapters.viewholders
 
+import com.streamflixreborn.streamflix.utils.ReleaseStatus
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -377,7 +378,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating)
+        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
 
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
@@ -421,7 +422,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating)
+        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
             progress = BrowseCards.progressPercent(watchHistory)
@@ -638,7 +639,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating)
+        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
 
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
@@ -707,7 +708,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating)
+        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
             progress = BrowseCards.progressPercent(watchHistory)
@@ -875,6 +876,34 @@ class MovieViewHolder(
         overview.text = movie.overview
     }
 
+    private fun isUnreleased() = ReleaseStatus.isUnreleased(movie.released)
+
+    /**
+     * A film that is not out yet cannot be played, so the main button says when it comes out and
+     * tapping it puts the film in the Queue (where the Coming up calendar lists it).
+     */
+    private fun bindUnreleased(button: MaterialButton, favorite: MaterialButton) {
+        val released = movie.released
+        if (released == null || !isUnreleased()) {
+            button.alpha = 1f
+            return
+        }
+        button.text = context.getString(R.string.movie_releases_on, ReleaseStatus.shortDate(context, released))
+        button.alpha = 0.78f
+        button.setOnClickListener {
+            if (!movie.isFavorite) {
+                favorite.performClick()
+                android.widget.Toast.makeText(context, R.string.movie_not_out_added, android.widget.Toast.LENGTH_LONG).show()
+            } else {
+                android.widget.Toast.makeText(
+                    context,
+                    context.getString(R.string.movie_not_out_info, ReleaseStatus.longDate(context, released)),
+                    android.widget.Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
+    }
+
     private fun bindMovieProgress(progressBar: LinearProgressIndicator) {
         progressBar.isVisible = movie.watchHistory != null
         progressBar.progress = DetailsUi.progressPercent(movie.watchHistory) ?: 0
@@ -949,6 +978,8 @@ class MovieViewHolder(
 
         binding.btnMovieWatchNow.apply {
             text = DetailsUi.playLabel(context, movie.watchHistory)
+            bindUnreleased(this, binding.btnMovieFavorite)
+            if (isUnreleased()) return@apply
             setOnClickListener {
                 // Este botón ya navega al reproductor, no a otra página de detalles.
                 // Generalmente non necesita el cambio de proveedor, pero lo añadimos por seguridad.
@@ -1025,6 +1056,8 @@ class MovieViewHolder(
 
         binding.btnMovieWatchNow.apply {
             text = DetailsUi.playLabel(context, movie.watchHistory)
+            bindUnreleased(this, binding.btnMovieFavorite)
+            if (isUnreleased()) return@apply
             setOnClickListener {
                 checkProviderAndRun {
                     findNavController().navigate(MovieTvFragmentDirections.actionMovieToPlayer(

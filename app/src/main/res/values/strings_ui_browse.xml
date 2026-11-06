@@ -5,6 +5,10 @@
     <string name="browse_more_info">More info</string>
     <string name="browse_navigate_up">Back</string>
     <string name="browse_rating_star">★ %1$s</string>
+    <string name="browse_coming_soon">Soon · %1$s</string>
+    <string name="movie_releases_on">Releases %1$s</string>
+    <string name="movie_not_out_added">Not out yet. It’s in your Queue and shows up under Coming up.</string>
+    <string name="movie_not_out_info">Not out yet. It arrives on %1$s.</string>
     <string name="browse_meta_separator">" · "</string>
 
     <plurals name="browse_minutes_left">
