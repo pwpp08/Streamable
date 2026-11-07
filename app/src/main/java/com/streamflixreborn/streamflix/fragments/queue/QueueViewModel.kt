@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.fragments.queue
 
+import com.streamflixreborn.streamflix.utils.FavoriteSync
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -248,10 +249,16 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
     fun setInQueue(context: Context, entry: QueueEntry, inQueue: Boolean) = viewModelScope.launch(Dispatchers.IO) {
         if (entry.isTv) {
             val show = entry.tvShow ?: TvShow(id = entry.id, title = entry.title, poster = entry.poster)
-            database.tvShowDao().upsertFavorite(ArtworkRepair.resolveTvShowForFavorite(context, show, inQueue), inQueue)
+            ArtworkRepair.resolveTvShowForFavorite(context, show, inQueue).let {
+                database.tvShowDao().upsertFavorite(it, inQueue)
+                FavoriteSync.tvShow(context, it, inQueue)
+            }
         } else {
             val movie = entry.movie ?: Movie(id = entry.id, title = entry.title, poster = entry.poster)
-            database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, movie, inQueue), inQueue)
+            ArtworkRepair.resolveMovieForFavorite(context, movie, inQueue).let {
+                database.movieDao().upsertFavorite(it, inQueue)
+                FavoriteSync.movie(context, it, inQueue)
+            }
         }
     }
 
@@ -395,7 +402,10 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                         if (target is ImportTarget.Rated) {
                             markRated(QueueStore.key(false, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction, match.released?.timeInMillis, match.rating)
                         } else {
-                            database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, match, true), true)
+                            ArtworkRepair.resolveMovieForFavorite(context, match, true).let {
+                                database.movieDao().upsertFavorite(it, true)
+                                FavoriteSync.movie(context, it, true)
+                            }
                         }
                         added += match.title
                     }
@@ -403,7 +413,10 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                         if (target is ImportTarget.Rated) {
                             markRated(QueueStore.key(true, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction, match.released?.timeInMillis, match.rating)
                         } else {
-                            database.tvShowDao().upsertFavorite(ArtworkRepair.resolveTvShowForFavorite(context, match, true), true)
+                            ArtworkRepair.resolveTvShowForFavorite(context, match, true).let {
+                                database.tvShowDao().upsertFavorite(it, true)
+                                FavoriteSync.tvShow(context, it, true)
+                            }
                         }
                         added += match.title
                     }
@@ -430,7 +443,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
     /** "1. The Bear (2022)" → ("The Bear", 2022). */
     private fun cleanLine(raw: String): Pair<String, Int?> {
         var line = raw.trim()
-            .replace(Regex("^([-*•▪◦·]|\\d+[.)]|\\[[ xX]?])\\s*"), "")
+            .replace(Regex("^([-*•▪◦·]|\\d+[.)]|\\[[ xX]?\\])\\s*"), "")
             .trim()
         val year = Regex("\\((\\d{4})\\)\\s*$").find(line)?.groupValues?.get(1)?.toIntOrNull()
             ?: Regex("\\s(\\d{4})$").find(line)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it in 1900..2100 }

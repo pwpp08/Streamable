@@ -1,8 +1,11 @@
 package com.streamflixreborn.streamflix.fragments.player.engine
 
+import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.text.Html
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.Player
@@ -11,9 +14,44 @@ import androidx.media3.common.text.Cue
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.SubtitleView
 import com.streamflixreborn.streamflix.utils.SubtitleOffset
+import java.io.File
 import java.nio.ByteBuffer
 import java.nio.charset.CharacterCodingException
 import java.nio.charset.CodingErrorAction
+
+private const val READ_TAG = "SideloadedSubtitles"
+
+/**
+ * Reads and parses a downloaded subtitle file. Never throws: a problem is logged with its real
+ * cause and an empty list is returned, so the caller can say so instead of crashing.
+ */
+fun readSubtitleFile(context: Context, uri: Uri): List<SubtitleLine> {
+    val bytes = try {
+        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+    } catch (e: Exception) {
+        Log.w(READ_TAG, "Could not open $uri through the content resolver: ${e.message}")
+        null
+    } ?: uri.path?.let { path ->
+        try {
+            File(path).readBytes()
+        } catch (e: Exception) {
+            Log.w(READ_TAG, "Could not read $path: ${e.message}")
+            null
+        }
+    }
+    if (bytes == null || bytes.isEmpty()) {
+        Log.w(READ_TAG, "Subtitle file is missing or empty: $uri")
+        return emptyList()
+    }
+    return try {
+        SubtitleFileParser.parse(SubtitleFileParser.decode(bytes)).also {
+            if (it.isEmpty()) Log.w(READ_TAG, "No timed lines found in ${bytes.size} bytes of $uri")
+        }
+    } catch (t: Throwable) {
+        Log.e(READ_TAG, "Subtitle parsing failed for $uri", t)
+        emptyList()
+    }
+}
 
 /** One timed line of an SRT / WebVTT file. */
 data class SubtitleLine(val startMs: Long, val endMs: Long, val text: String)
@@ -24,7 +62,8 @@ object SubtitleFileParser {
     private val TIME_LINE = Regex(
         """((?:\d{1,2}:)?\d{1,2}:\d{2}[.,]\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{1,2}:\d{2}[.,]\d{1,3})"""
     )
-    private val ASS_OVERRIDE = Regex("""\{\\[^}]*}""")
+    // Braces are escaped: Android's regex engine (ICU) rejects a bare "}" that Java accepts.
+    private val ASS_OVERRIDE = Regex("""\{\\[^\}]*\}""")
     private val BLOCK_BREAK = Regex("\n{2,}")
 
     /** UTF-8 when the bytes are valid UTF-8, otherwise the Windows-1252 most older subtitle files use. */

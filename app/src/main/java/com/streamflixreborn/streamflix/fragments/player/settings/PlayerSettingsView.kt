@@ -341,6 +341,12 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
 
     abstract fun show()
     abstract fun showSubtitles()
+
+    /** Opens the OpenSubtitles results straight from the subtitle picker. */
+    abstract fun showOpenSubtitles()
+
+    /** Opens the SubDL results straight from the subtitle picker. */
+    abstract fun showSubDL()
     abstract fun onBackPressed(): Boolean
     abstract fun hide()
 
@@ -780,20 +786,22 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                             .sortedBy { it.language ?: it.label }
 
                     val visible = filterByLanguage(tracks, { it.languageCode }, { it.isSelected })
+                    // One menu for everything subtitle-related: the subtitles available now, then
+                    // where to get more, then how they look and when they show.
                     list.clear()
-                    list.add(Style)
-                    list.add(Offset)
                     list.add(None)
                     list.addAll(visible)
                     if (visible.size < tracks.size || UserPreferences.showAllTrackLanguages) {
                         list.add(ShowAllLanguages)
                     }
-                    list.add(LocalSubtitles)
                     list.add(OpenSubtitles)
                     // Add SubDL only if an API key is configured
                     if (UserPreferences.subdlApiKey.isNotEmpty()) {
                         list.add(SubDLSubtitles)
                     }
+                    list.add(LocalSubtitles)
+                    list.add(Style)
+                    list.add(Offset)
                 }
             }
 

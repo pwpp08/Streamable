@@ -13,5 +13,6 @@
     <string name="player_skipped_intro">Skipped intro</string>
     <string name="player_skipped_recap">Skipped recap</string>
     <string name="player_subtitle_unsupported">That subtitle file couldn’t be read.</string>
+    <string name="player_no_full_hd">No %1$dp or better source found for this title; playing %2$dp</string>
     <string name="player_subtitle_loaded">Subtitle loaded</string>
 </resources>

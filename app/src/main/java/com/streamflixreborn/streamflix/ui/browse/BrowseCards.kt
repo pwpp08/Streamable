@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.ui.browse
 
+import com.streamflixreborn.streamflix.utils.CinemaStatus
 import android.content.Context
 import android.content.res.ColorStateList
 import android.view.View
@@ -50,6 +51,33 @@ object BrowseCards {
             MaterialColors.getColor(chip, com.google.android.material.R.attr.colorPrimaryContainer),
         )
         chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnPrimaryContainer))
+        chip.visibility = View.VISIBLE
+    }
+
+    /**
+     * [bindRating] for a film, plus a tinted "In cinemas" while it is only in theatres (so any copy
+     * online is a camera recording). The lookup is cached and runs in the background.
+     */
+    fun bindMovieRating(chip: TextView, movie: com.streamflixreborn.streamflix.models.Movie) {
+        bindRating(chip, movie.rating, movie.released)
+        chip.tag = movie.id
+        if (!CinemaStatus.applies() || !CinemaStatus.worthChecking(movie.released?.timeInMillis)) return
+        when (CinemaStatus.peek(movie.id)) {
+            true -> styleInCinemas(chip)
+            null -> CinemaStatus.request(movie.id) { onlyInCinemas ->
+                if (onlyInCinemas) chip.post { if (chip.tag == movie.id) styleInCinemas(chip) }
+            }
+            false -> Unit
+        }
+    }
+
+    /** Tints [chip] and sets it to "In cinemas". */
+    fun styleInCinemas(chip: TextView) {
+        chip.text = chip.context.getString(R.string.browse_in_cinemas)
+        chip.backgroundTintList = ColorStateList.valueOf(
+            MaterialColors.getColor(chip, com.google.android.material.R.attr.colorTertiaryContainer),
+        )
+        chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnTertiaryContainer))
         chip.visibility = View.VISIBLE
     }
 

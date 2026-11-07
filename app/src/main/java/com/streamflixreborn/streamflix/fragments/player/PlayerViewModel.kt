@@ -53,6 +53,11 @@ class PlayerViewModel(
     private val _state = MutableStateFlow<State>(State.LoadingServers)
     val state: Flow<State> = _state
 
+    private val _lowQuality = MutableSharedFlow<Pair<Int, Int>>(extraBufferCapacity = 1)
+
+    /** (wanted, playing) lines when every source was checked and none reached the minimum quality. */
+    val lowQuality: SharedFlow<Pair<Int, Int>> = _lowQuality
+
     private val _subtitleState = MutableSharedFlow<SubtitleState>()
     val subtitleState: SharedFlow<SubtitleState> = _subtitleState
 
@@ -422,9 +427,12 @@ class PlayerViewModel(
             val current = withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(playing) }
             QualityMemory.hint(server.name, current)
             if (current != null && current >= FULL_HD) return@launch
+            // Below the minimum (or unreadable): no probe or time limit, every source gets its turn.
+            val minHeight = UserPreferences.minQualityHeight
+            val strict = minHeight > 0 && (current == null || current < minHeight)
             // Adaptive Videasy streams reach their top rung on their own; an unreadable playlist is no reason to churn.
             if (current == null && ServerRanker.isVideasy(server.name)) return@launch
-            val deadline = SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
+            val deadline = if (strict) Long.MAX_VALUE else SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
             var probes = 0
             // Web servers first (they start faster); torrents get their own turn after them.
             // Ones already resolved come first (instant); slow resolvers can't hold up the check.
@@ -434,7 +442,7 @@ class PlayerViewModel(
             Log.d(TAG, "upgrade check: playing ${server.name} at ${current ?: "?"}p, ${order.size} candidates")
             for (candidate in order) {
                 val torrent = ServerRanker.isTorrentServer(candidate.name)
-                if (!torrent && (SystemClock.elapsedRealtime() > deadline || probes >= UPGRADE_MAX_PROBES)) continue
+                if (!torrent && (SystemClock.elapsedRealtime() > deadline || (!strict && probes >= UPGRADE_MAX_PROBES))) continue
                 if (torrent && !UserPreferences.torrentEnabled) continue
                 if (candidate.id == server.id || candidate.id in failedIds) continue
                 if (QualityMemory.height(candidate.name)?.let { it in 1 until FULL_HD } == true) continue
@@ -462,6 +470,8 @@ class PlayerViewModel(
                     return@launch
                 }
             }
+            // Every source was looked at and none has the minimum: tell the viewer why it stays soft.
+            if (strict && current != null && currentServerId == server.id) _lowQuality.tryEmit(minHeight to current)
         }
     }
 

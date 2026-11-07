@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.adapters.viewholders
 
+import com.streamflixreborn.streamflix.utils.FavoriteSync
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -737,6 +738,7 @@ class TvShowViewHolder(
                     val resolvedTvShow = ArtworkRepair.resolveTvShowForFavorite(context, tvShow, newValue)
 
                     dao.upsertFavorite(resolvedTvShow, newValue)
+                    FavoriteSync.tvShow(context, resolvedTvShow, newValue)
 
                     withContext(Dispatchers.Main) {
                         tvShow.poster = resolvedTvShow.poster

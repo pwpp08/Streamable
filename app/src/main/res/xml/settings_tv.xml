@@ -67,6 +67,14 @@
                     android:entryValues="@array/settings_max_resolution_values"
                     android:defaultValue="0" />
 
+                <ListPreference
+                    android:key="MIN_QUALITY"
+                    android:title="@string/settings_min_quality_title"
+                    android:summary="@string/settings_min_quality_summary"
+                    android:entries="@array/settings_min_quality_entries"
+                    android:entryValues="@array/settings_min_quality_values"
+                    android:defaultValue="1080" />
+
                 <SwitchPreferenceCompat
                     android:key="DATA_SAVER_ON_MOBILE"
                     android:title="@string/settings_data_saver_title"

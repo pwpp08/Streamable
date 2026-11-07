@@ -130,6 +130,8 @@ class MainTvActivity : FragmentActivity(), IdleDimHost {
             }
         }
 
+        SettingsSync.keepInSync(this)
+
         lifecycleScope.launch {
             WatchEvents.movieWatched
                 .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)

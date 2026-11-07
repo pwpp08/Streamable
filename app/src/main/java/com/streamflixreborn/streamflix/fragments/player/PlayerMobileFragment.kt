@@ -92,6 +92,7 @@ import com.streamflixreborn.streamflix.fragments.player.engine.AutoFitController
 import com.streamflixreborn.streamflix.fragments.player.engine.AutoSubtitleFetch
 import com.streamflixreborn.streamflix.fragments.player.engine.SideloadedSubtitles
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleFileParser
+import com.streamflixreborn.streamflix.fragments.player.engine.readSubtitleFile
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleStyler
 import com.streamflixreborn.streamflix.fragments.player.engine.PlaybackSnapshot
 import com.streamflixreborn.streamflix.fragments.player.engine.TrackPreferences
@@ -133,14 +134,10 @@ class PlayerMobileFragment : Fragment() {
      */
     private fun showSideloadedSubtitle(uri: Uri, name: String?) {
         viewLifecycleOwner.lifecycleScope.launch {
-            val lines = withContext(Dispatchers.IO) {
-                runCatching {
-                    val bytes = requireContext().contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    bytes?.let { SubtitleFileParser.parse(SubtitleFileParser.decode(it)) }
-                }.getOrNull()
-            }
+            val appContext = requireContext().applicationContext
+            val lines = withContext(Dispatchers.IO) { readSubtitleFile(appContext, uri) }
             if (_binding == null) return@launch
-            if (lines.isNullOrEmpty()) {
+            if (lines.isEmpty()) {
                 Toast.makeText(requireContext(), R.string.player_subtitle_unsupported, Toast.LENGTH_LONG).show()
                 return@launch
             }
@@ -308,6 +305,12 @@ class PlayerMobileFragment : Fragment() {
         setupNextUi()
         initializePlayer(false)
         initializeVideo()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.lowQuality.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { (wanted, playing) ->
+                showPlayerMessage(getString(R.string.player_no_full_hd, wanted, playing))
+            }
+        }
+
         // Stato Video
         viewLifecycleOwner.lifecycleScope.launch { 
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED).collect { state ->

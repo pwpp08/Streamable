@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.fragments.queue
 
+import com.streamflixreborn.streamflix.utils.FavoriteSync
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -76,13 +77,19 @@ class QueueSwipeViewModel(private val database: AppDatabase) : ViewModel() {
                 QueueStore.setSeen(QueueStore.key(false, item.id), item.title, item.poster, item.released?.format("yyyy"), true, item.released?.timeInMillis, item.rating)
                 WatchEvents.movieWatched(item)
             } else {
-                database.movieDao().upsertFavorite(ArtworkRepair.resolveMovieForFavorite(context, item, true), true)
+                ArtworkRepair.resolveMovieForFavorite(context, item, true).let {
+                    database.movieDao().upsertFavorite(it, true)
+                    FavoriteSync.movie(context, it, true)
+                }
             }
 
             is TvShow -> if (seen) {
                 QueueStore.setSeen(QueueStore.key(true, item.id), item.title, item.poster, item.released?.format("yyyy"), true, item.released?.timeInMillis, item.rating)
             } else {
-                database.tvShowDao().upsertFavorite(ArtworkRepair.resolveTvShowForFavorite(context, item, true), true)
+                ArtworkRepair.resolveTvShowForFavorite(context, item, true).let {
+                    database.tvShowDao().upsertFavorite(it, true)
+                    FavoriteSync.tvShow(context, it, true)
+                }
             }
 
             else -> Unit

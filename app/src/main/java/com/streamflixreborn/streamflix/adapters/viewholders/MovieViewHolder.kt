@@ -1,5 +1,7 @@
 package com.streamflixreborn.streamflix.adapters.viewholders
 
+import com.streamflixreborn.streamflix.utils.CinemaStatus
+import com.streamflixreborn.streamflix.utils.FavoriteSync
 import com.streamflixreborn.streamflix.utils.ReleaseStatus
 import android.app.AlertDialog
 import android.content.Context
@@ -378,7 +380,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
+        BrowseCards.bindMovieRating(binding.tvMovieRating, movie)
 
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
@@ -422,7 +424,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
+        BrowseCards.bindMovieRating(binding.tvMovieRating, movie)
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
             progress = BrowseCards.progressPercent(watchHistory)
@@ -639,7 +641,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
+        BrowseCards.bindMovieRating(binding.tvMovieRating, movie)
 
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
@@ -708,7 +710,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
+        BrowseCards.bindMovieRating(binding.tvMovieRating, movie)
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
             progress = BrowseCards.progressPercent(watchHistory)
@@ -874,6 +876,24 @@ class MovieViewHolder(
             context.getString(R.string.details_rating_content_description, rating.text)
         quality.setTextOrGone(movie.quality)
         overview.text = movie.overview
+        bindCinemaOnly(quality)
+    }
+
+    /** "In cinemas only" next to the rating while no home release exists: any stream is a camera copy. */
+    private fun bindCinemaOnly(quality: TextView) {
+        quality.tag = movie.id
+        if (!CinemaStatus.applies() || !CinemaStatus.worthChecking(movie.released?.timeInMillis)) return
+        fun show() {
+            quality.text = context.getString(R.string.movie_cinema_only)
+            quality.visibility = View.VISIBLE
+        }
+        when (CinemaStatus.peek(movie.id)) {
+            true -> show()
+            null -> CinemaStatus.request(movie.id) { onlyInCinemas ->
+                if (onlyInCinemas) quality.post { if (quality.tag == movie.id) show() }
+            }
+            false -> Unit
+        }
     }
 
     private fun isUnreleased() = ReleaseStatus.isUnreleased(movie.released)
@@ -921,6 +941,7 @@ class MovieViewHolder(
                     val resolvedMovie = ArtworkRepair.resolveMovieForFavorite(context, movie, newValue)
 
                     dao.upsertFavorite(resolvedMovie, newValue)
+                    FavoriteSync.movie(context, resolvedMovie, newValue)
 
                     withContext(Dispatchers.Main) {
                         movie.poster = resolvedMovie.poster

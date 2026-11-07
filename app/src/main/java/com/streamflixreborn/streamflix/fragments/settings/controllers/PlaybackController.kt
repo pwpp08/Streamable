@@ -23,6 +23,9 @@ class PlaybackController(private val host: SettingsHost) : SettingsController {
         host.bindList("MAX_RESOLUTION", { UserPreferences.maxResolution.toString() }) {
             UserPreferences.maxResolution = it.toIntOrNull() ?: 0
         }
+        host.bindList("MIN_QUALITY", { UserPreferences.minQualityHeight.toString() }) {
+            UserPreferences.minQualityHeight = it.toIntOrNull() ?: 1080
+        }
         host.bindSwitch("DATA_SAVER_ON_MOBILE", { UserPreferences.dataSaverOnMobile }) {
             UserPreferences.dataSaverOnMobile = it
         }
@@ -80,6 +83,7 @@ class PlaybackController(private val host: SettingsHost) : SettingsController {
     override fun refresh() {
         host.refreshList("QUALITY_MODE") { UserPreferences.qualityMode.name }
         host.refreshList("MAX_RESOLUTION") { UserPreferences.maxResolution.toString() }
+        host.refreshList("MIN_QUALITY") { UserPreferences.minQualityHeight.toString() }
         host.refreshList("BUFFER_PROFILE") { UserPreferences.bufferProfile.name }
         host.refreshList("UP_NEXT_SECONDS") { UserPreferences.upNextSeconds.toString() }
         host.refreshList("SKIP_SEGMENTS_MODE") { UserPreferences.skipSegmentsMode.name }

@@ -1,5 +1,7 @@
 package com.streamflixreborn.streamflix.fragments.queue
 
+import com.streamflixreborn.streamflix.ui.browse.BrowseCards
+import com.streamflixreborn.streamflix.utils.CinemaStatus
 import android.content.Context
 import android.content.res.ColorStateList
 import android.text.SpannableStringBuilder
@@ -101,12 +103,26 @@ class QueueAdapter(
     /** Only a tinted "Soon · Nov 12" while the title is not out yet; released titles carry no label. */
     private fun bindKindChip(chip: TextView, entry: QueueEntry) {
         val released = entry.releasedMillis
+        chip.tag = entry.key
         chip.isVisible = released != null && ReleaseStatus.isUnreleased(released)
-        if (released != null && chip.isVisible) {
+        if (!chip.isVisible && !entry.isTv) bindInCinemas(chip, entry)
+        if (released != null && ReleaseStatus.isUnreleased(released)) {
             val date = Calendar.getInstance().apply { timeInMillis = released }
             chip.text = chip.context.getString(R.string.browse_coming_soon, ReleaseStatus.shortDate(chip.context, date))
             chip.backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorPrimaryContainer))
             chip.setTextColor(MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnPrimaryContainer))
+        }
+    }
+
+    /** Films that are only in theatres so far get a tinted "In cinemas" instead of nothing. */
+    private fun bindInCinemas(chip: TextView, entry: QueueEntry) {
+        if (!CinemaStatus.applies() || !CinemaStatus.worthChecking(entry.releasedMillis)) return
+        when (CinemaStatus.peek(entry.id)) {
+            true -> BrowseCards.styleInCinemas(chip)
+            null -> CinemaStatus.request(entry.id) { onlyInCinemas ->
+                if (onlyInCinemas) chip.post { if (chip.tag == entry.key) BrowseCards.styleInCinemas(chip) }
+            }
+            false -> Unit
         }
     }
 

@@ -205,8 +205,12 @@ class NextUiBinder(
                 if (list.contains(Settings.Subtitle.ShowAllLanguages)) {
                     add(languageFilterAction { showSubtitles() })
                 }
-                // Style, timing offset, local file, OpenSubtitles and SubDL live in the settings panel.
-                add(PickerAction(context.getString(R.string.player_settings_title)) { settings.showSubtitles() })
+                // More subtitles, then every subtitle setting (look, timing, local file) in one page.
+                add(PickerAction(context.getString(R.string.player_settings_open_subtitles_title)) { settings.showOpenSubtitles() })
+                if (UserPreferences.subdlApiKey.isNotEmpty()) {
+                    add(PickerAction(context.getString(R.string.player_settings_subdl_title)) { settings.showSubDL() })
+                }
+                add(PickerAction(context.getString(R.string.player_subtitle_settings)) { settings.showSubtitles() })
             },
         )
     }

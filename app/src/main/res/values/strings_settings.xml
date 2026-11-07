@@ -60,6 +60,18 @@
         <item>1080</item>
         <item>720</item>
     </string-array>
+    <string name="settings_min_quality_title">Minimum quality</string>
+    <string name="settings_min_quality_summary">Keep looking through every source until one has at least this picture quality</string>
+    <string-array name="settings_min_quality_entries">
+        <item>1080p</item>
+        <item>720p</item>
+        <item>No minimum</item>
+    </string-array>
+    <string-array name="settings_min_quality_values" translatable="false">
+        <item>1080</item>
+        <item>720</item>
+        <item>0</item>
+    </string-array>
     <string name="settings_data_saver_title">Data saver on mobile data</string>
     <string name="settings_data_saver_summary">Lower quality when not on Wi-Fi or Ethernet</string>
     <string name="settings_buffer_profile_title">Buffer</string>

@@ -276,6 +276,7 @@
     <string name="player_settings_caption_style_window_opacity_1">100%</string>
     <string name="player_settings_caption_style_margin_title">Bottom margin</string>
     <string name="player_settings_caption_style_margin_label">Bottom margin</string>
+    <string name="player_subtitle_settings">Subtitle settings</string>
     <string name="player_settings_open_subtitles_title">OpenSubtitles</string>
     <string name="player_settings_open_subtitles_label">OpenSubtitles</string>
     <string name="player_settings_subdl_title">SubDL</string>
@@ -634,6 +635,8 @@
     <string name="queue_sort">Sort</string>
     <string name="queue_sort_recent">Recent</string>
     <string name="queue_sort_title">A–Z</string>
+    <string name="browse_in_cinemas">In cinemas</string>
+    <string name="movie_cinema_only">In cinemas only · likely camera quality</string>
     <string name="queue_sort_newest">Newest first</string>
     <string name="queue_sort_oldest">Oldest first</string>
     <string name="queue_tune">Sort and more</string>
