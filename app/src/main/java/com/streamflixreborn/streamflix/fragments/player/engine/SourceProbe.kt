@@ -2,8 +2,10 @@ package com.streamflixreborn.streamflix.fragments.player.engine
 
 import android.os.SystemClock
 import android.util.Base64
+import androidx.media3.container.NalUnitUtil
 import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.NetworkClient
+import com.streamflixreborn.streamflix.utils.health.HlsPlaylistParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withTimeoutOrNull
@@ -29,6 +31,10 @@ object SourceProbe {
 
     const val MIN_HEADROOM = 1.4
     private const val SAMPLE_BYTES = 384 * 1024L
+    private const val SPS_MAX_BYTES = 256
+    private const val HEADER_SCAN_BYTES = 128 * 1024
+    private const val HEVC_SPS = 0x42
+    private const val H264_SPS = 0x07
     private const val PLAYLIST_BYTES = 64 * 1024L
 
     private val bandwidthRegex = Regex("""BANDWIDTH=(\d+)""", RegexOption.IGNORE_CASE)
@@ -61,19 +67,51 @@ object SourceProbe {
             ?: variants.filter { it.height == 0 }.maxByOrNull { it.bandwidth }
             ?: variants.minByOrNull { it.bandwidth }
 
+    /**
+     * Quality class of the picture in a piece of an H.264 or HEVC stream, from its SPS header; 0 when
+     * [length] bytes of [data] hold none. Playlists without RESOLUTION need this: a bitrate can't
+     * tell 1080p HEVC from 720p H.264.
+     */
+    fun pictureHeight(data: ByteArray, length: Int = data.size): Int {
+        var i = 0
+        while (i + 5 < length) {
+            if (data[i].toInt() != 0 || data[i + 1].toInt() != 0 || data[i + 2].toInt() != 1) {
+                i++
+                continue
+            }
+            val header = data[i + 3].toInt() and 0xFF
+            val end = minOf(length, i + 3 + SPS_MAX_BYTES)
+            val size = runCatching {
+                when {
+                    header == HEVC_SPS && data[i + 4].toInt() == 1 ->
+                        NalUnitUtil.parseH265SpsNalUnit(data, i + 3, end, null).let { it.width to it.height }
+                    header and 0x9F == H264_SPS -> NalUnitUtil.parseSpsNalUnit(data, i + 3, end).let { it.width to it.height }
+                    else -> null
+                }
+            }.getOrNull()
+            if (size != null && size.first in 160..8192 && size.second in 90..4320) {
+                return HlsPlaylistParser.qualityHeight(size.first, size.second)
+            }
+            i += 3
+        }
+        return 0
+    }
+
     fun segmentUris(media: String): List<String> =
         media.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
 
     /**
-     * Picks the best measured stream: full HD first, then one the link sustains, then the fastest.
+     * Picks the best measured stream: full HD first, then one whose height is unknown (it may well be
+     * full HD), then known lower ones; within those, one the link sustains, the sharper, the fastest.
      * When nothing could be measured the first (best-ranked) item wins.
      */
     fun <T> pickBest(items: List<Pair<T, Result?>>): T? {
         val measured = items.filter { it.second?.speedMbps != null }
         if (measured.isEmpty()) return items.firstOrNull()?.first
         return measured.maxWithOrNull(
-            compareBy<Pair<T, Result?>> { if (it.second!!.height >= 1000) 1 else 0 }
+            compareBy<Pair<T, Result?>> { it.second!!.height.let { h -> if (h >= 1000) 2 else if (h == 0) 1 else 0 } }
                 .thenBy { if (it.second!!.sustainable) 1 else 0 }
+                .thenBy { it.second!!.height }
                 .thenBy { it.second!!.speedMbps!! },
         )?.first
     }
@@ -107,6 +145,8 @@ object SourceProbe {
         val builder = Request.Builder().url(segmentUrl).header("Range", "bytes=0-${SAMPLE_BYTES - 1}")
         video.headers?.forEach { (k, v) -> runCatching { builder.header(k, v) } }
         val started = SystemClock.elapsedRealtime()
+        val head = ByteArray(HEADER_SCAN_BYTES)
+        var headSize = 0
         val bytes = client.newCall(builder.build()).execute().use { response ->
             if (!response.isSuccessful) return@use 0L
             val body = response.body ?: return@use 0L
@@ -116,6 +156,10 @@ object SourceProbe {
             while (total < SAMPLE_BYTES) {
                 val read = stream.read(buffer)
                 if (read < 0) break
+                minOf(read, head.size - headSize).takeIf { it > 0 }?.let {
+                    System.arraycopy(buffer, 0, head, headSize, it)
+                    headSize += it
+                }
                 total += read
             }
             total
@@ -123,7 +167,7 @@ object SourceProbe {
         val seconds = (SystemClock.elapsedRealtime() - started) / 1000.0
         val speed = if (bytes > 32 * 1024 && seconds > 0) bytes * 8 / 1e6 / seconds else null
         Result(
-            height = variant?.height?.takeIf { it > 0 } ?: 0,
+            height = variant?.height?.takeIf { it > 0 } ?: pictureHeight(head, headSize),
             rungMbps = (variant?.bandwidth ?: 0L) / 1e6,
             speedMbps = speed,
         )

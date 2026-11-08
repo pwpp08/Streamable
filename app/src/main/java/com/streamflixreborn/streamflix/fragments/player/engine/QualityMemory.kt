@@ -59,6 +59,12 @@ object QualityMemory {
         return height.takeIf { now - at <= MAX_AGE_MS }
     }
 
+    @Volatile
+    private var decoded: Pair<String, Int>? = null
+
+    /** Height of the picture being decoded for [serverName]; null until its first frame is known. */
+    fun decodedHeight(serverName: String): Int? = decoded?.takeIf { it.first == serverName }?.second
+
     /** How long a stream must have been playing before its resolution counts. */
     internal const val SETTLE_MS = 20_000L
 
@@ -80,6 +86,7 @@ object QualityMemory {
                 best = 0
             }
             best = maxOf(best, height)
+            decoded = current to best
             commitIfSettled()
         }
 

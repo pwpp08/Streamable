@@ -307,12 +307,17 @@ class PlayerViewModel(
 
         while (true) {
             coroutineContext.ensureActive()
-            val best = videos.indexOfFirst { it != null }
+            // A torrent "resolves" instantly but takes far longer to start, so it only opens when no web server can.
+            val webPending = order.indices.any { !done[it] && !ServerRanker.isTorrentServer(order[it].name) }
+            val best = videos.indices.firstOrNull { videos[it] != null && (!webPending || !ServerRanker.isTorrentServer(order[it].name)) } ?: -1
             if (best >= 0) {
                 val higherRankedDone = (0 until best).all { done[it] }
                 val now = SystemClock.elapsedRealtime()
                 if (graceDeadline == 0L) graceDeadline = now + PICK_GRACE_MS
-                if (higherRankedDone || now >= graceDeadline) {
+                // Quality differs per title, so the first answer is not picked until there are a few to compare.
+                val enough = videos.indices.count { videos[it] != null && !ServerRanker.isTorrentServer(order[it].name) } >= MIN_TO_COMPARE ||
+                    !webPending
+                if ((higherRankedDone && enough) || now >= graceDeadline) {
                     val pick = chooseByMeasurement(order, videos) ?: best
                     emitSuccess(videos[pick]!!, order[pick], failover = false)
                     return
@@ -424,8 +429,10 @@ class PlayerViewModel(
             kotlinx.coroutines.delay(UPGRADE_DELAY_MS)
             val prober = ProviderHealthChecker(providers = emptyList())
             Log.d(TAG, "upgrade check: probing ${server.name}")
-            val current = withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(playing) }
-            QualityMemory.hint(server.name, current)
+            // Nothing stated in the playlist: go by the real picture. A bitrate guess takes 1080p HEVC for 720p.
+            val known = withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.declaredHeight(playing) } ?: decodedHeight(server.name)
+            QualityMemory.hint(server.name, known)
+            val current = known ?: withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(playing) }
             if (current != null && current >= FULL_HD) return@launch
             // Below the minimum (or unreadable): no probe or time limit, every source gets its turn.
             val minHeight = UserPreferences.minQualityHeight
@@ -434,23 +441,26 @@ class PlayerViewModel(
             if (current == null && ServerRanker.isVideasy(server.name)) return@launch
             val deadline = if (strict) Long.MAX_VALUE else SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
             var probes = 0
-            // Web servers first (they start faster); torrents get their own turn after them.
-            // Ones already resolved come first (instant); slow resolvers can't hold up the check.
+            // Ones already resolved come first (instant), then the torrents, which are the free 1080p
+            // most titles have; web servers still unanswered can take 12 s each, so they wait.
             val web = ranked.filterNot { ServerRanker.isTorrentServer(it.name) }
-            val order = web.filter { cachedVideo(it) != null } + web.filter { cachedVideo(it) == null } +
-                ranked.filter { ServerRanker.isTorrentServer(it.name) }
+            val order = web.filter { cachedVideo(it) != null } +
+                ranked.filter { ServerRanker.isTorrentServer(it.name) } +
+                web.filter { cachedVideo(it) == null }
             Log.d(TAG, "upgrade check: playing ${server.name} at ${current ?: "?"}p, ${order.size} candidates")
             for (candidate in order) {
                 val torrent = ServerRanker.isTorrentServer(candidate.name)
                 if (!torrent && (SystemClock.elapsedRealtime() > deadline || (!strict && probes >= UPGRADE_MAX_PROBES))) continue
                 if (torrent && !UserPreferences.torrentEnabled) continue
                 if (candidate.id == server.id || candidate.id in failedIds) continue
-                if (QualityMemory.height(candidate.name)?.let { it in 1 until FULL_HD } == true) continue
+                // Quality differs per title, so while below the minimum another title's result is no reason to skip.
+                if (!strict && QualityMemory.height(candidate.name)?.let { it in 1 until FULL_HD } == true) continue
                 val video = cachedVideo(candidate) ?: resolve(candidate) ?: continue
                 if (!torrent) probes++
                 // Web probes that take longer than this are not worth waiting for; torrents are checked by swarm.
-                val height = if (torrent) prober.probeHeight(video) else withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(video) }
-                QualityMemory.hint(candidate.name, height)
+                val declared = if (torrent) prober.declaredHeight(video) else withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.declaredHeight(video) }
+                QualityMemory.hint(candidate.name, declared)
+                val height = declared ?: withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(video) }
                 // A torrent is only worth switching to when its swarm is alive; check before cutting the picture.
                 if (TorrentSpec.isTorrentUri(video.source) && height != null && height >= FULL_HD) {
                     val spec = TorrentSpec.parse(video.source)
@@ -464,7 +474,9 @@ class PlayerViewModel(
                     }
                 }
                 Log.d(TAG, "upgrade probe: ${candidate.name} -> ${height ?: "?"}p (playing ${current ?: "?"}p)")
-                if (height != null && height >= FULL_HD && height > (current ?: 0)) {
+                // Full HD is the goal, but anything under 720p moves up at once; the search carries on from there.
+                val stepUp = current != null && current < HD && height != null && height >= HD
+                if (height != null && (height >= FULL_HD || stepUp) && height > (current ?: 0)) {
                     if (currentServerId != server.id) return@launch
                     playbackMutex.withLock { emitSuccess(video, candidate, failover = true) }
                     return@launch
@@ -473,6 +485,16 @@ class PlayerViewModel(
             // Every source was looked at and none has the minimum: tell the viewer why it stays soft.
             if (strict && current != null && currentServerId == server.id) _lowQuality.tryEmit(minHeight to current)
         }
+    }
+
+    /** Waits briefly for the first frame's format of the stream that just started. */
+    private suspend fun decodedHeight(serverName: String): Int? = withTimeoutOrNull(DECODE_WAIT_MS) {
+        var height = QualityMemory.decodedHeight(serverName)
+        while (height == null) {
+            kotlinx.coroutines.delay(250)
+            height = QualityMemory.decodedHeight(serverName)
+        }
+        height
     }
 
     private suspend fun resolve(server: Video.Server): Video? {
@@ -658,17 +680,20 @@ class PlayerViewModel(
         private const val RESOLVE_TIMEOUT_MS = 12_000L
         /** After the first server resolves, wait this long for better-ranked ones. */
         private const val PICK_GRACE_MS = 2_000L
+        private const val MIN_TO_COMPARE = 3
         /** Started server + backups resolved ahead of time. */
         private const val MAX_PRERESOLVED = 3
         private const val RESOLVED_MAX_AGE_MS = 10 * 60_000L
         private const val PREFETCH_ATTEMPTS = 3
         private const val FULL_HD = 1080
+        private const val HD = 720
         private const val UPGRADE_DELAY_MS = 8_000L
         private const val TORRENT_PREWARM_MS = 90_000L
         private const val UPGRADE_MAX_PROBES = 6
         /** How long after start the other servers are checked for a sharper picture. */
         private const val UPGRADE_WINDOW_MS = 45_000L
         private const val PROBE_TIMEOUT_MS = 6_000L
+        private const val DECODE_WAIT_MS = 15_000L
         /** Resolved servers whose speed is sampled before choosing the one to play. */
         private const val PROBE_CANDIDATES = 4
         private const val MEASURE_MAX_MS = 3_500L
