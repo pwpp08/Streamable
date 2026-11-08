@@ -37,9 +37,12 @@ class ProgressSaver(
     private val videoType: () -> Video.Type,
 ) {
     data class Snapshot(val positionMs: Long, val durationMs: Long) {
-        /** Same thresholds the player used before. */
-        val hasStarted get() = positionMs > durationMs * 0.005 || positionMs > 20_000
-        val hasFinished get() = positionMs > durationMs * 0.90
+        /**
+         * Same thresholds the player used before. While a new stream loads the duration is
+         * C.TIME_UNSET (negative), which would make every position count as "past 90 %".
+         */
+        val hasStarted get() = durationMs > 0 && (positionMs > durationMs * 0.005 || positionMs > 20_000)
+        val hasFinished get() = durationMs > 0 && positionMs > durationMs * 0.90
         val hasReallyFinished get() =
             durationMs > 0 && positionMs >= durationMs - UserPreferences.autoplayBuffer * 1000
 
@@ -88,6 +91,7 @@ class ProgressSaver(
 
     /** Saves the current position and waits (bounded) for the write to finish. */
     fun saveNow(snapshot: Snapshot) {
+        if (snapshot.durationMs <= 0) return
         val type = videoType()
         val future = executor.submit { persist(type, snapshot) }
         runCatching { future.get(SYNC_TIMEOUT_MS, TimeUnit.MILLISECONDS) }

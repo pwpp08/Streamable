@@ -49,6 +49,16 @@ class HlsPlaylistParserTest {
     }
 
     @Test
+    fun `the quality name ignores the letterbox`() {
+        assertEquals(1080, HlsPlaylistParser.displayHeight(1920, 816))
+        assertEquals(1080, HlsPlaylistParser.displayHeight(1916, 800))
+        assertEquals(1080, HlsPlaylistParser.displayHeight(2592, 1080))
+        assertEquals(720, HlsPlaylistParser.displayHeight(1280, 534))
+        assertEquals(720, HlsPlaylistParser.displayHeight(1280, 720))
+        assertEquals(480, HlsPlaylistParser.displayHeight(0, 480))
+    }
+
+    @Test
     fun `letterboxed and lowercase attributes are handled`() {
         val text = "﻿#EXTM3U\r\n#ext-x-stream-inf:bandwidth=1,resolution=1920x800\r\na.m3u8\r\n" +
             "#EXT-X-STREAM-INF:BANDWIDTH=2,RESOLUTION=1280x534\r\nb.m3u8\r\n"

@@ -77,7 +77,7 @@ internal fun BoxScope.DpadSeekIndicator(visible: Boolean, offsetMs: Long, positi
     ) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = Color.Black.copy(alpha = 0.6f),
+            color = Color.Black.copy(alpha = 0.72f),
         ) {
             Row(
                 modifier = Modifier.padding(
@@ -107,7 +107,7 @@ internal fun BoxScope.DpadSeekIndicator(visible: Boolean, offsetMs: Long, positi
                     Text(
                         text = positionMs.milliseconds.formatted(),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = Color.White.copy(alpha = 0.92f),
                     )
                 }
             }

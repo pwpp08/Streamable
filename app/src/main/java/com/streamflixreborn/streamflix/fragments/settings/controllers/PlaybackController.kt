@@ -26,6 +26,9 @@ class PlaybackController(private val host: SettingsHost) : SettingsController {
         host.bindList("MIN_QUALITY", { UserPreferences.minQualityHeight.toString() }) {
             UserPreferences.minQualityHeight = it.toIntOrNull() ?: 1080
         }
+        host.bindList("AUDIO_LEVELING", { UserPreferences.audioLeveling.toString() }) {
+            UserPreferences.audioLeveling = it.toIntOrNull() ?: 0
+        }
         host.bindSwitch("DATA_SAVER_ON_MOBILE", { UserPreferences.dataSaverOnMobile }) {
             UserPreferences.dataSaverOnMobile = it
         }
@@ -84,6 +87,7 @@ class PlaybackController(private val host: SettingsHost) : SettingsController {
         host.refreshList("QUALITY_MODE") { UserPreferences.qualityMode.name }
         host.refreshList("MAX_RESOLUTION") { UserPreferences.maxResolution.toString() }
         host.refreshList("MIN_QUALITY") { UserPreferences.minQualityHeight.toString() }
+        host.refreshList("AUDIO_LEVELING") { UserPreferences.audioLeveling.toString() }
         host.refreshList("BUFFER_PROFILE") { UserPreferences.bufferProfile.name }
         host.refreshList("UP_NEXT_SECONDS") { UserPreferences.upNextSeconds.toString() }
         host.refreshList("SKIP_SEGMENTS_MODE") { UserPreferences.skipSegmentsMode.name }

@@ -303,6 +303,14 @@ object UserPreferences {
         get() = Key.MIN_QUALITY.getString()?.toIntOrNull() ?: 1080
         set(value) = Key.MIN_QUALITY.setString(value.toString())
 
+    /** How strongly loud and quiet scenes are evened out (see AudioLeveling); 0 = off. */
+    var audioLeveling: Int
+        get() = Key.AUDIO_LEVELING.getString()?.toIntOrNull() ?: 0
+        set(value) {
+            Key.AUDIO_LEVELING.setString(value.toString())
+            com.streamflixreborn.streamflix.fragments.player.engine.AudioLeveling.level = value
+        }
+
     var dataSaverOnMobile: Boolean
         get() = Key.DATA_SAVER_ON_MOBILE.getBoolean() ?: false
         set(value) = Key.DATA_SAVER_ON_MOBILE.setBoolean(value)
@@ -747,6 +755,7 @@ object UserPreferences {
         QUALITY_MODE,
         MAX_RESOLUTION,
         MIN_QUALITY,
+        AUDIO_LEVELING,
         DATA_SAVER_ON_MOBILE,
         UP_NEXT_SECONDS,
         SKIP_SEGMENTS_MODE,

@@ -87,6 +87,15 @@
                     android:defaultValue="1080"
                     app:iconSpaceReserved="false" />
 
+                <ListPreference
+                    android:key="AUDIO_LEVELING"
+                    android:title="@string/settings_audio_leveling_title"
+                    android:summary="@string/settings_audio_leveling_summary"
+                    android:entries="@array/settings_audio_leveling_entries"
+                    android:entryValues="@array/settings_audio_leveling_values"
+                    android:defaultValue="0"
+                    app:iconSpaceReserved="false" />
+
                 <SwitchPreferenceCompat
                     android:key="DATA_SAVER_ON_MOBILE"
                     android:title="@string/settings_data_saver_title"

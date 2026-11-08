@@ -662,6 +662,10 @@ abstract class PlayerSettingsView @JvmOverloads constructor(
                 val trackIndex: Int,
                 val player: ExoPlayer,
             ) : Quality() {
+                /** What the menu calls this track; [height] stays the real one for selection. */
+                val displayHeight: Int
+                    get() = com.streamflixreborn.streamflix.utils.health.HlsPlaylistParser.displayHeight(width, height)
+
                 val isCurrentlyPlayed: Boolean
                     get() {
                         val currentFormat = player.videoFormat ?: return false

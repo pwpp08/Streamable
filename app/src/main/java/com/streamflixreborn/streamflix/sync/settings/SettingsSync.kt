@@ -93,6 +93,8 @@ object SettingsSync {
             { it.toIntOrNull()?.let { v -> UserPreferences.maxResolution = v } }),
         Entry("min_quality", { UserPreferences.minQualityHeight.toString() },
             { it.toIntOrNull()?.let { v -> UserPreferences.minQualityHeight = v } }),
+        Entry("audio_leveling", { UserPreferences.audioLeveling.toString() },
+            { it.toIntOrNull()?.let { v -> UserPreferences.audioLeveling = v } }),
         Entry("up_next_seconds", { UserPreferences.upNextSeconds.toString() },
             { it.toIntOrNull()?.let { v -> UserPreferences.upNextSeconds = v } }),
         Entry("skip_segments_mode", { UserPreferences.skipSegmentsMode.name },

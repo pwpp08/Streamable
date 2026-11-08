@@ -1115,7 +1115,7 @@ class PlayerMobileFragment : Fragment() {
 
 
     private fun ExoPlayer.hasFinished(): Boolean {
-        return (this.currentPosition > (this.duration * 0.90))
+        return this.duration > 0 && this.currentPosition > this.duration * 0.90
     }
 
     private fun ExoPlayer.hasReallyFinished(): Boolean {

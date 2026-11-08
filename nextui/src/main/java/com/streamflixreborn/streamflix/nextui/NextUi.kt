@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -25,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -66,6 +69,9 @@ import com.streamflixreborn.streamflix.nextui.ui.controls.ControlsBottomView
 import com.streamflixreborn.streamflix.nextui.ui.controls.ControlsMiddleView
 import com.streamflixreborn.streamflix.nextui.ui.controls.ControlsTopView
 import kotlin.time.Duration.Companion.seconds
+
+private val EDGE_SCRIM = Color.Black.copy(alpha = 0.7f)
+private val EDGE_SCRIM_MID = Color.Black.copy(alpha = 0.55f)
 
 /** NextPlayer's control surface, driven by a plain media3 [Player] and a small host-owned model. */
 @Composable
@@ -233,11 +239,23 @@ private fun NextUiContent(player: Player, model: NextUiModel, callbacks: NextUiC
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f)),
-            )
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f))) {
+                // The title and the time sit on these: white text needs about 55 % black over a white frame.
+                Box(
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .background(Brush.verticalGradient(0f to EDGE_SCRIM, 0.5f to EDGE_SCRIM_MID, 1f to Color.Transparent)),
+                )
+                Box(
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .background(Brush.verticalGradient(0f to Color.Transparent, 0.5f to EDGE_SCRIM_MID, 1f to EDGE_SCRIM)),
+                )
+            }
         }
         // With controls up, the middle row shows the indicator in place of play/pause instead.
         if (isLoading && !controlsShown) {

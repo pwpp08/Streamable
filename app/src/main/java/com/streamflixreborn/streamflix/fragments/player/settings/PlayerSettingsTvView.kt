@@ -641,7 +641,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                                 null -> context.getString(R.string.player_settings_quality_auto)
                                 else -> context.getString(
                                     R.string.player_settings_quality_auto_selected,
-                                    track.height
+                                    track.displayHeight
                                 )
                             }
 
@@ -649,7 +649,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                         }
                         is Settings.Quality.VideoTrackInformation -> context.getString(
                             R.string.player_settings_quality,
-                            item.height
+                            item.displayHeight
                         )
                     }
 
@@ -723,12 +723,12 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                                 null -> context.getString(R.string.player_settings_quality_auto)
                                 else -> context.getString(
                                     R.string.player_settings_quality_auto_selected,
-                                    track.height
+                                    track.displayHeight
                                 )
                             }
                             is Settings.Quality.VideoTrackInformation -> context.getString(
                                 R.string.player_settings_quality,
-                                selected.height
+                                selected.displayHeight
                             )
                         }
                         Settings.Audio -> Settings.Audio.selected?.name

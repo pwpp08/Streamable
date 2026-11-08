@@ -32,7 +32,8 @@
         android:layout_gravity="top|start"
         android:rotation="-14"
         android:text="@string/queue_swipe_add"
-        android:textColor="?attr/colorPrimary" />
+        android:backgroundTint="?attr/colorPrimaryContainer"
+        android:textColor="?attr/colorOnPrimaryContainer" />
 
     <TextView
         android:id="@+id/tv_swipe_stamp_skip"
@@ -40,13 +41,15 @@
         android:layout_gravity="top|end"
         android:rotation="14"
         android:text="@string/queue_swipe_skip"
-        android:textColor="?attr/colorError" />
+        android:backgroundTint="?attr/colorErrorContainer"
+        android:textColor="?attr/colorOnErrorContainer" />
 
     <TextView
         android:id="@+id/tv_swipe_stamp_seen"
         style="@style/Widget.StreamFlix.Queue.Stamp"
         android:layout_gravity="center"
         android:text="@string/queue_swipe_seen"
-        android:textColor="?attr/colorTertiary" />
+        android:backgroundTint="?attr/colorTertiaryContainer"
+        android:textColor="?attr/colorOnTertiaryContainer" />
 
 </com.google.android.material.card.MaterialCardView>

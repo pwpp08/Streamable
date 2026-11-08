@@ -121,6 +121,7 @@ object PlayerFactory {
         extraBuffering: Boolean,
         seekIncrementMs: Long? = null,
     ): Result {
+        AudioLeveling.level = UserPreferences.audioLeveling
         val profile = resolveProfile(context, extraBuffering)
         Log.d(TAG, "buffer profile=$profile, software decoder=$softwareDecoder, tunneling=${UserPreferences.tunneledPlayback}")
 

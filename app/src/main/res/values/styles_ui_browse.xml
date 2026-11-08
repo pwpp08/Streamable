@@ -71,6 +71,11 @@
         <item name="android:ellipsize">end</item>
     </style>
 
+    <!-- Meta line on the hero's dark scrim: light in light themes as well. -->
+    <style name="Widget.StreamFlix.Browse.CardMeta.OnScrim">
+        <item name="android:textColor">#F2FFFFFF</item>
+    </style>
+
     <style name="Widget.StreamFlix.Browse.CardMeta" parent="">
         <item name="android:textAppearance">?attr/textAppearanceLabelMedium</item>
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
