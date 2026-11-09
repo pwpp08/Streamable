@@ -6,6 +6,8 @@
 
     <!-- Seamless server failover -->
     <string name="player_switched_server">Switched to %1$s</string>
+    <string name="player_preparing_server">Getting %1$s ready…</string>
+    <string name="player_switch_failed">Couldn\'t switch source; staying on this one</string>
     <string name="player_all_servers_failed">All servers failed to load the video.</string>
 
     <!-- Skip segments (TheIntroDB) -->

@@ -78,6 +78,10 @@ class PlayerViewModel(
 
     @Volatile
     private var currentServerId: String? = null
+
+    /** The server that is really on screen; during a background switch it differs from [currentServerId]. */
+    private var activeServerId: String? = null
+    private var activeVideo: Video? = null
     private var upgradeJob: Job? = null
     private var resolutionJob: Job? = null
     private var playbackJob: Job? = null
@@ -234,10 +238,29 @@ class PlayerViewModel(
 
     /** [server] is playing fine; remember it for this title. */
     fun onPlaybackStarted(server: Video.Server) {
+        activeServerId = server.id
+        resolved[server.id]?.video?.let { activeVideo = it }
         if (server.id == offlineServer?.id) return
         // A torrent takes ~30 s to start, so it is never the "sticky" first choice; the quality upgrade finds it.
         if (ServerRanker.isTorrentServer(server.name)) return
         StickyServers.put(StreamFlixApp.instance, stickyKey, server.name)
+    }
+
+    /**
+     * The background switch to [candidate] could not be completed; [previous] is still on screen.
+     * The candidate is crossed off, and the search for a sharper source goes on from the one playing.
+     */
+    fun onSwitchFailed(candidate: Video.Server, previous: Video.Server?) {
+        failedIds += candidate.id
+        resolved.remove(candidate.id)
+        if (currentServerId != candidate.id) return
+        if (previous == null) {
+            currentServerId = null
+            return
+        }
+        currentServerId = previous.id
+        QualityMemory.currentServer = previous.name
+        activeVideo?.let { startQualityUpgrade(it, previous) }
     }
 
     /** Resolves the next episode's servers ahead of time (called at ~90 % progress). */
@@ -402,7 +425,7 @@ class PlayerViewModel(
 
     /** Next untried server, preferring ones that are already resolved. */
     private fun nextCandidate(): Video.Server? {
-        val remaining = ranked.filter { it.id !in failedIds && it.id != currentServerId }
+        val remaining = ranked.filter { it.id !in failedIds && it.id != currentServerId && it.id != activeServerId }
         return remaining.firstOrNull { cachedVideo(it) != null } ?: remaining.firstOrNull()
     }
 

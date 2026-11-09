@@ -60,15 +60,7 @@ object BrowseCards {
      */
     fun bindMovieRating(chip: TextView, movie: com.streamflixreborn.streamflix.models.Movie) {
         bindRating(chip, movie.rating, movie.released)
-        chip.tag = movie.id
-        if (!CinemaStatus.applies() || !CinemaStatus.worthChecking(movie.released?.timeInMillis)) return
-        when (CinemaStatus.peek(movie.id)) {
-            true -> styleInCinemas(chip)
-            null -> CinemaStatus.request(movie.id) { onlyInCinemas ->
-                if (onlyInCinemas) chip.post { if (chip.tag == movie.id) styleInCinemas(chip) }
-            }
-            false -> Unit
-        }
+        CinemaStatus.whenOnlyInCinemas(movie.id, movie.released?.timeInMillis, chip) { styleInCinemas(chip) }
     }
 
     /** Tints [chip] and sets it to "In cinemas". */

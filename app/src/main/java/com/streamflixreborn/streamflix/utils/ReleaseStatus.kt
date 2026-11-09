@@ -24,6 +24,15 @@ object ReleaseStatus {
         return DateUtils.formatDateTime(context, released.timeInMillis, flags)
     }
 
+    /** "Nov 12" for a date stored as UTC midnight (TMDb release dates), the same day in every time zone. */
+    fun shortDateUtc(context: Context, utcMillis: Long): String {
+        val year = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = utcMillis }.get(Calendar.YEAR)
+        val sameYear = Calendar.getInstance().get(Calendar.YEAR) == year
+        val flags = DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_MONTH or DateUtils.FORMAT_UTC or
+            (if (sameYear) DateUtils.FORMAT_NO_YEAR else DateUtils.FORMAT_SHOW_YEAR)
+        return DateUtils.formatDateTime(context, utcMillis, flags)
+    }
+
     /** "November 12, 2026". */
     fun longDate(context: Context, released: Calendar): String =
         DateUtils.formatDateTime(context, released.timeInMillis, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_YEAR)

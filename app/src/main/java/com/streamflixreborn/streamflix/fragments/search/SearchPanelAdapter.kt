@@ -12,6 +12,7 @@ import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.ItemSearchPanelHeaderBinding
 import com.streamflixreborn.streamflix.databinding.ItemSearchPanelRowBinding
 import com.streamflixreborn.streamflix.ui.tvFocusSpring
+import com.streamflixreborn.streamflix.utils.CinemaStatus
 import com.streamflixreborn.streamflix.utils.ThemeManager
 
 /**
@@ -110,6 +111,13 @@ class SearchPanelAdapter(
                     binding.tvSearchPanelBadge.apply {
                         text = type
                         visibility = View.VISIBLE
+                        tag = null
+                        val id = suggestion.tmdbId
+                        if (suggestion.type == SearchSuggestion.Type.MOVIE && id != null) {
+                            CinemaStatus.whenOnlyInCinemas(id, suggestion.releasedMillis, this) {
+                                text = context.getString(R.string.browse_in_cinemas)
+                            }
+                        }
                     }
                     val meta = suggestion.year?.let { context.getString(R.string.search_suggestion_meta, it, type) } ?: type
                     binding.root.contentDescription = "${suggestion.title}, $meta"

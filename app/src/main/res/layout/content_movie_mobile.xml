@@ -127,6 +127,25 @@
                 android:textColor="?attr/colorOnSurface"
                 tools:text="HD" />
         </LinearLayout>
+
+        <!-- In cinemas, and when it reaches streaming (only while the film is only in theatres) -->
+        <TextView
+            android:id="@+id/tv_movie_cinema"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/ud_quality_pill"
+            android:backgroundTint="?attr/colorTertiaryContainer"
+            android:maxLines="2"
+            android:paddingStart="10dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="4dp"
+            android:textAppearance="?attr/textAppearanceLabelLargeEmphasized"
+            android:textColor="?attr/colorOnTertiaryContainer"
+            android:visibility="gone"
+            tools:text="In cinemas · streaming from Jan 12"
+            tools:visibility="visible" />
     </LinearLayout>
 
     <androidx.constraintlayout.widget.Barrier

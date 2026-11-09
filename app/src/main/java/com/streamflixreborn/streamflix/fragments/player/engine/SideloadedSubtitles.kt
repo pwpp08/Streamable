@@ -197,6 +197,20 @@ class SideloadedSubtitles(
         handler.post(ticker)
     }
 
+    /** The player was replaced by another one: keep watching it, and keep the built-in subtitles off. */
+    fun rebind() {
+        if (lines.isEmpty()) return
+        val exo = player() ?: return
+        if (listening !== exo) {
+            listening?.removeListener(listener)
+            exo.addListener(listener)
+            listening = exo
+        }
+        exo.trackSelectionParameters = exo.trackSelectionParameters.buildUpon()
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+            .build()
+    }
+
     fun clear() {
         if (lines.isEmpty()) return
         lines = emptyList()

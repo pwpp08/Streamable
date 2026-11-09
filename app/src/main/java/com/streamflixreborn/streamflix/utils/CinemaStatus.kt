@@ -48,6 +48,10 @@ object CinemaStatus {
     fun worthChecking(releasedMillis: Long?, now: Long = System.currentTimeMillis()): Boolean =
         releasedMillis != null && releasedMillis <= now && releasedMillis >= now - RECENT_DAYS * DAY_MS
 
+    /** The earliest digital release still to come, if TMDb lists one: when the film reaches streaming. */
+    fun streamingDate(entries: List<ReleaseEntry>, now: Long = System.currentTimeMillis()): Long? =
+        entries.filter { it.type == 4 && it.millis > now }.minOfOrNull { it.millis }
+
     /** "2025-11-03T00:00:00.000Z" (or just the date) as UTC midnight. */
     fun parseDate(value: String?): Long? {
         val day = value?.take(10)?.takeIf { it.length == 10 } ?: return null
@@ -58,10 +62,34 @@ object CinemaStatus {
 
     /** The cached answer, or null when it is not known (or too old). */
     fun peek(id: String): Boolean? {
-        val stored = prefs().getString(id, null) ?: return null
-        val flag = stored.substringBefore('|').toBooleanStrictOrNull() ?: return null
-        val checkedAt = stored.substringAfter('|', "").toLongOrNull() ?: return null
-        return flag.takeIf { System.currentTimeMillis() - checkedAt < RECHECK_MS }
+        val fields = fresh(id) ?: return null
+        return fields[0].toBooleanStrictOrNull()
+    }
+
+    /** When the film is announced for streaming (UTC midnight), if the cache knows. */
+    fun streamingMillis(id: String): Long? =
+        fresh(id)?.getOrNull(2)?.toLongOrNull()?.takeIf { it > 0 }
+
+    private fun fresh(id: String): List<String>? {
+        val fields = prefs().getString(id, null)?.split('|') ?: return null
+        val checkedAt = fields.getOrNull(1)?.toLongOrNull() ?: return null
+        return fields.takeIf { System.currentTimeMillis() - checkedAt < RECHECK_MS }
+    }
+
+    /**
+     * Runs [show] on the UI thread once [id] is known to be only in cinemas (at once when cached).
+     * [tagView] carries the id so a recycled view that now shows another film is left alone.
+     */
+    fun whenOnlyInCinemas(id: String, releasedMillis: Long?, tagView: android.view.View, show: () -> Unit) {
+        tagView.tag = id
+        if (!applies() || !worthChecking(releasedMillis)) return
+        when (peek(id)) {
+            true -> show()
+            null -> request(id) { onlyInCinemas ->
+                if (onlyInCinemas) tagView.post { if (tagView.tag == id) show() }
+            }
+            false -> Unit
+        }
     }
 
     /** Only the TMDb provider's ids are TMDb ids. */
@@ -78,8 +106,9 @@ object CinemaStatus {
             try {
                 val answer = limiter.withPermit { fetch(tmdbId) }
                 if (answer != null) {
-                    prefs().edit().putString(id, "$answer|${System.currentTimeMillis()}").apply()
-                    onResult(answer)
+                    val (onlyInCinemas, streaming) = answer
+                    prefs().edit().putString(id, "$onlyInCinemas|${System.currentTimeMillis()}|${streaming ?: 0L}").apply()
+                    onResult(onlyInCinemas)
                 }
             } finally {
                 synchronized(inFlight) { inFlight.remove(id) }
@@ -87,7 +116,7 @@ object CinemaStatus {
         }
     }
 
-    private suspend fun fetch(tmdbId: Int): Boolean? = runCatching {
+    private suspend fun fetch(tmdbId: Int): Pair<Boolean, Long?>? = runCatching {
         val detail = TMDb3.Movies.details(
             movieId = tmdbId,
             appendToResponse = listOf(TMDb3.Params.AppendToResponse.Movie.RELEASES_DATES),
@@ -95,7 +124,7 @@ object CinemaStatus {
         val entries = detail.releaseDates?.results.orEmpty()
             .flatMap { it.releaseDates }
             .mapNotNull { date -> parseDate(date.releaseDate)?.let { ReleaseEntry(date.type.value, it) } }
-        isCinemaOnly(entries)
+        isCinemaOnly(entries) to streamingDate(entries)
     }.getOrNull()
 
     private fun prefs() = StreamFlixApp.instance.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

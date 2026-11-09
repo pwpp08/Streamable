@@ -17,6 +17,10 @@ object AudioLeveling {
 
     @Volatile
     var level: Int = OFF
+
+    /** What the playing leveler had settled on, so a player taking over starts from the same gain. */
+    @Volatile
+    var warm: AudioLeveler.Warm? = null
 }
 
 /**
@@ -24,7 +28,10 @@ object AudioLeveling {
  * doesn't need riding. One gain follows the loudest channel, which keeps the stereo image, and
  * there is no look-ahead, so picture and sound stay in sync. A limiter catches what gets past it.
  */
-class AudioLeveler(sampleRate: Int, private val channels: Int) {
+class AudioLeveler(sampleRate: Int, private val channels: Int, warm: Warm? = null) {
+
+    /** The state worth carrying to another leveler: the gain in force and the loudness it was reacting to. */
+    class Warm(val gainDb: Float, val power: Float)
 
     private class Preset(val thresholdDb: Float, val ratio: Float, val makeupDb: Float) {
         fun gainDb(levelDb: Float): Float {
@@ -34,9 +41,9 @@ class AudioLeveler(sampleRate: Int, private val channels: Int) {
                 over >= KNEE_DB / 2 -> over
                 else -> (over + KNEE_DB / 2).let { it * it / (2 * KNEE_DB) }
             }
-            // Below the noise floor the boost fades out, so hiss and room tone stay down.
-            val boost = makeupDb - min(makeupDb, max(0f, NOISE_FLOOR_DB - levelDb))
-            return compression + boost
+            // Quiet sound is raised, but hiss and room tone are not: the boost fades in over a 14 dB range.
+            val t = ((levelDb - GATE_BOTTOM_DB) / GATE_RANGE_DB).coerceIn(0f, 1f)
+            return compression + makeupDb * t * t * (3f - 2f * t)
         }
     }
 
@@ -49,10 +56,12 @@ class AudioLeveler(sampleRate: Int, private val channels: Int) {
     private val gainRelease = perFrame(0.4f, BLOCK_FRAMES)
     private val limiterRelease = perFrame(0.05f, 1)
 
-    private var power = 0f
-    private var gainDb = 0f
-    private var gain = 1f
+    private var power = warm?.power ?: 0f
+    private var gainDb = warm?.gainDb ?: 0f
+    private var gain = 10f.pow(gainDb / 20f)
     private var limiter = 1f
+
+    val state: Warm get() = Warm(gainDb, power)
 
     /** Rewrites [count] interleaved samples of [samples] in place. */
     fun process(samples: ShortArray, count: Int, level: Int) {
@@ -114,16 +123,17 @@ class AudioLeveler(sampleRate: Int, private val channels: Int) {
         /** Gain is recalculated every 32 frames (under 1 ms), which keeps this cheap on the projector. */
         const val BLOCK_FRAMES = 32
         const val KNEE_DB = 6f
-        const val NOISE_FLOOR_DB = -55f
+        const val GATE_BOTTOM_DB = -64f
+        const val GATE_RANGE_DB = 14f
         const val SILENCE_POWER = 1e-10f
         /** About -1 dB. */
         const val CEILING = 0.89f
 
-        /** Light, medium and strong. */
+        /** Light, medium and strong. Strong squeezes the loud and quiet scenes to within a few dB. */
         val PRESETS = listOf(
-            Preset(thresholdDb = -24f, ratio = 2f, makeupDb = 6f),
             Preset(thresholdDb = -28f, ratio = 3.5f, makeupDb = 11f),
             Preset(thresholdDb = -32f, ratio = 6f, makeupDb = 16f),
+            Preset(thresholdDb = -38f, ratio = 12f, makeupDb = 24f),
         )
     }
 }

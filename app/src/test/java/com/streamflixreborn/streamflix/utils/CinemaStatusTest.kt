@@ -62,4 +62,21 @@ class CinemaStatusTest {
         assertNull(CinemaStatus.parseDate(null))
         assertNull(CinemaStatus.parseDate("soon"))
     }
+
+    @Test
+    fun streamingDateIsTheEarliestDigitalReleaseStillToCome() {
+        val entries = listOf(
+            ReleaseEntry(3, at(20)),
+            ReleaseEntry(4, now + 90 * day),
+            ReleaseEntry(4, now + 60 * day),
+            ReleaseEntry(5, now + 30 * day),
+        )
+        assertEquals(now + 60 * day, CinemaStatus.streamingDate(entries, now))
+    }
+
+    @Test
+    fun noAnnouncedDigitalReleaseMeansNoDate() {
+        assertNull(CinemaStatus.streamingDate(listOf(ReleaseEntry(3, at(5)), ReleaseEntry(5, now + 10 * day)), now))
+        assertNull(CinemaStatus.streamingDate(listOf(ReleaseEntry(4, at(1))), now))
+    }
 }

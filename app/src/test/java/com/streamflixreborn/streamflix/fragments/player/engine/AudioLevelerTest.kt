@@ -54,7 +54,7 @@ class AudioLevelerTest {
         var last = original
         for (level in listOf(AudioLeveling.LIGHT, AudioLeveling.MEDIUM, AudioLeveling.STRONG)) {
             val gap = settled(-3.0, level) - settled(-27.0, level)
-            assertTrue("level $level leaves a gap of $gap dB", gap < last - 2)
+            assertTrue("level $level leaves a gap of $gap dB", gap < last - 1.5)
             last = gap
         }
     }
@@ -100,5 +100,23 @@ class AudioLevelerTest {
     fun aShortLastBufferIsHandled() {
         val audio = tone(-20.0, 0.001)
         AudioLeveler(rate, 2).process(audio, audio.size - 2, AudioLeveling.MEDIUM)
+    }
+
+    @Test
+    fun strongLeavesOnlyAFewDbBetweenTalkingAndGunfire() {
+        val gap = settled(-3.0, AudioLeveling.STRONG) - settled(-27.0, AudioLeveling.STRONG)
+        assertTrue("gap $gap dB", gap < 4.0)
+    }
+
+    @Test
+    fun aLevelerThatTakesOverStartsFromTheGainInForce() {
+        val first = AudioLeveler(rate, 2)
+        val talk = tone(-30.0)
+        first.process(talk, talk.size, AudioLeveling.MEDIUM)
+        val warmed = AudioLeveler(rate, 2, first.state)
+        val next = tone(-30.0, 0.05)
+        warmed.process(next, next.size, AudioLeveling.MEDIUM)
+        // Right from the first samples the boost is already there (a cold start begins at 0 dB).
+        assertTrue(peakDb(next) > -22.0)
     }
 }

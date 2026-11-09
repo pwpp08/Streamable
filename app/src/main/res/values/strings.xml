@@ -637,6 +637,10 @@
     <string name="queue_sort_title">A–Z</string>
     <string name="browse_in_cinemas">In cinemas</string>
     <string name="movie_cinema_only">In cinemas only · likely camera quality</string>
+    <string name="movie_cinema_streaming_on">In cinemas · streaming from %1$s</string>
+    <string name="movie_cinema_streaming_unknown">In cinemas · streaming date not announced yet</string>
+    <string name="movie_streaming_from_line">Streaming from %1$s</string>
+    <string name="movie_streaming_unknown_line">Streaming date not announced yet</string>
     <string name="queue_sort_newest">Newest first</string>
     <string name="queue_sort_oldest">Oldest first</string>
     <string name="queue_tune">Sort and more</string>

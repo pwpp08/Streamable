@@ -24,7 +24,7 @@ class LevelingAudioProcessor : BaseAudioProcessor() {
         // A seek keeps the current gain, so the sound doesn't jump; a new format starts over.
         val format = inputAudioFormat
         if (format.channelCount > 0 && format != levelerFormat) {
-            leveler = AudioLeveler(format.sampleRate, format.channelCount)
+            leveler = AudioLeveler(format.sampleRate, format.channelCount, AudioLeveling.warm)
             levelerFormat = format
         }
     }
@@ -44,7 +44,10 @@ class LevelingAudioProcessor : BaseAudioProcessor() {
         inputBuffer.order(java.nio.ByteOrder.nativeOrder()).asShortBuffer().get(samples, 0, count)
         inputBuffer.position(inputBuffer.limit())
 
-        leveler?.process(samples, count, AudioLeveling.level)
+        leveler?.let {
+            it.process(samples, count, AudioLeveling.level)
+            AudioLeveling.warm = it.state
+        }
 
         // The view leaves the buffer at position 0, ready to be read.
         replaceOutputBuffer(bytes).asShortBuffer().put(samples, 0, count)

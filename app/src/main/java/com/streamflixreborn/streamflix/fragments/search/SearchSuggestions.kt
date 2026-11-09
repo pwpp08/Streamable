@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.fragments.search
 
+import com.streamflixreborn.streamflix.utils.CinemaStatus
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.streamflixreborn.streamflix.utils.TMDb3
@@ -49,6 +50,10 @@ object SearchHistory {
 data class SearchSuggestion(val title: String, val year: String?, val type: Type) {
     enum class Type { MOVIE, TV }
 
+    /** TMDb id and release date, kept apart from the data so two suggestions still compare by what they show. */
+    var tmdbId: String? = null
+    var releasedMillis: Long? = null
+
     companion object {
         const val MIN_CHARS = 2
         const val LIMIT = 8
@@ -59,7 +64,12 @@ data class SearchSuggestion(val title: String, val year: String?, val type: Type
             results.mapNotNull { item ->
                 when (item) {
                     is TMDb3.Movie -> item.title.takeIf { it.isNotBlank() }
-                        ?.let { SearchSuggestion(it.trim(), yearOf(item.releaseDate), Type.MOVIE) }
+                        ?.let {
+                            SearchSuggestion(it.trim(), yearOf(item.releaseDate), Type.MOVIE).also { found ->
+                                found.tmdbId = item.id.toString()
+                                found.releasedMillis = CinemaStatus.parseDate(item.releaseDate)
+                            }
+                        }
                     is TMDb3.Tv -> item.name.takeIf { it.isNotBlank() }
                         ?.let { SearchSuggestion(it.trim(), yearOf(item.firstAirDate), Type.TV) }
                     else -> null
