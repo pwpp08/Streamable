@@ -119,8 +119,29 @@ object SwitchPlan {
     /** The prepared stream must have buffered this much beyond the point, so it doesn't stall right after. */
     const val MIN_AHEAD_MS = 2_500L
 
-    /** How far ahead of the picture the prepared stream starts: web sources are quick, torrents are not. */
-    fun startLeadMs(torrent: Boolean): Long = if (torrent) 12_000L else 4_000L
+    /**
+     * How far ahead of the picture the prepared stream starts. The switch can't happen before the
+     * picture gets there, so a fixed generous lead made every switch take at least that long. The
+     * lead now follows how long the last few preparations really took (a little more, for safety).
+     */
+    fun startLeadMs(torrent: Boolean): Long {
+        val recent = if (torrent) torrentPrepares else webPrepares
+        val typical = synchronized(recent) { if (recent.isEmpty()) null else recent.sorted()[recent.size / 2] }
+            ?: return if (torrent) 8_000L else 2_500L
+        return if (torrent) (typical + 2_000L).coerceIn(4_000L, 30_000L) else (typical + 800L).coerceIn(1_500L, 10_000L)
+    }
+
+    /** How long getting a [torrent] (or web) source ready to play took, from creating the player. */
+    fun recordPrepare(torrent: Boolean, elapsedMs: Long) {
+        val recent = if (torrent) torrentPrepares else webPrepares
+        synchronized(recent) {
+            if (recent.size == 5) recent.removeFirst()
+            recent.addLast(elapsedMs)
+        }
+    }
+
+    private val webPrepares = ArrayDeque<Long>()
+    private val torrentPrepares = ArrayDeque<Long>()
 
     /** Null while the prepared stream hasn't buffered far enough past the chosen point. */
     fun swapPoint(

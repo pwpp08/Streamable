@@ -92,16 +92,16 @@ object ServerRanker {
         }
         val stickyHeight = servers.firstOrNull { it.name.equals(stickyName, ignoreCase = true) }
             ?.let { heights.getValue(it) }
-        // A sticky server only keeps its lead when it is known to deliver full HD, or when no
-        // server is expected to (a remembered 720p server must not beat a 1080p one).
-        val stickyUsable = if (fullHdExists) stickyHeight != null && stickyHeight >= 1080 else true
+        // The server (or torrent) that last played this title comes first again, unless it is known
+        // to be below full HD while another server is expected to deliver it.
+        val stickyUsable = !(fullHdExists && stickyHeight != null && stickyHeight < 1080)
         return servers.withIndex()
             .sortedWith(
                 compareBy<IndexedValue<Video.Server>> { if (it.value.name.equals(preferredName, ignoreCase = true)) 0 else 1 }
-                    // P2P takes ~30 s to start: it only plays first when nothing else is left (the
-                    // quality upgrade and failover still reach it).
-                    .thenBy { if (isTorrentServer(it.value.name)) 1 else 0 }
                     .thenBy { if (stickyUsable && it.value.name.equals(stickyName, ignoreCase = true)) 0 else 1 }
+                    // P2P takes ~30 s to start: it only plays first when nothing else is left or it
+                    // is what this title played last (the quality upgrade and failover still reach it).
+                    .thenBy { if (isTorrentServer(it.value.name)) 1 else 0 }
                     .thenByDescending { scores.getValue(it.value) }
                     .thenBy { it.index }
             )

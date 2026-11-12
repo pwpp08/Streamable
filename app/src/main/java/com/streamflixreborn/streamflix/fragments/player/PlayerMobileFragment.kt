@@ -129,7 +129,19 @@ class PlayerMobileFragment : Fragment() {
     }
     private val autoSubtitleFetch = AutoSubtitleFetch()
 
+    /** Brings back the subtitle this movie / episode had last time, and remembers new choices. */
+    private val subtitleRecall by lazy {
+        com.streamflixreborn.streamflix.fragments.player.engine.SubtitleRecall(
+            context = requireContext().applicationContext,
+            key = com.streamflixreborn.streamflix.fragments.player.engine.TitleMemory.key(args.videoType),
+            showFile = { uri, name -> showSideloadedSubtitle(uri, name) },
+            fileShowing = { sideloadedSubtitles.isActive },
+        )
+    }
+
     private fun maybeFetchAutoSubtitle() {
+        // A remembered choice (including "off") beats fetching one automatically.
+        if (subtitleRecall.hadMemory) return
         autoSubtitleFetch.next(sideloadedSubtitles.isActive)?.let { viewModel.downloadSubtitle(it) }
     }
 
@@ -147,6 +159,7 @@ class PlayerMobileFragment : Fragment() {
                 return@launch
             }
             sideloadedSubtitles.show(lines, name)
+            subtitleRecall.onFileShown(uri, name)
             showPlayerMessage(name ?: getString(R.string.player_subtitle_loaded))
         }
     }
@@ -391,6 +404,11 @@ class PlayerMobileFragment : Fragment() {
                             seamlessSwitch?.cancel()
                             displayVideo(state.video, state.server, failover = state.failover)
                         }
+                    }
+
+                    is PlayerViewModel.State.ChoiceUnavailable -> {
+                        if (mainIsHealthy()) showPlayerMessage(getString(R.string.player_server_unavailable, state.server.name))
+                        else viewModel.continueAfterFailedChoice()
                     }
 
                     is PlayerViewModel.State.FailedLoadingVideo -> {
@@ -1097,6 +1115,7 @@ class PlayerMobileFragment : Fragment() {
 
         override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
             autoSubtitles?.onTracksChanged(tracks)
+            if (::player.isInitialized) subtitleRecall.onTracksChanged(player, tracks)
             autoSubtitleFetch.onTracks(tracks)
             maybeFetchAutoSubtitle()
         }

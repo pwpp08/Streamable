@@ -36,8 +36,8 @@ android {
         applicationId "com.streamflixreborn.streamflix"
         minSdk 23
         targetSdk 35
-        versionCode 192
-        versionName "1.0.19"
+        versionCode 193
+        versionName "1.0.20"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // -PonlyAbi=armeabi-v7a builds a slim APK for the 32-bit projector (drops the other libtorrent .so files).
         if (project.hasProperty('onlyAbi')) {

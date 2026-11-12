@@ -744,8 +744,9 @@ class TmdbProvider(override val language: String) : Provider {
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
         val servers = mutableListOf<Video.Server>()
-        // Videasy first: native, ~150 ms, adaptive up to 1080p (see VideasyExtractor).
-        val videasy = VideasyExtractor().servers(videoType)
+        // Videasy first: native, ~150 ms, adaptive up to 1080p (see VideasyExtractor). Left out
+        // while its API is blocking apps, so playback doesn't start on it and fall to the next server.
+        val videasy = VideasyExtractor().let { if (it.isReachable()) it.servers(videoType) else emptyList() }
         servers.addAll(videasy)
         servers.addAll(listOf(
             VixSrcExtractor().server(videoType),

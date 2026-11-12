@@ -197,6 +197,7 @@ class PlayerViewModel(
         if (servers.isEmpty()) return
         this.servers = servers
         val sticky = StickyServers.get(StreamFlixApp.instance, stickyKey)
+        stickyName = sticky
         ranked = ServerRanker.rank(servers, preferredName = preferredServerName, stickyName = sticky)
         failedIds.clear()
         wrongAudio.clear()
@@ -215,7 +216,32 @@ class PlayerViewModel(
             ranked = servers
         }
         failedIds.remove(server.id)
-        launchPlayback { playWithFailover(server, failover = false) }
+        launchPlayback { playChosen(server) }
+    }
+
+    /**
+     * A server picked by hand. If it doesn't resolve while something is already playing, that keeps
+     * playing and the user is told; moving on to another server they didn't pick would be confusing.
+     */
+    private suspend fun playChosen(server: Video.Server) {
+        val cached = cachedVideo(server)
+        if (cached == null) _state.emit(State.LoadingVideo(server))
+        val video = cached ?: resolve(server)
+        if (video != null) {
+            emitSuccess(video, server, failover = false)
+            return
+        }
+        failedIds += server.id
+        if (activeServerId != null) {
+            _state.emit(State.ChoiceUnavailable(server))
+            return
+        }
+        playWithFailover(null, failover = true)
+    }
+
+    /** A hand-picked server failed and nothing was left playing: carry on with the best of the rest. */
+    fun continueAfterFailedChoice() {
+        launchPlayback { playWithFailover(null, failover = true) }
     }
 
     /** The player failed on [server] (fatal error): continue with the next server. */
@@ -241,8 +267,7 @@ class PlayerViewModel(
         activeServerId = server.id
         resolved[server.id]?.video?.let { activeVideo = it }
         if (server.id == offlineServer?.id) return
-        // A torrent takes ~30 s to start, so it is never the "sticky" first choice; the quality upgrade finds it.
-        if (ServerRanker.isTorrentServer(server.name)) return
+        // Torrents too: whatever played this title last is what it starts with next time.
         StickyServers.put(StreamFlixApp.instance, stickyKey, server.name)
     }
 
@@ -322,6 +347,12 @@ class PlayerViewModel(
             }
         }
 
+    /** The server this title played on last time; a remembered torrent isn't held back like other torrents. */
+    private var stickyName: String? = null
+
+    private fun deferred(server: Video.Server) =
+        ServerRanker.isTorrentServer(server.name) && !server.name.equals(stickyName, ignoreCase = true)
+
     private suspend fun pickFirst(order: List<Video.Server>, results: Channel<Pair<Int, Video?>>) {
         _state.emit(State.LoadingVideo(order.first()))
         val done = BooleanArray(order.size)
@@ -331,17 +362,18 @@ class PlayerViewModel(
         while (true) {
             coroutineContext.ensureActive()
             // A torrent "resolves" instantly but takes far longer to start, so it only opens when no web server can.
-            val webPending = order.indices.any { !done[it] && !ServerRanker.isTorrentServer(order[it].name) }
-            val best = videos.indices.firstOrNull { videos[it] != null && (!webPending || !ServerRanker.isTorrentServer(order[it].name)) } ?: -1
+            val webPending = order.indices.any { !done[it] && !deferred(order[it]) }
+            val best = videos.indices.firstOrNull { videos[it] != null && (!webPending || !deferred(order[it])) } ?: -1
             if (best >= 0) {
                 val higherRankedDone = (0 until best).all { done[it] }
                 val now = SystemClock.elapsedRealtime()
                 if (graceDeadline == 0L) graceDeadline = now + PICK_GRACE_MS
                 // Quality differs per title, so the first answer is not picked until there are a few to compare.
+                // The remembered server needs no comparison: it is what the viewer settled on.
                 val enough = videos.indices.count { videos[it] != null && !ServerRanker.isTorrentServer(order[it].name) } >= MIN_TO_COMPARE ||
-                    !webPending
+                    !webPending || order[best].name.equals(stickyName, ignoreCase = true)
                 if ((higherRankedDone && enough) || now >= graceDeadline) {
-                    val pick = chooseByMeasurement(order, videos) ?: best
+                    val pick = if (order[best].name.equals(stickyName, ignoreCase = true)) best else chooseByMeasurement(order, videos) ?: best
                     emitSuccess(videos[pick]!!, order[pick], failover = false)
                     return
                 }
@@ -680,6 +712,9 @@ class PlayerViewModel(
 
         /** All servers failed. */
         data class FailedLoadingVideo(val error: Exception, val server: Video.Server) : State()
+
+        /** A server picked by hand did not work; the stream that was playing carries on. */
+        data class ChoiceUnavailable(val server: Video.Server) : State()
     }
 
     sealed class SubtitleState {

@@ -83,18 +83,15 @@ object SettingsSync {
         Entry("home_banner", { UserPreferences.homeBanner }, { UserPreferences.homeBanner = it }),
         Entry("spoken_languages", { UserPreferences.spokenLanguages.joinToString(",") },
             { value -> UserPreferences.spokenLanguages = value.split(',').map { it.trim() }.filter { it.isNotEmpty() } }),
-        Entry("subtitle_mode", { UserPreferences.subtitleMode.name },
-            { runCatching { UserPreferences.SubtitleMode.valueOf(it) }.getOrNull()?.let { m -> UserPreferences.subtitleMode = m } }),
-        // Subtitle preset, size, margin and style are deliberately not synced: a phone and a
-        // projector need different values, and a newer change on one must never reset the other.
+        // Subtitle settings (mode, preset, size, margin, style) and audio leveling are deliberately
+        // not synced: a phone and a projector need different values, and a newer change on one
+        // must never reset the other.
         Entry("quality_mode", { UserPreferences.qualityMode.name },
             { runCatching { UserPreferences.QualityMode.valueOf(it) }.getOrNull()?.let { m -> UserPreferences.qualityMode = m } }),
         Entry("max_resolution", { UserPreferences.maxResolution.toString() },
             { it.toIntOrNull()?.let { v -> UserPreferences.maxResolution = v } }),
         Entry("min_quality", { UserPreferences.minQualityHeight.toString() },
             { it.toIntOrNull()?.let { v -> UserPreferences.minQualityHeight = v } }),
-        Entry("audio_leveling", { UserPreferences.audioLeveling.toString() },
-            { it.toIntOrNull()?.let { v -> UserPreferences.audioLeveling = v } }),
         Entry("up_next_seconds", { UserPreferences.upNextSeconds.toString() },
             { it.toIntOrNull()?.let { v -> UserPreferences.upNextSeconds = v } }),
         Entry("skip_segments_mode", { UserPreferences.skipSegmentsMode.name },

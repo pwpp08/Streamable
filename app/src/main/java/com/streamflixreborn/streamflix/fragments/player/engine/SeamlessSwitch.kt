@@ -119,7 +119,9 @@ class SeamlessSwitch(
             standby.release()
             return host.fallBack(video, server)
         }
-        Log.d(TAG, "${server.name} ready after ${SystemClock.elapsedRealtime() - started} ms")
+        val readyAfter = SystemClock.elapsedRealtime() - started
+        SwitchPlan.recordPrepare(torrent, readyAfter)
+        Log.d(TAG, "${server.name} ready after $readyAfter ms")
 
         // 2. Choose where to cut over, and wait for the picture to get there.
         var attempt = 0

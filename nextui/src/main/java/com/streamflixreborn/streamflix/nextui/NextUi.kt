@@ -104,7 +104,7 @@ private fun NextUiContent(player: Player, model: NextUiModel, callbacks: NextUiC
     }
     val tapGestureState = rememberTapGestureState(
         player = player,
-        doubleTapGesture = DoubleTapGesture.BOTH,
+        doubleTapGesture = DoubleTapGesture.PLAY_PAUSE,
         seekIncrementMillis = seekIncrementMs,
         useLongPressGesture = false,
         longPressSpeed = 2f,
