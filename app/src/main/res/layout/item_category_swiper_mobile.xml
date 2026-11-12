@@ -35,7 +35,7 @@
             android:ellipsize="end"
             android:maxLines="2"
             android:textAppearance="?attr/textAppearanceTitleLargeEmphasized"
-            android:textColor="?attr/colorOnSurface"
+            android:textColor="@android:color/white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -43,7 +43,7 @@
 
         <TextView
             android:id="@+id/tv_swiper_tv_show_last_episode"
-            style="@style/Widget.StreamFlix.Browse.CardMeta"
+            style="@style/Widget.StreamFlix.Browse.CardMeta.OnScrim"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -53,7 +53,7 @@
 
         <TextView
             android:id="@+id/tv_swiper_released"
-            style="@style/Widget.StreamFlix.Browse.CardMeta"
+            style="@style/Widget.StreamFlix.Browse.CardMeta.OnScrim"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
@@ -64,7 +64,7 @@
 
         <TextView
             android:id="@+id/tv_swiper_quality"
-            style="@style/Widget.StreamFlix.Browse.CardMeta"
+            style="@style/Widget.StreamFlix.Browse.CardMeta.OnScrim"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
@@ -82,12 +82,12 @@
             app:layout_constraintBottom_toBottomOf="@id/tv_swiper_rating"
             app:layout_constraintStart_toEndOf="@id/tv_swiper_quality"
             app:layout_constraintTop_toTopOf="@id/tv_swiper_rating"
-            android:tint="?attr/colorOnSurfaceVariant"
+            android:tint="#F2FFFFFF"
             tools:ignore="ContentDescription" />
 
         <TextView
             android:id="@+id/tv_swiper_rating"
-            style="@style/Widget.StreamFlix.Browse.CardMeta"
+            style="@style/Widget.StreamFlix.Browse.CardMeta.OnScrim"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"

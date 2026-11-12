@@ -24,10 +24,17 @@ object InAppUpdater {
     /** The 32-bit-only build for low-memory TV boxes; the other APK carries both ABIs. */
     private const val SLIM_ABI = "armeabi-v7a"
 
+    /** Projector (TV-only) releases are tagged `projector-v1.2.3`; the phone app never offers them. */
+    const val PROJECTOR_TAG_PREFIX = "projector-"
+
+    private val TV_NAME = Regex("-tv(-|\\.apk$)")
+    private val MOBILE_NAME = Regex("-mobile(-|\\.apk$)")
+
     data class AppAsset(val name: String, val url: String, val size: Long)
 
     data class AppRelease(val tagName: String, val body: String?, val assets: List<AppAsset>) {
-        val versionName: String get() = tagName.removePrefix("v").removePrefix("V")
+        val versionName: String
+            get() = tagName.removePrefix(PROJECTOR_TAG_PREFIX).removePrefix("v").removePrefix("V")
     }
 
     /** Thrown when the user still has to allow installs from this app in system settings. */
@@ -35,7 +42,7 @@ object InAppUpdater {
 
     /** Dotted numbers compared part by part, so 1.0.10 > 1.0.9. Anything after a digit run is ignored. */
     fun compareVersions(a: String, b: String): Int {
-        fun parts(v: String) = v.removePrefix("v").removePrefix("V").split(".").map { part ->
+        fun parts(v: String) = v.removePrefix(PROJECTOR_TAG_PREFIX).removePrefix("v").removePrefix("V").split(".").map { part ->
             part.takeWhile { it.isDigit() }.toIntOrNull() ?: 0
         }
         val left = parts(a)
@@ -57,9 +64,9 @@ object InAppUpdater {
     fun pickAsset(assets: List<AppAsset>, supportedAbis: List<String>, layout: String): AppAsset? {
         val apks = assets.filter { it.name.endsWith(".apk") }.filter {
             when (layout) {
-                "mobile" -> it.name.endsWith("-mobile.apk")
-                "tv" -> it.name.endsWith("-tv.apk")
-                else -> !it.name.endsWith("-mobile.apk") && !it.name.endsWith("-tv.apk")
+                "mobile" -> MOBILE_NAME.containsMatchIn(it.name)
+                "tv" -> TV_NAME.containsMatchIn(it.name)
+                else -> !MOBILE_NAME.containsMatchIn(it.name) && !TV_NAME.containsMatchIn(it.name)
             }
         }.ifEmpty { assets.filter { it.name.endsWith(".apk") } }
         val is32bitOnly = supportedAbis.firstOrNull() == SLIM_ABI
@@ -68,11 +75,19 @@ object InAppUpdater {
         return if (is32bitOnly) slim ?: full else full ?: slim
     }
 
+    /**
+     * Whether [release] is meant for an app built with [layout]: the TV-only app follows the
+     * projector releases (the ones with -tv APKs), every other build follows the normal ones.
+     */
+    fun isForLayout(tagName: String, assetNames: List<String>, layout: String): Boolean =
+        if (layout == "tv") assetNames.any { TV_NAME.containsMatchIn(it) } else !tagName.startsWith(PROJECTOR_TAG_PREFIX)
+
     /** Published releases newer than the installed version, newest first. */
     suspend fun getNewReleases(): List<AppRelease> {
         val current = BuildConfig.VERSION_NAME
         return GitHub.Releases.getReleases(REPO_OWNER, REPO_NAME)
             .filter { !it.draft && !it.prerelease && isNewer(it.tagName, current) }
+            .filter { release -> isForLayout(release.tagName, release.assets.map { it.name }, BuildConfig.APP_LAYOUT) }
             .map { release ->
                 AppRelease(
                     tagName = release.tagName,

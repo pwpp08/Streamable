@@ -276,6 +276,7 @@
     <string name="player_settings_caption_style_window_opacity_1">100%</string>
     <string name="player_settings_caption_style_margin_title">Bottom margin</string>
     <string name="player_settings_caption_style_margin_label">Bottom margin</string>
+    <string name="player_subtitle_settings">Subtitle settings</string>
     <string name="player_settings_open_subtitles_title">OpenSubtitles</string>
     <string name="player_settings_open_subtitles_label">OpenSubtitles</string>
     <string name="player_settings_subdl_title">SubDL</string>
@@ -614,7 +615,7 @@
     <string name="queue_section_up_next">In progress</string>
     <string name="queue_section_watchlist">Watchlist</string>
     <string name="queue_section_watched">Watched</string>
-    <string name="queue_section_count">%1$s · %2$d</string>
+    <string name="queue_section_count">%2$d %1$s</string>
     <string name="queue_filter_all">All</string>
     <string name="queue_filter_unrated">Not rated</string>
     <string name="queue_filter_movies">Movies</string>
@@ -632,9 +633,18 @@
         <item quantity="other">%d episodes left</item>
     </plurals>
     <string name="queue_sort">Sort</string>
-    <string name="queue_sort_recent">Recently added</string>
-    <string name="queue_sort_title">Title A–Z</string>
-    <string name="queue_sort_release">Release date</string>
+    <string name="queue_sort_recent">Recent</string>
+    <string name="queue_sort_title">A–Z</string>
+    <string name="browse_in_cinemas">In cinemas</string>
+    <string name="movie_cinema_only">In cinemas only · likely camera quality</string>
+    <string name="movie_cinema_streaming_on">In cinemas · streaming from %1$s</string>
+    <string name="movie_cinema_streaming_unknown">In cinemas · streaming date not announced yet</string>
+    <string name="movie_streaming_from_line">Streaming from %1$s</string>
+    <string name="movie_streaming_unknown_line">Streaming date not announced yet</string>
+    <string name="queue_sort_newest">Newest first</string>
+    <string name="queue_sort_oldest">Oldest first</string>
+    <string name="queue_tune">Sort and more</string>
+    <string name="queue_tune_show">Show</string>
     <string name="queue_sort_rating">Rating</string>
     <string name="queue_spin">Spin</string>
     <string name="queue_swipe">Swipe</string>

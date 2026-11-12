@@ -139,7 +139,7 @@ class NextUiBinder(
                     val playing = auto.currentTrack
                     PickerItem(
                         label = if (playing != null && auto.isSelected) {
-                            context.getString(R.string.player_settings_quality_auto_selected, playing.height)
+                            context.getString(R.string.player_settings_quality_auto_selected, playing.displayHeight)
                         } else {
                             context.getString(R.string.player_settings_quality_auto)
                         },
@@ -148,7 +148,7 @@ class NextUiBinder(
                 }
 
                 is Settings.Quality.VideoTrackInformation -> PickerItem(
-                    label = context.getString(R.string.player_settings_quality, quality.height),
+                    label = context.getString(R.string.player_settings_quality, quality.displayHeight),
                     selected = quality.isSelected,
                 ) { settings.selectQuality(quality) }
             }
@@ -171,6 +171,28 @@ class NextUiBinder(
             },
             actions = buildList {
                 if (hasToggle) add(languageFilterAction { showAudio() })
+                add(
+                    PickerAction(
+                        label = context.getString(
+                            R.string.player_leveling_action,
+                            context.resources.getStringArray(R.array.settings_audio_leveling_entries)[UserPreferences.audioLeveling],
+                        ),
+                        dismiss = false,
+                    ) { showLeveling() },
+                )
+            },
+        )
+    }
+
+    private fun showLeveling() {
+        val names = context.resources.getStringArray(R.array.settings_audio_leveling_entries)
+        model.picker = Picker(
+            title = context.getString(R.string.settings_audio_leveling_title),
+            items = names.indices.map { level ->
+                PickerItem(
+                    label = names[level],
+                    selected = UserPreferences.audioLeveling == level,
+                ) { UserPreferences.audioLeveling = level }
             },
         )
     }
@@ -205,8 +227,12 @@ class NextUiBinder(
                 if (list.contains(Settings.Subtitle.ShowAllLanguages)) {
                     add(languageFilterAction { showSubtitles() })
                 }
-                // Style, timing offset, local file, OpenSubtitles and SubDL live in the settings panel.
-                add(PickerAction(context.getString(R.string.player_settings_title)) { settings.showSubtitles() })
+                // More subtitles, then every subtitle setting (look, timing, local file) in one page.
+                add(PickerAction(context.getString(R.string.player_settings_open_subtitles_title)) { settings.showOpenSubtitles() })
+                if (UserPreferences.subdlApiKey.isNotEmpty()) {
+                    add(PickerAction(context.getString(R.string.player_settings_subdl_title)) { settings.showSubDL() })
+                }
+                add(PickerAction(context.getString(R.string.player_subtitle_settings)) { settings.showSubtitles() })
             },
         )
     }

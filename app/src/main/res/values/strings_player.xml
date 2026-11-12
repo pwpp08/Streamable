@@ -6,6 +6,9 @@
 
     <!-- Seamless server failover -->
     <string name="player_switched_server">Switched to %1$s</string>
+    <string name="player_preparing_server">Getting %1$s ready…</string>
+    <string name="player_server_unavailable">%1$s isn\'t available right now; staying on this one</string>
+    <string name="player_switch_failed">Couldn\'t switch source; staying on this one</string>
     <string name="player_all_servers_failed">All servers failed to load the video.</string>
 
     <!-- Skip segments (TheIntroDB) -->
@@ -13,5 +16,7 @@
     <string name="player_skipped_intro">Skipped intro</string>
     <string name="player_skipped_recap">Skipped recap</string>
     <string name="player_subtitle_unsupported">That subtitle file couldn’t be read.</string>
+    <string name="player_no_full_hd">No %1$dp or better source found for this title; playing %2$dp</string>
+    <string name="player_leveling_action">Volume leveling: %1$s</string>
     <string name="player_subtitle_loaded">Subtitle loaded</string>
 </resources>

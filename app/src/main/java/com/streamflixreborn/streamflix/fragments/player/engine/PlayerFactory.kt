@@ -11,6 +11,7 @@ import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.AdaptiveTrackSelection
@@ -37,7 +38,15 @@ object PlayerFactory {
         LARGE(60_000, 240_000),
     }
 
-    class Result(val player: ExoPlayer, val analytics: PlaybackAnalytics?, val profile: Profile, val stalls: StallWatchdog)
+    class Result(
+        val player: ExoPlayer,
+        val analytics: PlaybackAnalytics?,
+        val profile: Profile,
+        val stalls: StallWatchdog,
+        val tag: ServerTag,
+        val decoder: DecoderWatch,
+        val limit: PrepLimit?,
+    )
 
     /** Kept for the whole process so the bandwidth estimate survives player re-creation. */
     @Volatile
@@ -95,6 +104,11 @@ object PlayerFactory {
             .setBackBuffer(20_000, true)
             .build()
 
+    private fun loadControlFor(context: Context, profile: Profile, limit: PrepLimit?): LoadControl {
+        val normal = buildLoadControl(context, profile)
+        return if (limit == null) normal else LimitedLoadControl(normal, limit)
+    }
+
     fun buildTrackSelector(context: Context): DefaultTrackSelector {
         val builder = DefaultTrackSelector.Parameters.Builder(context)
         TrackPreferences.apply(context, builder)
@@ -120,7 +134,10 @@ object PlayerFactory {
         softwareDecoder: Boolean,
         extraBuffering: Boolean,
         seekIncrementMs: Long? = null,
+        tag: ServerTag = ServerTag(QualityMemory.currentServer),
+        limit: PrepLimit? = null,
     ): Result {
+        AudioLeveling.level = UserPreferences.audioLeveling
         val profile = resolveProfile(context, extraBuffering)
         Log.d(TAG, "buffer profile=$profile, software decoder=$softwareDecoder, tunneling=${UserPreferences.tunneledPlayback}")
 
@@ -129,7 +146,7 @@ object PlayerFactory {
 
         val builder = ExoPlayer.Builder(context, buildRenderersFactory(context, softwareDecoder))
             .setMediaSourceFactory(mediaSourceFactory)
-            .setLoadControl(buildLoadControl(context, profile))
+            .setLoadControl(loadControlFor(context, profile, limit))
             .setTrackSelector(buildTrackSelector(context))
             .setBandwidthMeter(bandwidthMeter(context))
             .setAudioAttributes(
@@ -145,9 +162,10 @@ object PlayerFactory {
         }
 
         val player = builder.build()
-        player.addAnalyticsListener(QualityMemory.Listener())
+        player.addAnalyticsListener(QualityMemory.Listener(tag))
+        val decoder = DecoderWatch().also(player::addAnalyticsListener)
         val analytics = if (BuildConfig.DEBUG) PlaybackAnalytics().also(player::addAnalyticsListener) else null
         val stalls = StallWatchdog(player).also(player::addListener)
-        return Result(player, analytics, profile, stalls)
+        return Result(player, analytics, profile, stalls, tag, decoder, limit)
     }
 }

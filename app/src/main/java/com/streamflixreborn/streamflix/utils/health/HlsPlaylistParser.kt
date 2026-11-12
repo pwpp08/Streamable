@@ -32,6 +32,14 @@ object HlsPlaylistParser {
     /** Height of the 16:9 frame the picture fits in: 1920x800 -> 1080, 1280x720 -> 720. */
     fun qualityHeight(width: Int, height: Int): Int = maxOf(height, width * 9 / 16)
 
+    /** The name of the picture's quality: 1920x816 and 2592x1080 are 1080p, 1280x534 is 720p. */
+    fun displayHeight(width: Int, height: Int): Int {
+        fun standard(value: Int) = STANDARD_HEIGHTS.firstOrNull { kotlin.math.abs(value - it) * 50 <= it }
+        return standard(height) ?: qualityHeight(width, height).let { standard(it) ?: it }
+    }
+
+    private val STANDARD_HEIGHTS = intArrayOf(2160, 1440, 1080, 720, 576, 480, 360, 240)
+
     /** "1080p", "720p", or "?" when unknown. */
     fun label(height: Int?): String = if (height == null || height <= 0) "?" else "${height}p"
 }

@@ -4,6 +4,7 @@
     <dimen name="browse_gutter">16dp</dimen>
     <dimen name="browse_row_gap">24dp</dimen>
     <dimen name="browse_row_item_gap">12dp</dimen>
+    <dimen name="queue_grid_gap">6dp</dimen>
     <dimen name="browse_poster_row_width">120dp</dimen>
     <dimen name="browse_continue_width">240dp</dimen>
     <!-- Hero posters are exactly 2:3: 224dp wide, 336dp tall (the uncontained strategy keeps every card at this size). -->

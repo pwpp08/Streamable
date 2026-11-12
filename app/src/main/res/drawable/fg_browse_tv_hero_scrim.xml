@@ -10,7 +10,7 @@
                 android:angle="0"
                 android:centerX="0.4"
                 android:startColor="@color/sf_crimson_dark_surface"
-                android:centerColor="#80000000"
+                android:centerColor="#B3000000"
                 android:endColor="@android:color/transparent"
                 android:type="linear" />
         </shape>

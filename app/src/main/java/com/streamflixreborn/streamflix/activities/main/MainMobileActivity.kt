@@ -170,6 +170,8 @@ class MainMobileActivity : FragmentActivity(), IdleDimHost {
             binding.mainContent.post { binding.mainContent.requestApplyInsets() }
         }
 
+        SettingsSync.keepInSync(this)
+
         lifecycleScope.launch {
             WatchEvents.movieWatched
                 .flowWithLifecycle(lifecycle, Lifecycle.State.STARTED)

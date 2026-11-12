@@ -53,6 +53,11 @@ class PlayerViewModel(
     private val _state = MutableStateFlow<State>(State.LoadingServers)
     val state: Flow<State> = _state
 
+    private val _lowQuality = MutableSharedFlow<Pair<Int, Int>>(extraBufferCapacity = 1)
+
+    /** (wanted, playing) lines when every source was checked and none reached the minimum quality. */
+    val lowQuality: SharedFlow<Pair<Int, Int>> = _lowQuality
+
     private val _subtitleState = MutableSharedFlow<SubtitleState>()
     val subtitleState: SharedFlow<SubtitleState> = _subtitleState
 
@@ -73,6 +78,10 @@ class PlayerViewModel(
 
     @Volatile
     private var currentServerId: String? = null
+
+    /** The server that is really on screen; during a background switch it differs from [currentServerId]. */
+    private var activeServerId: String? = null
+    private var activeVideo: Video? = null
     private var upgradeJob: Job? = null
     private var resolutionJob: Job? = null
     private var playbackJob: Job? = null
@@ -188,6 +197,7 @@ class PlayerViewModel(
         if (servers.isEmpty()) return
         this.servers = servers
         val sticky = StickyServers.get(StreamFlixApp.instance, stickyKey)
+        stickyName = sticky
         ranked = ServerRanker.rank(servers, preferredName = preferredServerName, stickyName = sticky)
         failedIds.clear()
         wrongAudio.clear()
@@ -206,7 +216,32 @@ class PlayerViewModel(
             ranked = servers
         }
         failedIds.remove(server.id)
-        launchPlayback { playWithFailover(server, failover = false) }
+        launchPlayback { playChosen(server) }
+    }
+
+    /**
+     * A server picked by hand. If it doesn't resolve while something is already playing, that keeps
+     * playing and the user is told; moving on to another server they didn't pick would be confusing.
+     */
+    private suspend fun playChosen(server: Video.Server) {
+        val cached = cachedVideo(server)
+        if (cached == null) _state.emit(State.LoadingVideo(server))
+        val video = cached ?: resolve(server)
+        if (video != null) {
+            emitSuccess(video, server, failover = false)
+            return
+        }
+        failedIds += server.id
+        if (activeServerId != null) {
+            _state.emit(State.ChoiceUnavailable(server))
+            return
+        }
+        playWithFailover(null, failover = true)
+    }
+
+    /** A hand-picked server failed and nothing was left playing: carry on with the best of the rest. */
+    fun continueAfterFailedChoice() {
+        launchPlayback { playWithFailover(null, failover = true) }
     }
 
     /** The player failed on [server] (fatal error): continue with the next server. */
@@ -229,10 +264,28 @@ class PlayerViewModel(
 
     /** [server] is playing fine; remember it for this title. */
     fun onPlaybackStarted(server: Video.Server) {
+        activeServerId = server.id
+        resolved[server.id]?.video?.let { activeVideo = it }
         if (server.id == offlineServer?.id) return
-        // A torrent takes ~30 s to start, so it is never the "sticky" first choice; the quality upgrade finds it.
-        if (ServerRanker.isTorrentServer(server.name)) return
+        // Torrents too: whatever played this title last is what it starts with next time.
         StickyServers.put(StreamFlixApp.instance, stickyKey, server.name)
+    }
+
+    /**
+     * The background switch to [candidate] could not be completed; [previous] is still on screen.
+     * The candidate is crossed off, and the search for a sharper source goes on from the one playing.
+     */
+    fun onSwitchFailed(candidate: Video.Server, previous: Video.Server?) {
+        failedIds += candidate.id
+        resolved.remove(candidate.id)
+        if (currentServerId != candidate.id) return
+        if (previous == null) {
+            currentServerId = null
+            return
+        }
+        currentServerId = previous.id
+        QualityMemory.currentServer = previous.name
+        activeVideo?.let { startQualityUpgrade(it, previous) }
     }
 
     /** Resolves the next episode's servers ahead of time (called at ~90 % progress). */
@@ -294,6 +347,12 @@ class PlayerViewModel(
             }
         }
 
+    /** The server this title played on last time; a remembered torrent isn't held back like other torrents. */
+    private var stickyName: String? = null
+
+    private fun deferred(server: Video.Server) =
+        ServerRanker.isTorrentServer(server.name) && !server.name.equals(stickyName, ignoreCase = true)
+
     private suspend fun pickFirst(order: List<Video.Server>, results: Channel<Pair<Int, Video?>>) {
         _state.emit(State.LoadingVideo(order.first()))
         val done = BooleanArray(order.size)
@@ -302,13 +361,19 @@ class PlayerViewModel(
 
         while (true) {
             coroutineContext.ensureActive()
-            val best = videos.indexOfFirst { it != null }
+            // A torrent "resolves" instantly but takes far longer to start, so it only opens when no web server can.
+            val webPending = order.indices.any { !done[it] && !deferred(order[it]) }
+            val best = videos.indices.firstOrNull { videos[it] != null && (!webPending || !deferred(order[it])) } ?: -1
             if (best >= 0) {
                 val higherRankedDone = (0 until best).all { done[it] }
                 val now = SystemClock.elapsedRealtime()
                 if (graceDeadline == 0L) graceDeadline = now + PICK_GRACE_MS
-                if (higherRankedDone || now >= graceDeadline) {
-                    val pick = chooseByMeasurement(order, videos) ?: best
+                // Quality differs per title, so the first answer is not picked until there are a few to compare.
+                // The remembered server needs no comparison: it is what the viewer settled on.
+                val enough = videos.indices.count { videos[it] != null && !ServerRanker.isTorrentServer(order[it].name) } >= MIN_TO_COMPARE ||
+                    !webPending || order[best].name.equals(stickyName, ignoreCase = true)
+                if ((higherRankedDone && enough) || now >= graceDeadline) {
+                    val pick = if (order[best].name.equals(stickyName, ignoreCase = true)) best else chooseByMeasurement(order, videos) ?: best
                     emitSuccess(videos[pick]!!, order[pick], failover = false)
                     return
                 }
@@ -392,7 +457,7 @@ class PlayerViewModel(
 
     /** Next untried server, preferring ones that are already resolved. */
     private fun nextCandidate(): Video.Server? {
-        val remaining = ranked.filter { it.id !in failedIds && it.id != currentServerId }
+        val remaining = ranked.filter { it.id !in failedIds && it.id != currentServerId && it.id != activeServerId }
         return remaining.firstOrNull { cachedVideo(it) != null } ?: remaining.firstOrNull()
     }
 
@@ -419,30 +484,38 @@ class PlayerViewModel(
             kotlinx.coroutines.delay(UPGRADE_DELAY_MS)
             val prober = ProviderHealthChecker(providers = emptyList())
             Log.d(TAG, "upgrade check: probing ${server.name}")
-            val current = withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(playing) }
-            QualityMemory.hint(server.name, current)
+            // Nothing stated in the playlist: go by the real picture. A bitrate guess takes 1080p HEVC for 720p.
+            val known = withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.declaredHeight(playing) } ?: decodedHeight(server.name)
+            QualityMemory.hint(server.name, known)
+            val current = known ?: withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(playing) }
             if (current != null && current >= FULL_HD) return@launch
+            // Below the minimum (or unreadable): no probe or time limit, every source gets its turn.
+            val minHeight = UserPreferences.minQualityHeight
+            val strict = minHeight > 0 && (current == null || current < minHeight)
             // Adaptive Videasy streams reach their top rung on their own; an unreadable playlist is no reason to churn.
             if (current == null && ServerRanker.isVideasy(server.name)) return@launch
-            val deadline = SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
+            val deadline = if (strict) Long.MAX_VALUE else SystemClock.elapsedRealtime() + UPGRADE_WINDOW_MS
             var probes = 0
-            // Web servers first (they start faster); torrents get their own turn after them.
-            // Ones already resolved come first (instant); slow resolvers can't hold up the check.
+            // Ones already resolved come first (instant), then the torrents, which are the free 1080p
+            // most titles have; web servers still unanswered can take 12 s each, so they wait.
             val web = ranked.filterNot { ServerRanker.isTorrentServer(it.name) }
-            val order = web.filter { cachedVideo(it) != null } + web.filter { cachedVideo(it) == null } +
-                ranked.filter { ServerRanker.isTorrentServer(it.name) }
+            val order = web.filter { cachedVideo(it) != null } +
+                ranked.filter { ServerRanker.isTorrentServer(it.name) } +
+                web.filter { cachedVideo(it) == null }
             Log.d(TAG, "upgrade check: playing ${server.name} at ${current ?: "?"}p, ${order.size} candidates")
             for (candidate in order) {
                 val torrent = ServerRanker.isTorrentServer(candidate.name)
-                if (!torrent && (SystemClock.elapsedRealtime() > deadline || probes >= UPGRADE_MAX_PROBES)) continue
+                if (!torrent && (SystemClock.elapsedRealtime() > deadline || (!strict && probes >= UPGRADE_MAX_PROBES))) continue
                 if (torrent && !UserPreferences.torrentEnabled) continue
                 if (candidate.id == server.id || candidate.id in failedIds) continue
-                if (QualityMemory.height(candidate.name)?.let { it in 1 until FULL_HD } == true) continue
+                // Quality differs per title, so while below the minimum another title's result is no reason to skip.
+                if (!strict && QualityMemory.height(candidate.name)?.let { it in 1 until FULL_HD } == true) continue
                 val video = cachedVideo(candidate) ?: resolve(candidate) ?: continue
                 if (!torrent) probes++
                 // Web probes that take longer than this are not worth waiting for; torrents are checked by swarm.
-                val height = if (torrent) prober.probeHeight(video) else withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(video) }
-                QualityMemory.hint(candidate.name, height)
+                val declared = if (torrent) prober.declaredHeight(video) else withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.declaredHeight(video) }
+                QualityMemory.hint(candidate.name, declared)
+                val height = declared ?: withTimeoutOrNull(PROBE_TIMEOUT_MS) { prober.probeHeight(video) }
                 // A torrent is only worth switching to when its swarm is alive; check before cutting the picture.
                 if (TorrentSpec.isTorrentUri(video.source) && height != null && height >= FULL_HD) {
                     val spec = TorrentSpec.parse(video.source)
@@ -456,13 +529,27 @@ class PlayerViewModel(
                     }
                 }
                 Log.d(TAG, "upgrade probe: ${candidate.name} -> ${height ?: "?"}p (playing ${current ?: "?"}p)")
-                if (height != null && height >= FULL_HD && height > (current ?: 0)) {
+                // Full HD is the goal, but anything under 720p moves up at once; the search carries on from there.
+                val stepUp = current != null && current < HD && height != null && height >= HD
+                if (height != null && (height >= FULL_HD || stepUp) && height > (current ?: 0)) {
                     if (currentServerId != server.id) return@launch
                     playbackMutex.withLock { emitSuccess(video, candidate, failover = true) }
                     return@launch
                 }
             }
+            // Every source was looked at and none has the minimum: tell the viewer why it stays soft.
+            if (strict && current != null && currentServerId == server.id) _lowQuality.tryEmit(minHeight to current)
         }
+    }
+
+    /** Waits briefly for the first frame's format of the stream that just started. */
+    private suspend fun decodedHeight(serverName: String): Int? = withTimeoutOrNull(DECODE_WAIT_MS) {
+        var height = QualityMemory.decodedHeight(serverName)
+        while (height == null) {
+            kotlinx.coroutines.delay(250)
+            height = QualityMemory.decodedHeight(serverName)
+        }
+        height
     }
 
     private suspend fun resolve(server: Video.Server): Video? {
@@ -625,6 +712,9 @@ class PlayerViewModel(
 
         /** All servers failed. */
         data class FailedLoadingVideo(val error: Exception, val server: Video.Server) : State()
+
+        /** A server picked by hand did not work; the stream that was playing carries on. */
+        data class ChoiceUnavailable(val server: Video.Server) : State()
     }
 
     sealed class SubtitleState {
@@ -648,17 +738,20 @@ class PlayerViewModel(
         private const val RESOLVE_TIMEOUT_MS = 12_000L
         /** After the first server resolves, wait this long for better-ranked ones. */
         private const val PICK_GRACE_MS = 2_000L
+        private const val MIN_TO_COMPARE = 3
         /** Started server + backups resolved ahead of time. */
         private const val MAX_PRERESOLVED = 3
         private const val RESOLVED_MAX_AGE_MS = 10 * 60_000L
         private const val PREFETCH_ATTEMPTS = 3
         private const val FULL_HD = 1080
+        private const val HD = 720
         private const val UPGRADE_DELAY_MS = 8_000L
         private const val TORRENT_PREWARM_MS = 90_000L
         private const val UPGRADE_MAX_PROBES = 6
         /** How long after start the other servers are checked for a sharper picture. */
         private const val UPGRADE_WINDOW_MS = 45_000L
         private const val PROBE_TIMEOUT_MS = 6_000L
+        private const val DECODE_WAIT_MS = 15_000L
         /** Resolved servers whose speed is sampled before choosing the one to play. */
         private const val PROBE_CANDIDATES = 4
         private const val MEASURE_MAX_MS = 3_500L

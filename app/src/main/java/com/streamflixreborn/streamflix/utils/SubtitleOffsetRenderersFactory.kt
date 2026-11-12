@@ -7,11 +7,14 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ForwardingRenderer
 import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.RendererConfiguration
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.SampleStream
 import androidx.media3.exoplayer.text.TextOutput
 import androidx.media3.exoplayer.text.TextRenderer
+import com.streamflixreborn.streamflix.fragments.player.engine.LevelingAudioProcessor
 
 /** Runtime subtitle timing shared by the player settings and text renderer. */
 object SubtitleOffset {
@@ -25,6 +28,16 @@ object SubtitleOffset {
  */
 @UnstableApi
 class SubtitleOffsetRenderersFactory(context: Context) : DefaultRenderersFactory(context) {
+    override fun buildAudioSink(
+        context: Context,
+        enableFloatOutput: Boolean,
+        enableAudioTrackPlaybackParams: Boolean,
+    ): AudioSink = DefaultAudioSink.Builder(context)
+        .setEnableFloatOutput(enableFloatOutput)
+        .setEnableAudioOutputPlaybackParameters(enableAudioTrackPlaybackParams)
+        .setAudioProcessors(arrayOf(LevelingAudioProcessor()))
+        .build()
+
     override fun buildTextRenderers(
         context: Context,
         output: TextOutput,

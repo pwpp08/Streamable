@@ -180,6 +180,12 @@ class AutoFitController(
     private var lastAspect = 0f
     private var grab: Bitmap? = null
 
+    /**
+     * Once enough frames agree the zoom is fixed for the title: re-measuring all film long let dark
+     * scenes and credits nudge the estimate, and the picture visibly zoomed in and out.
+     */
+    private var locked = false
+
     private val playerListener = object : Player.Listener {
         override fun onVideoSizeChanged(videoSize: VideoSize) {
             val aspect = if (videoSize.height > 0) videoSize.width.toFloat() / videoSize.height else 0f
@@ -245,6 +251,7 @@ class AutoFitController(
     /** Forget what was learned about the bars, e.g. for a new title. Keeps the current picture until new data arrives. */
     fun reset() {
         estimator.clear()
+        locked = false
         apply(animate = true)
     }
 
@@ -299,7 +306,7 @@ class AutoFitController(
                 attachedPlayer = current
             }
             if (scale != VideoContentScale.AUTO && scale != VideoContentScale.CROP) continue
-            if (!current.isPlaying) continue
+            if (locked || !current.isPlaying) continue
             val size = current.videoSize
             val texture = playerView.videoSurfaceView as? TextureView ?: continue
             if (size.width <= 0 || size.height <= 0 || !texture.isAvailable) continue
@@ -312,9 +319,12 @@ class AutoFitController(
                 BarDetector.analyze(pixels, GRAB_WIDTH, GRAB_HEIGHT, size.width, size.height)
             } ?: continue
             taken++
-            val before = estimator.estimate()
             estimator.add(bars)
-            if (estimator.estimate() != before) apply(animate = true)
+            // One decision, one animation: nothing moves until the samples are in.
+            if (estimator.size >= LOCK_SAMPLES) {
+                locked = true
+                apply(animate = true)
+            }
         }
     }
 
@@ -322,6 +332,7 @@ class AutoFitController(
         const val GRAB_WIDTH = 256
         const val GRAB_HEIGHT = 144
         const val FAST_SAMPLES = 12
+        const val LOCK_SAMPLES = 12
         const val FAST_INTERVAL_MS = 500L
         const val SLOW_INTERVAL_MS = 1_500L
     }

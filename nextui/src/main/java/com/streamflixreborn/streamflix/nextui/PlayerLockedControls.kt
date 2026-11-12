@@ -28,7 +28,7 @@ fun PlayerLockedControls(
     ) {
         PlayerButton(
             modifier = unlockButtonModifier,
-            containerColor = Color.Black.copy(alpha = 0.5f),
+            containerColor = Color.Black.copy(alpha = 0.72f),
             onClick = onUnlockControls,
         ) {
             Icon(

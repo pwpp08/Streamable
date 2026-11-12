@@ -41,11 +41,23 @@ object ServerRanker {
     /** Videasy nodes answer in ~150 ms with adaptive HLS up to 1080p+, so they start with a head start. */
     fun isVideasy(name: String) = name.startsWith("Videasy ", ignoreCase = true)
 
-    /** Servers that never go above this height, whatever the title (measured). */
-    private val KNOWN_HEIGHT_CAP = mapOf("vixsrc" to 720)
+    /** Vidzee resolves in 1-2 s; it ranges from 480p to 1080p per title, so its real height decides at start. */
+    fun isVidzee(name: String) = name.endsWith("(Vidzee)", ignoreCase = true)
+
+    /** Servers that never go above this height, whatever the title (measured). VixSrc was 720p until late 2026; it now lists 1080p. */
+    private val KNOWN_HEIGHT_CAP = emptyMap<String, Int>()
 
     /** Score for a server nothing is known about yet. */
     const val VIDEASY_PRIOR = 70
+
+    /** Answers quickly, so it is ready to be compared before slow servers that often time out. */
+    const val VIDZEE_PRIOR = 65
+
+    /**
+     * The primary source: fast, dependable, and up to 1080p. Starts ahead of every other unproven
+     * server, but once it has been seen playing below full HD (low-res penalty) Vidzee goes first.
+     */
+    const val VIXSRC_PRIOR = 72
 
     fun rank(
         servers: List<Video.Server>,
@@ -61,7 +73,12 @@ object ServerRanker {
         val scores = servers.associateWith { server ->
             val stalled = runCatching { StallMemory.isRecent(server.name) }.getOrDefault(false)
             val known = runCatching { score(server.name) }.getOrNull()
-                ?: if (isVideasy(server.name)) VIDEASY_PRIOR else UNKNOWN_SCORE
+                ?: when {
+                    isVideasy(server.name) -> VIDEASY_PRIOR
+                    isVidzee(server.name) -> VIDZEE_PRIOR
+                    server.name.equals("VixSrc", ignoreCase = true) -> VIXSRC_PRIOR
+                    else -> UNKNOWN_SCORE
+                }
             val base = known - if (stalled) STALL_PENALTY else 0
             val played = heights.getValue(server)
             base + when {
@@ -73,20 +90,21 @@ object ServerRanker {
         // The sticky server only keeps its lead when it isn't known to be low-res while another
         // server is known to play in full HD.
         val fullHdExists = servers.any { server ->
-            !isTorrentServer(server.name) && (isVideasy(server.name) || (heights.getValue(server) ?: 0) >= 1080)
+            !isTorrentServer(server.name) &&
+                (isVideasy(server.name) || isVidzee(server.name) || (heights.getValue(server) ?: 0) >= 1080)
         }
         val stickyHeight = servers.firstOrNull { it.name.equals(stickyName, ignoreCase = true) }
             ?.let { heights.getValue(it) }
-        // A sticky server only keeps its lead when it is known to deliver full HD, or when no
-        // server is expected to (a remembered 720p server must not beat a 1080p one).
-        val stickyUsable = if (fullHdExists) stickyHeight != null && stickyHeight >= 1080 else true
+        // The server (or torrent) that last played this title comes first again, unless it is known
+        // to be below full HD while another server is expected to deliver it.
+        val stickyUsable = !(fullHdExists && stickyHeight != null && stickyHeight < 1080)
         return servers.withIndex()
             .sortedWith(
                 compareBy<IndexedValue<Video.Server>> { if (it.value.name.equals(preferredName, ignoreCase = true)) 0 else 1 }
-                    // P2P takes ~30 s to start: it only plays first when nothing else is left (the
-                    // quality upgrade and failover still reach it).
-                    .thenBy { if (isTorrentServer(it.value.name)) 1 else 0 }
                     .thenBy { if (stickyUsable && it.value.name.equals(stickyName, ignoreCase = true)) 0 else 1 }
+                    // P2P takes ~30 s to start: it only plays first when nothing else is left or it
+                    // is what this title played last (the quality upgrade and failover still reach it).
+                    .thenBy { if (isTorrentServer(it.value.name)) 1 else 0 }
                     .thenByDescending { scores.getValue(it.value) }
                     .thenBy { it.index }
             )

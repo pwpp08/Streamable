@@ -287,13 +287,29 @@ object UserPreferences {
     enum class QualityMode { MAX, AUTO }
 
     var qualityMode: QualityMode
-        get() = runCatching { QualityMode.valueOf(Key.QUALITY_MODE.getString() ?: "") }.getOrDefault(QualityMode.AUTO)
+        get() = runCatching { QualityMode.valueOf(Key.QUALITY_MODE.getString() ?: "") }.getOrDefault(QualityMode.MAX)
         set(value) = Key.QUALITY_MODE.setString(value.name)
 
     /** 0 = limited by the display only. */
     var maxResolution: Int
         get() = Key.MAX_RESOLUTION.getString()?.toIntOrNull() ?: 0
         set(value) = Key.MAX_RESOLUTION.setString(value.toString())
+
+    /**
+     * The lowest picture quality (in lines) a stream should have: the player keeps trying every
+     * server until one delivers it, and says so when none does. 0 = no minimum.
+     */
+    var minQualityHeight: Int
+        get() = Key.MIN_QUALITY.getString()?.toIntOrNull() ?: 1080
+        set(value) = Key.MIN_QUALITY.setString(value.toString())
+
+    /** How strongly loud and quiet scenes are evened out (see AudioLeveling); 0 = off. */
+    var audioLeveling: Int
+        get() = Key.AUDIO_LEVELING.getString()?.toIntOrNull() ?: 0
+        set(value) {
+            Key.AUDIO_LEVELING.setString(value.toString())
+            com.streamflixreborn.streamflix.fragments.player.engine.AudioLeveling.level = value
+        }
 
     var dataSaverOnMobile: Boolean
         get() = Key.DATA_SAVER_ON_MOBILE.getBoolean() ?: false
@@ -738,6 +754,8 @@ object UserPreferences {
         SHOW_ALL_TRACK_LANGUAGES,
         QUALITY_MODE,
         MAX_RESOLUTION,
+        MIN_QUALITY,
+        AUDIO_LEVELING,
         DATA_SAVER_ON_MOBILE,
         UP_NEXT_SECONDS,
         SKIP_SEGMENTS_MODE,

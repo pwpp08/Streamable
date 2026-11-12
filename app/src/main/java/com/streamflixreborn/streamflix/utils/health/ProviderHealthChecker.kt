@@ -118,7 +118,11 @@ class ProviderHealthChecker(
                     ok = stream.ok,
                     latencyMs = System.currentTimeMillis() - started,
                     // Media playlists and MP4s carry no RESOLUTION; estimate from the bitrate so they are not shown as "?".
-                    maxHeight = stream.maxHeight ?: if (stream.ok) runCatching { estimateFromBitrate(video) }.getOrNull() else null,
+                    maxHeight = stream.maxHeight ?: if (stream.ok) {
+                        pictureHeight(video) ?: runCatching { estimateFromBitrate(video) }.getOrNull()
+                    } else {
+                        null
+                    },
                     error = stream.error,
                     checkedAt = System.currentTimeMillis(),
                     probe = kind,
@@ -138,6 +142,16 @@ class ProviderHealthChecker(
         }
     }
 
+    /** The height [video] really has: torrent name, master playlist, or the picture header of a segment. */
+    suspend fun declaredHeight(video: Video): Int? = try {
+        if (TorrentSpec.isTorrentUri(video.source)) TorrentSpec.heightOf(video.source)
+        else inspectStream(video).maxHeight ?: pictureHeight(video)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
+
     /**
      * Best quality class of [video]: the master playlist's RESOLUTION, or, for a plain media
      * playlist (no resolutions listed), an estimate from the first segment's bitrate. Null when
@@ -152,6 +166,9 @@ class ProviderHealthChecker(
     } catch (e: Exception) {
         null
     }
+
+    private suspend fun pictureHeight(video: Video): Int? =
+        com.streamflixreborn.streamflix.fragments.player.engine.SourceProbe.measure(video)?.height?.takeIf { it > 0 }
 
     private suspend fun estimateFromBitrate(video: Video): Int? {
         if (!video.source.startsWith("http", ignoreCase = true)) return null

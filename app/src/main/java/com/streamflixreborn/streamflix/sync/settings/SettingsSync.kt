@@ -3,6 +3,10 @@ package com.streamflixreborn.streamflix.sync.settings
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.streamflixreborn.streamflix.fragments.queue.QueueStore
 import com.google.android.material.color.MaterialColors
 import com.streamflixreborn.streamflix.fragments.home.HomeRowsStore
 import com.streamflixreborn.streamflix.sync.CloudSyncManager
@@ -18,6 +22,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -43,6 +50,7 @@ object SettingsSync {
     private const val TABLE = "user_settings"
     private const val STATE_PREFS = "settings_sync_state"
     private const val PULL_INTERVAL_MS = 30_000L
+    private const val QUEUE_PUSH_DELAY_MS = 1_500L
 
     private const val META_UPDATED = "_updated_at"
     private const val META_DEVICE = "_device"
@@ -75,14 +83,15 @@ object SettingsSync {
         Entry("home_banner", { UserPreferences.homeBanner }, { UserPreferences.homeBanner = it }),
         Entry("spoken_languages", { UserPreferences.spokenLanguages.joinToString(",") },
             { value -> UserPreferences.spokenLanguages = value.split(',').map { it.trim() }.filter { it.isNotEmpty() } }),
-        Entry("subtitle_mode", { UserPreferences.subtitleMode.name },
-            { runCatching { UserPreferences.SubtitleMode.valueOf(it) }.getOrNull()?.let { m -> UserPreferences.subtitleMode = m } }),
-        // Subtitle preset, size, margin and style are deliberately not synced: a phone and a
-        // projector need different values, and a newer change on one must never reset the other.
+        // Subtitle settings (mode, preset, size, margin, style) and audio leveling are deliberately
+        // not synced: a phone and a projector need different values, and a newer change on one
+        // must never reset the other.
         Entry("quality_mode", { UserPreferences.qualityMode.name },
             { runCatching { UserPreferences.QualityMode.valueOf(it) }.getOrNull()?.let { m -> UserPreferences.qualityMode = m } }),
         Entry("max_resolution", { UserPreferences.maxResolution.toString() },
             { it.toIntOrNull()?.let { v -> UserPreferences.maxResolution = v } }),
+        Entry("min_quality", { UserPreferences.minQualityHeight.toString() },
+            { it.toIntOrNull()?.let { v -> UserPreferences.minQualityHeight = v } }),
         Entry("up_next_seconds", { UserPreferences.upNextSeconds.toString() },
             { it.toIntOrNull()?.let { v -> UserPreferences.upNextSeconds = v } }),
         Entry("skip_segments_mode", { UserPreferences.skipSegmentsMode.name },
@@ -125,7 +134,32 @@ object SettingsSync {
         if (!force && System.currentTimeMillis() - lastPullAt < PULL_INTERVAL_MS) return
         if (CloudSyncManager.currentUserId() == null) return
         lastPullAt = System.currentTimeMillis()
-        scope.launch { runCatching { pullNow(activity) }.onFailure { Log.w(TAG, "pull failed: ${it.message}") } }
+        scope.launch {
+            runCatching { pullNow(activity) }.onFailure { Log.w(TAG, "pull failed: ${it.message}") }
+            // Anything this device held that the account did not (merged queue entries) goes back up.
+            runCatching { pushNow(activity) }.onFailure { Log.w(TAG, "push after pull failed: ${it.message}") }
+        }
+    }
+
+    /**
+     * While [activity] is on screen: pulls other devices' changes every half minute and uploads
+     * Queue changes a moment after they are made, so a phone and a TV stay level without leaving
+     * the app (a projector may kill the app on Home, so waiting for "left the app" is not enough).
+     */
+    fun keepInSync(activity: androidx.activity.ComponentActivity) {
+        activity.lifecycleScope.launch {
+            activity.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    while (true) {
+                        pull(activity)
+                        delay(PULL_INTERVAL_MS + 1_000L)
+                    }
+                }
+                launch {
+                    QueueStore.revision.drop(1).debounce(QUEUE_PUSH_DELAY_MS).collect { push(activity) }
+                }
+            }
+        }
     }
 
     private suspend fun pullNow(activity: Activity) = mutex.withLock {
@@ -160,9 +194,13 @@ object SettingsSync {
             }
         }
         // Remember what this device now holds, so applying is not echoed back as a local change.
+        // The Queue is merged, not copied: when the merge holds more than the account does, the
+        // fingerprint keeps the account's copy so the difference is uploaded.
+        val held = snapshot(activity).toMutableMap()
+        if (remoteDevice != DeviceIdentity.id(activity)) remote["queue"]?.let { held["queue"] = it }
         prefs.edit()
             .putLong(stateKey("remote_updated"), remoteUpdated)
-            .putString(stateKey("fingerprint"), SettingsPayload(snapshot(activity)).fingerprint())
+            .putString(stateKey("fingerprint"), SettingsPayload(held).fingerprint())
             .apply()
         if (homeRowsChanged) HomeRowsStore.notifyChanged()
         if (themeChanged || homeRowsChanged) _applied.tryEmit(Applied(themeChanged, homeRowsChanged))

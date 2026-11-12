@@ -38,10 +38,8 @@ class VidzeeExtractor : Extractor() {
         ServerConfig("Nflix", 0),
         ServerConfig("Duke", 1),
         ServerConfig("Glory", 2),
-        ServerConfig("Nazy", 3),
-        ServerConfig("Atlas", 4),
-        ServerConfig("Drag", 5),
-        ServerConfig("Achilles", 6),
+        // One entry per backend: Nazy, Atlas, Drag and Achilles only repeated these and crowded out
+        // other servers when sources are compared at start.
         // Indexes 7-13 (Viet, Velocità, Hindi, Bengali, Tamil, Telugu, Malayalam) are dubs in
         // other languages. They are left out because only English audio is offered.
     )
@@ -186,7 +184,10 @@ class VidzeeExtractor : Extractor() {
             )
         }
 
-        for (directServer in directServers) {
+        // The entries differ in quality per title only through the backend they start from.
+        val first = (uri.getQueryParameter("sr")?.toIntOrNull() ?: 0).mod(directServers.size)
+
+        for (directServer in directServers.drop(first) + directServers.take(first)) {
             val endpoint = if (isEpisode) {
                 "$coreApi/streams/tv/" +
                     "$tmdbId/$season/$episode" +

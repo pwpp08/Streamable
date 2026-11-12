@@ -21,6 +21,12 @@ object QueueStore {
     private const val REACTIONS = "r"
     private const val SEEN = "s"
 
+    /** When each reaction was last set or cleared (kept for cleared ones), per key. */
+    private const val REACTION_TIMES = "rt"
+
+    /** When a title was last un-marked as seen, per key; lets the removal win over an older copy. */
+    private const val SEEN_REMOVED = "sx"
+
     /** Best to worst; the order is the order of the rating buttons and filter chips. */
     enum class Reaction(val emoji: String, @StringRes val labelRes: Int) {
         LOVED("😍", R.string.queue_reaction_loved),
@@ -41,6 +47,8 @@ object QueueStore {
         val poster: String?,
         val year: String?,
         val atMillis: Long,
+        val releasedMillis: Long? = null,
+        val rating: Double? = null,
     )
 
     private val _revision = MutableStateFlow(0)
@@ -60,6 +68,8 @@ object QueueStore {
     fun setReaction(key: String, reaction: Reaction?) = edit { data ->
         val json = data.optJSONObject(REACTIONS) ?: JSONObject().also { data.put(REACTIONS, it) }
         if (reaction == null) json.remove(key) else json.put(key, reaction.name)
+        val times = data.optJSONObject(REACTION_TIMES) ?: JSONObject().also { data.put(REACTION_TIMES, it) }
+        times.put(key, System.currentTimeMillis())
     }
 
     fun seen(): List<Seen> {
@@ -72,28 +82,126 @@ object QueueStore {
                 poster = o.optString("p").ifBlank { null },
                 year = o.optString("y").ifBlank { null },
                 atMillis = o.optLong("at"),
+                releasedMillis = o.optLong("rd", -1L).takeIf { it >= 0 },
+                rating = o.optDouble("rt", -1.0).takeIf { it > 0 },
             )
         }.toList()
     }
 
     fun isSeen(key: String): Boolean = providerData().optJSONObject(SEEN)?.has(key) == true
 
-    fun setSeen(key: String, title: String, poster: String?, year: String?, seen: Boolean) = edit { data ->
+    fun setSeen(
+        key: String,
+        title: String,
+        poster: String?,
+        year: String?,
+        seen: Boolean,
+        releasedMillis: Long? = null,
+        rating: Double? = null,
+    ) = edit { data ->
         val json = data.optJSONObject(SEEN) ?: JSONObject().also { data.put(SEEN, it) }
+        val removed = data.optJSONObject(SEEN_REMOVED) ?: JSONObject().also { data.put(SEEN_REMOVED, it) }
         if (seen) {
-            json.put(key, JSONObject().put("t", title).put("p", poster.orEmpty()).put("y", year.orEmpty()).put("at", System.currentTimeMillis()))
+            removed.remove(key)
+            json.put(
+                key,
+                JSONObject().put("t", title).put("p", poster.orEmpty()).put("y", year.orEmpty())
+                    .put("at", System.currentTimeMillis())
+                    .apply {
+                        if (releasedMillis != null) put("rd", releasedMillis)
+                        if (rating != null && rating > 0) put("rt", rating)
+                    },
+            )
         } else {
             json.remove(key)
+            removed.put(key, System.currentTimeMillis())
         }
     }
 
     /** The whole profile document, for SettingsSync. */
-    fun exportForSync(): String = document().toString()
+    fun exportForSync(): String = canonical(document()).toString()
 
+    /** Same data with every object's keys sorted, so equal documents compare (and upload) equal. */
+    internal fun canonical(value: JSONObject): JSONObject = JSONObject().also { out ->
+        value.keys().asSequence().toSortedSet().forEach { key ->
+            val child = value.get(key)
+            out.put(key, if (child is JSONObject) canonical(child) else child)
+        }
+    }
+
+    /** Merges a document from another device into this one: nothing either side added is lost. */
+    @Synchronized
     fun importFromSync(value: String) {
-        val parsed = runCatching { JSONObject(value) }.getOrNull() ?: return
-        prefs().edit().putString(docKey(), parsed.toString()).apply()
+        val remote = runCatching { JSONObject(value) }.getOrNull() ?: return
+        val merged = merge(document(), remote)
+        if (canonical(merged).toString() == canonical(document()).toString()) return
+        prefs().edit().putString(docKey(), canonical(merged).toString()).apply()
         _revision.value++
+    }
+
+    /**
+     * Union of two documents (each maps provider name to its data). Per title the newest change
+     * wins: a reaction by its time, a seen title against the time it was un-marked.
+     */
+    internal fun merge(local: JSONObject, remote: JSONObject): JSONObject {
+        val result = JSONObject()
+        val providers = (local.keys().asSequence() + remote.keys().asSequence()).toSortedSet()
+        for (provider in providers) {
+            val a = local.optJSONObject(provider) ?: JSONObject()
+            val b = remote.optJSONObject(provider) ?: JSONObject()
+            result.put(provider, mergeProvider(a, b))
+        }
+        return result
+    }
+
+    private fun mergeProvider(a: JSONObject, b: JSONObject): JSONObject {
+        val out = JSONObject()
+
+        // Reactions: the side that changed a title last decides, a cleared one counts as a change.
+        val reactions = JSONObject()
+        val times = JSONObject()
+        val keys = sortedSetOf<String>()
+        for (src in listOf(a, b)) {
+            src.optJSONObject(REACTIONS)?.keys()?.forEach { keys += it }
+            src.optJSONObject(REACTION_TIMES)?.keys()?.forEach { keys += it }
+        }
+        for (key in keys) {
+            val ta = a.optJSONObject(REACTION_TIMES)?.optLong(key, 0L) ?: 0L
+            val tb = b.optJSONObject(REACTION_TIMES)?.optLong(key, 0L) ?: 0L
+            val ra = a.optJSONObject(REACTIONS)?.optString(key)?.takeIf { it.isNotEmpty() }
+            val rb = b.optJSONObject(REACTIONS)?.optString(key)?.takeIf { it.isNotEmpty() }
+            val (winner, time) = when {
+                ta > tb -> ra to ta
+                tb > ta -> rb to tb
+                else -> (ra ?: rb) to ta
+            }
+            if (winner != null) reactions.put(key, winner)
+            if (time > 0) times.put(key, time)
+        }
+        out.put(REACTIONS, reactions)
+        out.put(REACTION_TIMES, times)
+
+        // Seen: a title is seen when its newest mark is newer than its newest removal.
+        val seen = JSONObject()
+        val removed = JSONObject()
+        val seenKeys = sortedSetOf<String>()
+        for (src in listOf(a, b)) {
+            src.optJSONObject(SEEN)?.keys()?.forEach { seenKeys += it }
+            src.optJSONObject(SEEN_REMOVED)?.keys()?.forEach { seenKeys += it }
+        }
+        for (key in seenKeys) {
+            val entries = listOfNotNull(a.optJSONObject(SEEN)?.optJSONObject(key), b.optJSONObject(SEEN)?.optJSONObject(key))
+            val best = entries.maxByOrNull { it.optLong("at") }
+            val removedAt = maxOf(
+                a.optJSONObject(SEEN_REMOVED)?.optLong(key, 0L) ?: 0L,
+                b.optJSONObject(SEEN_REMOVED)?.optLong(key, 0L) ?: 0L,
+            )
+            if (best != null && best.optLong("at") > removedAt) seen.put(key, best)
+            else if (removedAt > 0) removed.put(key, removedAt)
+        }
+        out.put(SEEN, seen)
+        out.put(SEEN_REMOVED, removed)
+        return out
     }
 
     private fun prefs() = StreamFlixApp.instance.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

@@ -28,5 +28,23 @@ class SourceProbeTest {
         assertEquals("fast", SourceProbe.pickBest(listOf("slow" to slow, "fast" to fast, "low" to lowRes)))
         assertEquals("slow", SourceProbe.pickBest(listOf("low" to lowRes, "slow" to slow)))
         assertEquals("first", SourceProbe.pickBest(listOf("first" to null, "second" to null)))
+        val unstated = SourceProbe.Result(0, 0.0, 5.0)
+        assertEquals("unstated", SourceProbe.pickBest(listOf("low" to lowRes, "unstated" to unstated)))
+        assertEquals("fast", SourceProbe.pickBest(listOf("unstated" to unstated, "fast" to fast)))
+        val sd = SourceProbe.Result(480, 1.0, 30.0)
+        val hd = SourceProbe.Result(720, 1.0, 10.0)
+        assertEquals("hd", SourceProbe.pickBest(listOf("sd" to sd, "hd" to hd)))
+    }
+
+    private fun bytes(hex: String) = hex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+
+    @Test
+    fun theRealPictureSizeIsReadFromTheStreamHeader() {
+        val noise = ByteArray(40) { 0x47 }
+        val startCode = byteArrayOf(0, 0, 1)
+        assertEquals(1080, SourceProbe.pictureHeight(noise + startCode + bytes("67640028ace501e0089f95") + noise))
+        // 1280x544 is a wide 720p film.
+        assertEquals(720, SourceProbe.pictureHeight(noise + startCode + bytes("67640028ace50140117f40")))
+        assertEquals(0, SourceProbe.pictureHeight(noise))
     }
 }

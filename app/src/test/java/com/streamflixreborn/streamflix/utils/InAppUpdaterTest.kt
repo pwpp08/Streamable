@@ -48,4 +48,30 @@ class InAppUpdaterTest {
         assertEquals(slim, InAppUpdater.pickAsset(listOf(slim), listOf("arm64-v8a"), ""))
         assertNull(InAppUpdater.pickAsset(listOf(asset("notes.txt"), asset("app.apk.sha256")), listOf("arm64-v8a"), ""))
     }
+
+    @Test
+    fun projectorReleasesPickTheTvApkForTheDevicesAbi() {
+        val tv64 = asset("Streamable-1.0.14-tv.apk")
+        val tv32 = asset("Streamable-1.0.14-tv-armeabi-v7a.apk")
+        val all = listOf(tv64, tv32)
+        assertEquals(tv32, InAppUpdater.pickAsset(all, listOf("armeabi-v7a", "armeabi"), "tv"))
+        assertEquals(tv64, InAppUpdater.pickAsset(all, listOf("arm64-v8a", "armeabi-v7a"), "tv"))
+        // The universal build never picks a TV-only file.
+        assertEquals(full, InAppUpdater.pickAsset(listOf(full, slim, tv64, tv32), listOf("arm64-v8a"), ""))
+        assertEquals(slim, InAppUpdater.pickAsset(listOf(full, slim, tv64, tv32), listOf("armeabi-v7a"), ""))
+    }
+
+    @Test
+    fun projectorTagsComparePlainlyAndAreOnlyForTvBuilds() {
+        assertTrue(InAppUpdater.isNewer("projector-v1.0.15", "1.0.14"))
+        assertFalse(InAppUpdater.isNewer("projector-v1.0.14", "1.0.14"))
+        assertEquals("1.0.15", InAppUpdater.AppRelease("projector-v1.0.15", null, emptyList()).versionName)
+
+        val projector = listOf("Streamable-1.0.15-tv.apk", "Streamable-1.0.15-tv-armeabi-v7a.apk")
+        val normal = listOf("Streamable-1.0.15.apk", "Streamable-1.0.15-armeabi-v7a.apk")
+        assertTrue(InAppUpdater.isForLayout("projector-v1.0.15", projector, "tv"))
+        assertFalse(InAppUpdater.isForLayout("v1.0.15", normal, "tv"))
+        assertFalse(InAppUpdater.isForLayout("projector-v1.0.15", projector, "null"))
+        assertTrue(InAppUpdater.isForLayout("v1.0.15", normal, "null"))
+    }
 }

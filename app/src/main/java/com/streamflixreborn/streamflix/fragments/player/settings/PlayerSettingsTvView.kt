@@ -107,6 +107,14 @@ class PlayerSettingsTvView @JvmOverloads constructor(
 
     /** Player toolbar shortcuts (subtitles, audio, quality, speed, servers). */
     override fun showSubtitles() = showShortcut(Setting.SUBTITLES)
+    override fun showOpenSubtitles() {
+        onSubtitlesClicked?.invoke()
+        showShortcut(Setting.OPEN_SUBTITLES)
+    }
+    override fun showSubDL() {
+        onSubtitlesClicked?.invoke()
+        showShortcut(Setting.SUBDL)
+    }
     fun showAudio() = showShortcut(Setting.AUDIO)
     fun showQuality() = showShortcut(Setting.QUALITY)
     fun showSpeed() = showShortcut(Setting.SPEED)
@@ -318,9 +326,9 @@ class PlayerSettingsTvView @JvmOverloads constructor(
         private fun isGroupEnd(position: Int): Boolean {
             val item = items[position]
             val next = items.getOrNull(position + 1)
-            return item == Settings.Subtitle.Style ||
-                item == Settings.Subtitle.Style.ResetStyle ||
-                next == Settings.Subtitle.LocalSubtitles
+            return item == Settings.Subtitle.Style.ResetStyle ||
+                next == Settings.Subtitle.OpenSubtitles ||
+                next == Settings.Subtitle.Style
         }
 
         override fun getItemCount() = items.size
@@ -334,9 +342,9 @@ class PlayerSettingsTvView @JvmOverloads constructor(
         fun displaySettings(item: Item) {
             binding.root.apply {
                 when (item) {
-                    Settings.Subtitle.Style,
                     Settings.Subtitle.Style.ResetStyle -> margin(bottom = 6.dp(context))
-                    Settings.Subtitle.LocalSubtitles -> margin(top = 6.dp(context))
+                    Settings.Subtitle.OpenSubtitles,
+                    Settings.Subtitle.Style -> margin(top = 6.dp(context))
                     else -> margin(bottom = 0, top = 0)
                 }
                 setOnClickListener {
@@ -633,7 +641,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                                 null -> context.getString(R.string.player_settings_quality_auto)
                                 else -> context.getString(
                                     R.string.player_settings_quality_auto_selected,
-                                    track.height
+                                    track.displayHeight
                                 )
                             }
 
@@ -641,7 +649,7 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                         }
                         is Settings.Quality.VideoTrackInformation -> context.getString(
                             R.string.player_settings_quality,
-                            item.height
+                            item.displayHeight
                         )
                     }
 
@@ -715,12 +723,12 @@ class PlayerSettingsTvView @JvmOverloads constructor(
                                 null -> context.getString(R.string.player_settings_quality_auto)
                                 else -> context.getString(
                                     R.string.player_settings_quality_auto_selected,
-                                    track.height
+                                    track.displayHeight
                                 )
                             }
                             is Settings.Quality.VideoTrackInformation -> context.getString(
                                 R.string.player_settings_quality,
-                                selected.height
+                                selected.displayHeight
                             )
                         }
                         Settings.Audio -> Settings.Audio.selected?.name

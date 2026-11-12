@@ -61,6 +61,22 @@ class VideasyExtractor : Extractor() {
         }
     }
 
+    /**
+     * Whether the API answers at all. It sits behind Cloudflare, which has been refusing apps with
+     * HTTP 403; listing the nodes then only sends playback to the next server. Asked every few minutes.
+     */
+    fun isReachable(): Boolean {
+        val (ok, at) = reach
+        if (System.currentTimeMillis() - at < REACH_TTL_MS) return ok
+        val result = runCatching { fetch("$mainUrl/seed?mediaId=550"); true }.getOrElse { e ->
+            val msg = e.message.orEmpty()
+            !(msg.contains("HTTP 403") || msg.contains("HTTP 503"))
+        }
+        if (!result) Log.w(TAG, "API refuses requests (blocked); Videasy servers hidden for now")
+        reach = result to System.currentTimeMillis()
+        return result
+    }
+
     private fun yearOf(date: String?): String? = date?.take(4)?.takeIf { it.length == 4 && it.all(Char::isDigit) }
 
     override suspend fun extract(link: String): Video {
@@ -161,6 +177,9 @@ class VideasyExtractor : Extractor() {
         )
 
         private val seeds = ConcurrentHashMap<Long, Pair<String, Long>>()
+
+        private const val REACH_TTL_MS = 10 * 60_000L
+        @Volatile private var reach: Pair<Boolean, Long> = false to 0L
 
         private const val GOLDEN = -1640531527 // 2654435769u
         private val TABLE = longArrayOf(

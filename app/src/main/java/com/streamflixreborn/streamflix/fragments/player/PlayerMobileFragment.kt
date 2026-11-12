@@ -92,8 +92,14 @@ import com.streamflixreborn.streamflix.fragments.player.engine.AutoFitController
 import com.streamflixreborn.streamflix.fragments.player.engine.AutoSubtitleFetch
 import com.streamflixreborn.streamflix.fragments.player.engine.SideloadedSubtitles
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleFileParser
+import com.streamflixreborn.streamflix.fragments.player.engine.readSubtitleFile
 import com.streamflixreborn.streamflix.fragments.player.engine.SubtitleStyler
 import com.streamflixreborn.streamflix.fragments.player.engine.PlaybackSnapshot
+import com.streamflixreborn.streamflix.fragments.player.engine.PrepLimit
+import com.streamflixreborn.streamflix.fragments.player.engine.SeamlessSwitch
+import com.streamflixreborn.streamflix.fragments.player.engine.ServerTag
+import com.streamflixreborn.streamflix.fragments.player.engine.Standby
+import com.streamflixreborn.streamflix.torrent.TorrentSpec
 import com.streamflixreborn.streamflix.fragments.player.engine.TrackPreferences
 import com.streamflixreborn.streamflix.fragments.player.engine.UpNextController
 import com.streamflixreborn.streamflix.sync.CloudSyncHooks
@@ -123,7 +129,19 @@ class PlayerMobileFragment : Fragment() {
     }
     private val autoSubtitleFetch = AutoSubtitleFetch()
 
+    /** Brings back the subtitle this movie / episode had last time, and remembers new choices. */
+    private val subtitleRecall by lazy {
+        com.streamflixreborn.streamflix.fragments.player.engine.SubtitleRecall(
+            context = requireContext().applicationContext,
+            key = com.streamflixreborn.streamflix.fragments.player.engine.TitleMemory.key(args.videoType),
+            showFile = { uri, name -> showSideloadedSubtitle(uri, name) },
+            fileShowing = { sideloadedSubtitles.isActive },
+        )
+    }
+
     private fun maybeFetchAutoSubtitle() {
+        // A remembered choice (including "off") beats fetching one automatically.
+        if (subtitleRecall.hadMemory) return
         autoSubtitleFetch.next(sideloadedSubtitles.isActive)?.let { viewModel.downloadSubtitle(it) }
     }
 
@@ -133,18 +151,15 @@ class PlayerMobileFragment : Fragment() {
      */
     private fun showSideloadedSubtitle(uri: Uri, name: String?) {
         viewLifecycleOwner.lifecycleScope.launch {
-            val lines = withContext(Dispatchers.IO) {
-                runCatching {
-                    val bytes = requireContext().contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    bytes?.let { SubtitleFileParser.parse(SubtitleFileParser.decode(it)) }
-                }.getOrNull()
-            }
+            val appContext = requireContext().applicationContext
+            val lines = withContext(Dispatchers.IO) { readSubtitleFile(appContext, uri) }
             if (_binding == null) return@launch
-            if (lines.isNullOrEmpty()) {
+            if (lines.isEmpty()) {
                 Toast.makeText(requireContext(), R.string.player_subtitle_unsupported, Toast.LENGTH_LONG).show()
                 return@launch
             }
             sideloadedSubtitles.show(lines, name)
+            subtitleRecall.onFileShown(uri, name)
             showPlayerMessage(name ?: getString(R.string.player_subtitle_loaded))
         }
     }
@@ -169,6 +184,11 @@ class PlayerMobileFragment : Fragment() {
         controller.setScale(UserPreferences.playerResize.contentScale)
     }
     private lateinit var dataSources: StreamDataSourceFactory
+    private var mainBuilt: PlayerFactory.Result? = null
+    private var playerTag = ServerTag()
+    private var seamlessSwitch: SeamlessSwitch? = null
+    /** True while the switch being prepared was asked for by the viewer (not a quality upgrade). */
+    private var switchWasChosen = false
     private lateinit var mediaSession: MediaSession
     private var analytics: PlaybackAnalytics? = null
     private var autoSubtitles: TrackPreferences.AutoSubtitles? = null
@@ -308,6 +328,12 @@ class PlayerMobileFragment : Fragment() {
         setupNextUi()
         initializePlayer(false)
         initializeVideo()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.lowQuality.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { (wanted, playing) ->
+                showPlayerMessage(getString(R.string.player_no_full_hd, wanted, playing))
+            }
+        }
+
         // Stato Video
         viewLifecycleOwner.lifecycleScope.launch { 
             viewModel.state.flowWithLifecycle(lifecycle, Lifecycle.State.CREATED).collect { state ->
@@ -349,7 +375,9 @@ class PlayerMobileFragment : Fragment() {
                     }
 
                     is PlayerViewModel.State.LoadingVideo -> {
-                        binding.nextUi.model.isLoading = true
+                    // The stream on screen keeps playing while the next one is looked up.
+                    if (mainIsHealthy()) return@collect
+                    binding.nextUi.model.isLoading = true
                         if (pendingSnapshot == null) pendingSnapshot = captureSnapshot()
                         player.setMediaItem(
                             MediaItem.Builder()
@@ -366,11 +394,29 @@ class PlayerMobileFragment : Fragment() {
                     is PlayerViewModel.State.SuccessLoadingVideo -> {
                         PlayerSettingsView.Settings.ExtraBuffering.init(state.video.extraBuffering)
                         PlayerSettingsView.Settings.SoftwareDecoder.init(false)
-                        displayVideo(state.video, state.server, failover = state.failover)
+                        if (canSeamless(state.video)) {
+                            switchWasChosen = !state.failover
+                            val snapshot = pendingSnapshot ?: captureSnapshot()
+                            pendingSnapshot = null
+                            if (switchWasChosen) showPlayerMessage(getString(R.string.player_preparing_server, state.server.name))
+                            seamless().start(state.video, state.server, snapshot)
+                        } else {
+                            seamlessSwitch?.cancel()
+                            displayVideo(state.video, state.server, failover = state.failover)
+                        }
+                    }
+
+                    is PlayerViewModel.State.ChoiceUnavailable -> {
+                        if (mainIsHealthy()) showPlayerMessage(getString(R.string.player_server_unavailable, state.server.name))
+                        else viewModel.continueAfterFailedChoice()
                     }
 
                     is PlayerViewModel.State.FailedLoadingVideo -> {
                         // The ViewModel already tried every server.
+                        if (mainIsHealthy()) {
+                            showPlayerMessage(getString(R.string.player_switch_failed))
+                            return@collect
+                        }
                         Toast.makeText(
                             requireContext(),
                             unavailableMessage(getString(R.string.player_all_servers_failed)),
@@ -884,28 +930,11 @@ class PlayerMobileFragment : Fragment() {
         pendingResumeMs = null
         stickyReportedServerId = null
 
+        playerTag.name = server.name
+
         dataSources.applyHeaders(video)
 
-        player.setMediaItem(
-            // A downloaded title keeps its stream keys and cache key (offline playback).
-            (OfflineMediaProvider.mediaItemBuilder(video) ?: MediaItem.Builder()
-                .setUri(debugTestClip() ?: video.source.toUri())
-                .setMimeType(if (debugTestClip() != null) null else video.type))
-                .setSubtitleConfigurations(video.subtitles.map { subtitle ->
-                    MediaItem.SubtitleConfiguration.Builder(subtitle.file.toUri())
-                        .setMimeType(subtitle.file.toSubtitleMimeType())
-                        .setLabel(subtitle.label)
-                        .setLanguage(LanguageMatcher.normalize(subtitle.label))
-                        .setSelectionFlags(if (subtitle.default) C.SELECTION_FLAG_DEFAULT else 0)
-                        .build()
-                } + snapshot?.sideloaded.orEmpty())
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setMediaServerId(server.id)
-                        .build()
-                )
-                .build()
-        )
+        player.setMediaItem(mediaItemFor(video, server, snapshot))
 
         snapshot?.restore(player)
 
@@ -1086,6 +1115,7 @@ class PlayerMobileFragment : Fragment() {
 
         override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
             autoSubtitles?.onTracksChanged(tracks)
+            if (::player.isInitialized) subtitleRecall.onTracksChanged(player, tracks)
             autoSubtitleFetch.onTracks(tracks)
             maybeFetchAutoSubtitle()
         }
@@ -1112,7 +1142,7 @@ class PlayerMobileFragment : Fragment() {
 
 
     private fun ExoPlayer.hasFinished(): Boolean {
-        return (this.currentPosition > (this.duration * 0.90))
+        return this.duration > 0 && this.currentPosition > this.duration * 0.90
     }
 
     private fun ExoPlayer.hasReallyFinished(): Boolean {
@@ -1236,14 +1266,21 @@ class PlayerMobileFragment : Fragment() {
         currentExtraBuffering = extraBuffering
         currentSoftwareDecoder = softwareDecoder
 
-        dataSources = StreamDataSourceFactory(requireContext(), { currentVideo }, "MOBILE")
+        val streamSources = StreamDataSourceFactory(requireContext(), { currentVideo }, "MOBILE")
         val built = PlayerFactory.build(
             context = requireContext(),
-            dataSources = dataSources,
+            dataSources = streamSources,
             softwareDecoder = softwareDecoder,
             extraBuffering = extraBuffering,
             seekIncrementMs = 10_000,
         )
+        attachPlayer(built, streamSources)
+    }
+
+    private fun attachPlayer(built: PlayerFactory.Result, streamSources: StreamDataSourceFactory) {
+        dataSources = streamSources
+        mainBuilt = built
+        playerTag = built.tag
         player = built.player
         analytics = built.analytics
         built.stalls.onStalled = {
@@ -1259,6 +1296,9 @@ class PlayerMobileFragment : Fragment() {
         autoSubtitles = TrackPreferences.AutoSubtitles(player)
         mediaSession = MediaSession.Builder(requireContext(), player).build()
 
+        // The last picture stays up while another player takes over.
+        binding.pvPlayer.setKeepContentOnPlayerReset(true)
+
         binding.pvPlayer.player = player
         binding.nextUi.player = player
         binding.settings.player = player
@@ -1268,7 +1308,109 @@ class PlayerMobileFragment : Fragment() {
         }
     }
 
+    private fun mainPlayerOrNull(): ExoPlayer? = if (_binding != null && ::player.isInitialized) player else null
+
+    private fun seamless(): SeamlessSwitch = seamlessSwitch ?: SeamlessSwitch(viewLifecycleOwner.lifecycleScope, object : SeamlessSwitch.Host {
+        override val player: ExoPlayer? get() = mainPlayerOrNull()
+        override fun createStandby(video: Video, server: Video.Server, startMs: Long, snapshot: PlaybackSnapshot?) =
+            createStandbyPlayer(video, server, startMs, snapshot)
+        override fun mainUsesSoftwareDecoder() = mainBuilt?.decoder?.isSoftware == true
+        override fun commit(standby: Standby, play: Boolean) = commitStandby(standby, play)
+        override fun fallBack(video: Video, server: Video.Server) {
+            if (_binding != null) displayVideo(video, server, failover = true)
+        }
+        override fun failed(server: Video.Server) {
+            if (_binding == null) return
+            viewModel.onSwitchFailed(server, currentServer)
+            if (switchWasChosen) showPlayerMessage(getString(R.string.player_switch_failed))
+        }
+    }).also { seamlessSwitch = it }
+
+    /** True when the stream on screen is playing (or catching up) fine, so it can carry on while another one is prepared. */
+    private fun mainIsHealthy(): Boolean {
+        if (_binding == null || !::player.isInitialized) return false
+        val uri = player.currentMediaItem?.localConfiguration?.uri?.toString()
+        return !uri.isNullOrEmpty() && player.playerError == null && player.currentPosition > 0 &&
+            (player.playbackState == Player.STATE_READY || player.playbackState == Player.STATE_BUFFERING)
+    }
+
+    private fun canSeamless(video: Video): Boolean =
+        mainIsHealthy() && !UserPreferences.tunneledPlayback && debugTestClip() == null &&
+            !OfflineMediaProvider.isOffline(video) && !OfflineMediaProvider.isOffline(currentVideo) &&
+            PlayerSettingsView.Settings.ExtraBuffering.isEnabled == currentExtraBuffering &&
+            PlayerSettingsView.Settings.SoftwareDecoder.isEnabled == currentSoftwareDecoder
+
+    /** A second player that gets [video] ready (muted, paused, from [startMs]) while the first one plays on. */
+    private fun createStandbyPlayer(video: Video, server: Video.Server, startMs: Long, snapshot: PlaybackSnapshot?): Standby {
+        val streamSources = StreamDataSourceFactory(requireContext(), { video }, "MOBILE")
+        val limit = PrepLimit(if (TorrentSpec.isTorrentUri(video.source)) 30_000_000L else 20_000_000L)
+        val built = PlayerFactory.build(
+            context = requireContext(),
+            dataSources = streamSources,
+            softwareDecoder = currentSoftwareDecoder,
+            extraBuffering = currentExtraBuffering,
+            seekIncrementMs = 10_000,
+            tag = ServerTag(server.name),
+            limit = limit,
+        )
+        val standby = built.player
+        standby.volume = 0f
+        standby.playWhenReady = false
+        standby.playlistMetadata = player.playlistMetadata
+        streamSources.applyHeaders(video)
+        standby.setMediaItem(mediaItemFor(video, server, snapshot))
+        snapshot?.restore(standby)
+        standby.seekTo(startMs)
+        standby.prepare()
+        return Standby(built, streamSources, video, server)
+    }
+
+    /** [standby] is ready and in the right place: it becomes the player on screen. Returns the one it replaces. */
+    private fun commitStandby(standby: Standby, play: Boolean): ExoPlayer {
+        val old = player
+        old.removeListener(playerListener)
+        stopProgressHandler()
+        if (::mediaSession.isInitialized) mediaSession.release()
+        standby.built.limit?.lift()
+        currentVideo = standby.video
+        currentServer = standby.server
+        pendingResumeMs = null
+        attachPlayer(standby.built, standby.dataSources)
+        updatePlayerHeader()
+        nextUi.setServers(servers, standby.server)
+        binding.nextUi.model.isLoading = false
+        binding.nextUi.model.showExternalPlayerButton = true
+        stickyReportedServerId = standby.server.id
+        viewModel.onPlaybackStarted(standby.server)
+        playerListener.onTracksChanged(player.currentTracks)
+        sideloadedSubtitles.rebind()
+        player.playWhenReady = play
+        showPlayerMessage(getString(R.string.player_switched_server, standby.server.name))
+        return old
+    }
+
+    private fun mediaItemFor(video: Video, server: Video.Server, snapshot: PlaybackSnapshot?): MediaItem =
+        // A downloaded title keeps its stream keys and cache key (offline playback).
+        (OfflineMediaProvider.mediaItemBuilder(video) ?: MediaItem.Builder()
+            .setUri(debugTestClip() ?: video.source.toUri())
+            .setMimeType(if (debugTestClip() != null) null else video.type))
+            .setSubtitleConfigurations(video.subtitles.map { subtitle ->
+                MediaItem.SubtitleConfiguration.Builder(subtitle.file.toUri())
+                    .setMimeType(subtitle.file.toSubtitleMimeType())
+                    .setLabel(subtitle.label)
+                    .setLanguage(LanguageMatcher.normalize(subtitle.label))
+                    .setSelectionFlags(if (subtitle.default) C.SELECTION_FLAG_DEFAULT else 0)
+                    .build()
+            } + snapshot?.sideloaded.orEmpty())
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setMediaServerId(server.id)
+                    .build()
+            )
+            .build()
+
     private fun releasePlayer() {
+        seamlessSwitch?.cancel()
         stopProgressHandler()
         binding.pvPlayer.player = null
         binding.nextUi.player = null

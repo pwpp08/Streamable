@@ -1,5 +1,7 @@
 package com.streamflixreborn.streamflix.adapters.viewholders
 
+import com.streamflixreborn.streamflix.utils.CinemaStatus
+import com.streamflixreborn.streamflix.utils.FavoriteSync
 import com.streamflixreborn.streamflix.utils.ReleaseStatus
 import android.app.AlertDialog
 import android.content.Context
@@ -378,7 +380,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
+        BrowseCards.bindMovieRating(binding.tvMovieRating, movie)
 
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
@@ -422,7 +424,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
+        BrowseCards.bindMovieRating(binding.tvMovieRating, movie)
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
             progress = BrowseCards.progressPercent(watchHistory)
@@ -639,7 +641,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
+        BrowseCards.bindMovieRating(binding.tvMovieRating, movie)
 
         binding.tvMovieQuality.apply {
             text = movie.quality ?: ""
@@ -708,7 +710,7 @@ class MovieViewHolder(
             transition(DrawableTransitionOptions.withCrossFade())
         }
         bindRibbons(binding.ivMovieFavoriteRibbon, binding.ivMovieWatchedRibbon)
-        BrowseCards.bindRating(binding.tvMovieRating, movie.rating, movie.released)
+        BrowseCards.bindMovieRating(binding.tvMovieRating, movie)
         binding.pbMovieProgress.apply {
             val watchHistory = movie.watchHistory
             progress = BrowseCards.progressPercent(watchHistory)
@@ -777,6 +779,10 @@ class MovieViewHolder(
             visibility = when {
                 text.isNullOrEmpty() -> View.GONE
                 else -> View.VISIBLE
+            }
+            CinemaStatus.whenOnlyInCinemas(movie.id, movie.released?.timeInMillis, this) {
+                text = context.getString(R.string.browse_in_cinemas)
+                visibility = View.VISIBLE
             }
         }
 
@@ -863,6 +869,7 @@ class MovieViewHolder(
         rating: TextView,
         quality: TextView,
         overview: TextView,
+        cinemaLine: TextView? = null,
     ) {
         title.text = movie.title
         released.setTextOrGone(movie.released?.format("yyyy"))
@@ -874,6 +881,36 @@ class MovieViewHolder(
             context.getString(R.string.details_rating_content_description, rating.text)
         quality.setTextOrGone(movie.quality)
         overview.text = movie.overview
+        bindCinemaOnly(quality, overview, cinemaLine)
+    }
+
+    /**
+     * While a film is only in theatres any stream is a camera copy, so say so, and when TMDb knows
+     * it, when the film reaches streaming. Phones get a line of their own under the rating row;
+     * TV puts a short chip beside the rating and the date above the overview.
+     */
+    private fun bindCinemaOnly(quality: TextView, overview: TextView, cinemaLine: TextView?) {
+        cinemaLine?.visibility = View.GONE
+        CinemaStatus.whenOnlyInCinemas(movie.id, movie.released?.timeInMillis, quality) {
+            val streaming = CinemaStatus.streamingMillis(movie.id)
+            if (cinemaLine != null) {
+                cinemaLine.text = if (streaming != null) {
+                    context.getString(R.string.movie_cinema_streaming_on, ReleaseStatus.shortDateUtc(context, streaming))
+                } else {
+                    context.getString(R.string.movie_cinema_streaming_unknown)
+                }
+                cinemaLine.visibility = View.VISIBLE
+            } else {
+                quality.text = context.getString(R.string.browse_in_cinemas)
+                quality.visibility = View.VISIBLE
+                val line = if (streaming != null) {
+                    context.getString(R.string.movie_streaming_from_line, ReleaseStatus.shortDateUtc(context, streaming))
+                } else {
+                    context.getString(R.string.movie_streaming_unknown_line)
+                }
+                overview.text = line + "\n\n" + (movie.overview ?: "")
+            }
+        }
     }
 
     private fun isUnreleased() = ReleaseStatus.isUnreleased(movie.released)
@@ -921,6 +958,7 @@ class MovieViewHolder(
                     val resolvedMovie = ArtworkRepair.resolveMovieForFavorite(context, movie, newValue)
 
                     dao.upsertFavorite(resolvedMovie, newValue)
+                    FavoriteSync.movie(context, resolvedMovie, newValue)
 
                     withContext(Dispatchers.Main) {
                         movie.poster = resolvedMovie.poster
@@ -973,6 +1011,7 @@ class MovieViewHolder(
             binding.tvMovieRating,
             binding.tvMovieQuality,
             binding.tvMovieOverview,
+            binding.tvMovieCinema,
         )
         DetailsUi.bindGenreChips(binding.cgMovieGenres, binding.hsvMovieGenres, movie.genres)
 

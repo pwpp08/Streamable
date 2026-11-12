@@ -64,6 +64,38 @@
         <item name="ensureMinTouchTargetSize">false</item>
     </style>
 
+    <!-- Round filter chip that floats over the bottom of the grid (kind and rating filters). -->
+    <style name="Widget.StreamFlix.Queue.FloatChip" parent="Widget.StreamFlix.Chip">
+        <item name="chipBackgroundColor">@color/queue_float_chip_bg</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipMinHeight">40dp</item>
+        <item name="chipCornerRadius">20dp</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="android:textSize">14sp</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+    </style>
+
+    <!-- Spin / Swipe pill floating over the bottom of the grid. -->
+    <style name="Widget.StreamFlix.Queue.FloatPill" parent="Widget.Material3Expressive.Button.TonalButton">
+        <item name="android:minHeight">44dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:elevation">6dp</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">22dp</item>
+        <item name="iconSize">20dp</item>
+        <item name="iconPadding">8dp</item>
+    </style>
+
+    <!-- Tune button at the start of the floating filter row. -->
+    <style name="Widget.StreamFlix.Queue.FloatIcon" parent="Widget.Material3Expressive.Button.IconButton.Tonal">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="iconSize">22dp</item>
+    </style>
+
     <!-- Swipe page actions: one line, icon on the left, so "Seen it" never wraps. -->
     <style name="Widget.StreamFlix.Queue.SwipeAction.Base" parent="">
         <item name="android:maxLines">1</item>

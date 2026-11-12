@@ -59,32 +59,42 @@ object QualityMemory {
         return height.takeIf { now - at <= MAX_AGE_MS }
     }
 
+    @Volatile
+    private var decoded: Pair<String, Int>? = null
+
+    /** Height of the picture being decoded for [serverName]; null until its first frame is known. */
+    fun decodedHeight(serverName: String): Int? = decoded?.takeIf { it.first == serverName }?.second
+
     /** How long a stream must have been playing before its resolution counts. */
     internal const val SETTLE_MS = 20_000L
 
     /**
-     * Attached to every player: tracks the best decoded quality of [currentServer] and records it
-     * once the stream has played for [SETTLE_MS], so adaptive streams get time to ramp up.
+     * Attached to every player: tracks the best decoded quality of the server in [tag] and records it
+     * once the stream has played for [SETTLE_MS], so adaptive streams get time to ramp up. A player
+     * that is only being prepared in the background records nothing until it really plays.
      */
     @OptIn(UnstableApi::class)
-    class Listener : AnalyticsListener {
+    class Listener(private val tag: ServerTag = ServerTag(currentServer)) : AnalyticsListener {
         private var server: String? = null
         private var startedAt = 0L
         private var best = 0
+        private var played = false
 
         private fun track(height: Int) {
-            val current = currentServer ?: return
+            val current = tag.name ?: return
             if (current != server) {
                 server = current
-                startedAt = SystemClock.elapsedRealtime()
+                startedAt = if (played) SystemClock.elapsedRealtime() else 0L
                 best = 0
             }
             best = maxOf(best, height)
+            decoded = current to best
             commitIfSettled()
         }
 
         private fun commitIfSettled() {
             val name = server ?: return
+            if (!played || startedAt == 0L) return
             if (best > 0 && SystemClock.elapsedRealtime() - startedAt >= SETTLE_MS) {
                 record(name, best)
                 best = 0
@@ -104,6 +114,10 @@ object QualityMemory {
         }
 
         override fun onIsPlayingChanged(eventTime: AnalyticsListener.EventTime, isPlaying: Boolean) {
+            if (isPlaying && !played) {
+                played = true
+                if (startedAt == 0L) startedAt = SystemClock.elapsedRealtime()
+            }
             if (!isPlaying) commitIfSettled()
         }
 

@@ -6,6 +6,10 @@ StreamFlix for Windows and macOS: the phone app's sources and look on a big scre
 
 VLC is built in; nothing else to install.
 
+**New in 1.1.3**
+- Same sources as the phone app 1.0.21: VixSrc is tried first, and servers that no longer work (2Embed, Moviesapi, Vidsrc.net, Vidflix, Vidlove, Videm, Vidrock) are gone, so playback starts faster.
+- OpenSubtitles fixes and the other shared improvements from the phone app 1.0.15 to 1.0.21.
+
 **New in 1.1.2**
 - Updates itself. When a new version is out, a card in the corner offers it (also Settings → About → Check for updates).
   - Windows: click Update, StreamFlix closes, installs the new version in place and opens again (about a minute, no questions asked).

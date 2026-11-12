@@ -3,7 +3,7 @@
 <p align="center">
   <img src="./app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" height="100px" />
   <br />
-  A redesigned, phone ↔ TV connected fork of <a href="https://git.gay/streamflix-reborn2/streamflix">Streamflix Reborn</a> for Android phones, tablets and Android TV.
+  A redesigned, phone interface ↔ TV for Android phones, tablets and Android TV.
   <br />
   <br />
   <a href="https://github.com/pwpp08/Streamable/releases/latest">
