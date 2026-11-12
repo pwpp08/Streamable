@@ -55,7 +55,7 @@ object Automation {
             ui { Nav.play(request) }
             "ok"
         }
-        "/status" -> status()
+        "/status" -> "inPlayer=${Nav.playing != null} " + status()
         "/pause" -> { ui { pause() }; "ok" }
         else -> "unknown"
     }

@@ -46,6 +46,15 @@ data class Source(
             h >= 1440 -> "1440p"
             else -> "${h}p"
         }
+
+        /** By the picture's width too, so a widescreen film at 1920x800 reads as 1080p, not 800p. */
+        fun qualityName(width: Int, height: Int) = when {
+            width >= 3600 || height >= 2000 -> "4K"
+            width >= 2400 || height >= 1400 -> "1440p"
+            width >= 1800 || height >= 1000 -> "1080p"
+            width >= 1200 || height >= 700 -> "720p"
+            else -> "${height}p"
+        }
     }
 }
 

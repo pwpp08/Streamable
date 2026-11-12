@@ -52,6 +52,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -75,7 +76,6 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -92,6 +92,11 @@ import org.jetbrains.skia.Rect
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.image.BufferedImage
+
+/** The player's keyboard shortcuts, called by the window for every key press while it is open. */
+object PlayerKeys {
+    @Volatile var handler: ((Key) -> Boolean)? = null
+}
 
 private enum class Fit(val label: String) { FIT("Fit"), FILL("Fill"), STRETCH("Stretch") }
 
@@ -140,10 +145,41 @@ fun PlayerScreen(request: PlayRequest) {
     }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
+    var qualityOpen by remember { mutableStateOf(false) }
 
     // Next episode: offered in the last 40 seconds and played automatically at the end.
     var next by remember(request) { mutableStateOf<PlayRequest?>(null) }
     LaunchedEffect(request) { next = controller.nextEpisode() }
+
+    // Keys are read by the window itself (see Main.kt), so they work whatever has focus:
+    // after a click on a button or the seek bar, or when macOS hands focus nowhere at all.
+    DisposableEffect(controller) {
+        PlayerKeys.handler = handler@{ key ->
+            lastMove = System.currentTimeMillis()
+            when (key) {
+                Key.Escape -> {
+                    // An open menu closes itself first; otherwise Escape leaves the player.
+                    if (menuOpen || qualityOpen) {
+                        menuOpen = false
+                        qualityOpen = false
+                        false
+                    } else {
+                        Nav.back()
+                        true
+                    }
+                }
+                Key.Spacebar, Key.K -> { controller.togglePause(); true }
+                Key.DirectionLeft, Key.J -> { controller.seekBy(-10_000); true }
+                Key.DirectionRight, Key.L -> { controller.seekBy(10_000); true }
+                Key.DirectionUp -> { controller.changeVolume(controller.volume + 5); true }
+                Key.DirectionDown -> { controller.changeVolume(controller.volume - 5); true }
+                Key.M -> { controller.toggleMute(); true }
+                Key.N -> { next?.let(Nav::play); true }
+                else -> false
+            }
+        }
+        onDispose { PlayerKeys.handler = null }
+    }
     val nearEnd = controller.lengthMs > 0 && controller.lengthMs - controller.timeMs < 40_000 && controller.timeMs > 0
     LaunchedEffect(controller.finished, next) {
         val n = next
@@ -159,21 +195,6 @@ fun PlayerScreen(request: PlayRequest) {
             .background(Color.Black)
             .focusRequester(focus)
             .focusable()
-            .onPreviewKeyEvent { e ->
-                if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                lastMove = System.currentTimeMillis()
-                when (e.key) {
-                    Key.Spacebar, Key.K -> { controller.togglePause(); true }
-                    Key.DirectionLeft, Key.J -> { controller.seekBy(-10_000); true }
-                    Key.DirectionRight, Key.L -> { controller.seekBy(10_000); true }
-                    Key.DirectionUp -> { controller.changeVolume(controller.volume + 5); true }
-                    Key.DirectionDown -> { controller.changeVolume(controller.volume - 5); true }
-                    Key.M -> { controller.toggleMute(); true }
-                    Key.N -> { next?.let(Nav::play); true }
-                    Key.Escape -> { Nav.back(); true }
-                    else -> false
-                }
-            }
             .onPointerEvent(PointerEventType.Move) { lastMove = System.currentTimeMillis() }
             .pointerHoverIcon(if (controlsVisible) PointerIcon.Default else hiddenCursor)
             .pointerInput(controller) {
@@ -219,7 +240,7 @@ fun PlayerScreen(request: PlayRequest) {
             ContainedLoadingIndicator(Modifier.align(Alignment.Center).size(96.dp))
         }
 
-        AnimatedVisibility(controlsVisible || controller.loading || error != null, enter = fadeIn(), exit = fadeOut()) {
+        AnimatedVisibility(controlsVisible || controller.loading || error != null || qualityOpen, enter = fadeIn(), exit = fadeOut()) {
             Box(Modifier.fillMaxSize()) {
                 // Scrims.
                 Box(Modifier.fillMaxWidth().height(160.dp).background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.75f), Color.Transparent))))
@@ -303,12 +324,17 @@ fun PlayerScreen(request: PlayRequest) {
                         Text("${formatTime(controller.timeMs)} / ${formatTime(controller.lengthMs)}", color = Color.White, style = MaterialTheme.typography.labelLarge)
                         Spacer(Modifier.weight(1f))
                         if (controller.videoHeight > 0) {
-                            Text(
-                                Source.qualityName(controller.videoHeight),
-                                color = Color.White,
-                                style = MaterialTheme.typography.labelLarge,
-                                modifier = Modifier.background(Color.White.copy(alpha = 0.16f), CircleShape).padding(horizontal = 10.dp, vertical = 4.dp),
-                            )
+                            Box {
+                                TextButton(
+                                    onClick = { qualityOpen = true; lastMove = System.currentTimeMillis() },
+                                    colors = ButtonDefaults.textButtonColors(containerColor = Color.White.copy(alpha = 0.16f), contentColor = Color.White),
+                                ) {
+                                    Text(Source.qualityName(controller.frames.width, controller.videoHeight), style = MaterialTheme.typography.labelLarge)
+                                }
+                                DropdownMenu(expanded = qualityOpen, onDismissRequest = { qualityOpen = false }) {
+                                    ServerMenuItems(controller, title = "Quality · pick a server") { qualityOpen = false }
+                                }
+                            }
                             Spacer(Modifier.width(8.dp))
                         }
                         TrackMenu(Icons.Rounded.ClosedCaption, "Subtitles", controller.subtitleTracks, controller.subtitleTrack, allowOff = true, onOpen = { menuOpen = it }) { controller.selectSubtitle(it) }
@@ -363,39 +389,44 @@ private fun ServerMenu(controller: PlayerController, open: Boolean, onOpen: (Boo
             Text(cur?.let { it.server.name + " · " + it.label } ?: "Servers", maxLines = 1)
         }
         DropdownMenu(expanded = open, onDismissRequest = { onOpen(false) }) {
-            Text(
-                "Servers · best first",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            val ranked = Sources.rank(controller.sources)
-            val rest = controller.sources.filter { s -> ranked.none { it.order == s.order } }
-            (ranked + rest).forEach { src ->
-                val isCurrent = controller.current?.order == src.order
-                DropdownMenuItem(
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(src.server.name, modifier = Modifier.weight(1f, fill = false))
-                            Spacer(Modifier.width(16.dp))
-                            Text(src.label, color = if (src.state is Source.State.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                        }
-                    },
-                    leadingIcon = {
-                        when {
-                            isCurrent -> Icon(Icons.Rounded.Check, null)
-                            src.state is Source.State.Pending -> LoadingIndicator(Modifier.size(24.dp))
-                            else -> Spacer(Modifier.size(24.dp))
-                        }
-                    },
-                    enabled = src.video != null,
-                    onClick = {
-                        onOpen(false)
-                        controller.play(src, manual = true)
-                    },
-                )
-            }
+            ServerMenuItems(controller, title = "Servers · best first") { onOpen(false) }
         }
+    }
+}
+
+@Composable
+private fun ServerMenuItems(controller: PlayerController, title: String, onPicked: () -> Unit) {
+    Text(
+        title,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+    val ranked = Sources.rank(controller.sources)
+    val rest = controller.sources.filter { s -> ranked.none { it.order == s.order } }
+    (ranked + rest).forEach { src ->
+        val isCurrent = controller.current?.order == src.order
+        DropdownMenuItem(
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(src.server.name, modifier = Modifier.weight(1f, fill = false))
+                    Spacer(Modifier.width(16.dp))
+                    Text(src.label, color = if (src.state is Source.State.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                }
+            },
+            leadingIcon = {
+                when {
+                    isCurrent -> Icon(Icons.Rounded.Check, null)
+                    src.state is Source.State.Pending -> LoadingIndicator(Modifier.size(24.dp))
+                    else -> Spacer(Modifier.size(24.dp))
+                }
+            },
+            enabled = src.video != null,
+            onClick = {
+                onPicked()
+                controller.play(src, manual = true)
+            },
+        )
     }
 }
 

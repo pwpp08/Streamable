@@ -32,6 +32,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,8 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
 import com.streamflixreborn.streamflix.desktop.data.Library
+import com.streamflixreborn.streamflix.desktop.player.GpuMemory
+import com.streamflixreborn.streamflix.desktop.player.PlayerKeys
 import com.streamflixreborn.streamflix.desktop.player.PlayerScreen
 import com.streamflixreborn.streamflix.desktop.theme.StreamFlixTheme
 import com.streamflixreborn.streamflix.desktop.ui.GenreScreen
@@ -101,7 +104,12 @@ fun main() {
 
     application {
         // True full screen: no title bar, and the taskbar is hidden (Alt+F4 or Settings to quit).
-        val windowState = rememberWindowState(placement = WindowPlacement.Fullscreen, size = DpSize(1440.dp, 900.dp))
+        // -Dstreamflix.windowed=true (./gradlew run -Pwindowed) keeps a small window for testing.
+        val windowed = System.getProperty("streamflix.windowed") == "true"
+        val windowState = rememberWindowState(
+            placement = if (windowed) WindowPlacement.Floating else WindowPlacement.Fullscreen,
+            size = DpSize(1440.dp, 900.dp),
+        )
         val icon = remember { BitmapPainter(useResource("streamflix.png", ::loadImageBitmap)) }
         var themeMode by remember { mutableStateOf(UserPreferences.themeMode) }
 
@@ -111,14 +119,29 @@ fun main() {
                 exitApplication()
             },
             state = windowState,
-            undecorated = true,
+            undecorated = !windowed,
             title = "StreamFlix",
             icon = icon,
             onPreviewKeyEvent = { e ->
-                e.type == KeyEventType.KeyDown && Nav.playing == null && ((e.isAltPressed && e.key == Key.DirectionLeft) || e.key == Key.Escape) && Nav.back()
+                when {
+                    e.type != KeyEventType.KeyDown -> false
+                    Nav.playing != null -> PlayerKeys.handler?.invoke(e.key) ?: (e.key == Key.Escape && Nav.back())
+                    else -> ((e.isAltPressed && e.key == Key.DirectionLeft) || e.key == Key.Escape) && Nav.back()
+                }
             },
         ) {
             window.minimumSize = java.awt.Dimension(1000, 640)
+            // An undecorated window on macOS doesn't always take the keyboard by itself.
+            LaunchedEffect(Unit) {
+                window.toFront()
+                window.requestFocus()
+                // Keeps Skia's GPU cache small (see GpuMemory); re-checked in case the context is rebuilt.
+                GpuMemory.window = window
+                while (true) {
+                    GpuMemory.limit()
+                    kotlinx.coroutines.delay(10_000)
+                }
+            }
             setSingletonImageLoaderFactory { context ->
                 ImageLoader.Builder(context)
                     .components { add(OkHttpNetworkFetcherFactory(callFactory = { NetworkClient.default })) }

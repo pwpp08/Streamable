@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.12.2"
 }
 
-val appVersion = "1.1.0"
+val appVersion = "1.1.1"
 
 kotlin {
     jvmToolchain(17)
@@ -160,10 +160,12 @@ dependencies {
 compose.desktop {
     application {
         mainClass = "com.streamflixreborn.streamflix.desktop.MainKt"
-        jvmArgs += listOf("-Xmx1g", "-Dsun.java2d.uiScale.enabled=true")
+        // G1's periodic collection hands unused heap (and the video frame buffers) back after playback.
+        jvmArgs += listOf("-Xmx1g", "-XX:G1PeriodicGCInterval=30000", "-Dsun.java2d.uiScale.enabled=true")
         // ./gradlew run -Pautomation=8799 opens the loopback test hook (see Automation.kt).
         (project.findProperty("automation") as String?)?.let { jvmArgs += "-Dstreamflix.automation=$it" }
         (project.findProperty("vlcargs") as String?)?.let { jvmArgs += "-Dstreamflix.vlcargs=$it" }
+        if (project.hasProperty("windowed")) jvmArgs += "-Dstreamflix.windowed=true"
 
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Dmg)

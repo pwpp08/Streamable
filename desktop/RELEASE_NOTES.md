@@ -6,6 +6,12 @@ StreamFlix for Windows and macOS: the phone app's sources and look on a big scre
 
 VLC is built in; nothing else to install.
 
+**New in 1.1.1**
+- Esc leaves the player again, also on macOS and after clicking a button or the seek bar. With a menu open, Esc closes the menu first.
+- The quality chip (1080p, 4K…) is a real button now: it opens the server list with each server's quality, so you can switch from there. Before, clicking it only paused.
+- Widescreen films at 1920x800 show as 1080p instead of 800p.
+- Uses far less memory during and after playback (about 200 MB less in testing): Skia's GPU cache for video frames is capped at 64 MB instead of 256 MB.
+
 **New in 1.1**
 - True full screen: no title bar and the taskbar is hidden. Quit with Alt+F4 or Settings → Quit.
 - Starts at 1080p, always. In the background it tests a 4K server on a second, muted player and only switches if that server really keeps up. The switch is lined up to the second, with no loading screen.
