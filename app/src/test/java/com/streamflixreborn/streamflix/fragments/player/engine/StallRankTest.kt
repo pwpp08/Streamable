@@ -14,18 +14,19 @@ class StallRankTest {
             ),
             stickyName = "VixSrc",
             score = { null },
-            height = { null },
+            height = { if (it == "VixSrc") 720 else null },
         )
         assertEquals("Nflix (Vidzee)", ranked.first().name)
     }
 
     @Test
-    fun knownSlowVixSrcRanksBelowVideasyEvenWhenSticky() {
+    fun vixSrcIsTheFirstChoiceWhileNothingIsKnown() {
         val servers = listOf(
-            com.streamflixreborn.streamflix.models.Video.Server("v", "VixSrc"),
+            com.streamflixreborn.streamflix.models.Video.Server("n", "Nflix (Vidzee)"),
             com.streamflixreborn.streamflix.models.Video.Server("b", "Videasy Boise"),
+            com.streamflixreborn.streamflix.models.Video.Server("v", "VixSrc"),
         )
-        val ranked = ServerRanker.rank(servers, stickyName = "VixSrc", score = { null }, height = { null })
-        assertEquals("Videasy Boise", ranked.first().name)
+        val ranked = ServerRanker.rank(servers, score = { null }, height = { null })
+        assertEquals("VixSrc", ranked.first().name)
     }
 }

@@ -44,8 +44,8 @@ object ServerRanker {
     /** Vidzee resolves in 1-2 s; it ranges from 480p to 1080p per title, so its real height decides at start. */
     fun isVidzee(name: String) = name.endsWith("(Vidzee)", ignoreCase = true)
 
-    /** Servers that never go above this height, whatever the title (measured). */
-    private val KNOWN_HEIGHT_CAP = mapOf("vixsrc" to 720)
+    /** Servers that never go above this height, whatever the title (measured). VixSrc was 720p until late 2026; it now lists 1080p. */
+    private val KNOWN_HEIGHT_CAP = emptyMap<String, Int>()
 
     /** Score for a server nothing is known about yet. */
     const val VIDEASY_PRIOR = 70
@@ -53,8 +53,11 @@ object ServerRanker {
     /** Answers quickly, so it is ready to be compared before slow servers that often time out. */
     const val VIDZEE_PRIOR = 65
 
-    /** Dependable 720p: high enough, even after the low-res penalty, to be among the sources compared at start. */
-    const val VIXSRC_PRIOR = 70
+    /**
+     * The primary source: fast, dependable, and up to 1080p. Starts ahead of every other unproven
+     * server, but once it has been seen playing below full HD (low-res penalty) Vidzee goes first.
+     */
+    const val VIXSRC_PRIOR = 72
 
     fun rank(
         servers: List<Video.Server>,

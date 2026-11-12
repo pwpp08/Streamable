@@ -2,20 +2,13 @@ package com.streamflixreborn.streamflix.providers
 
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.extractors.Extractor
-import com.streamflixreborn.streamflix.extractors.MoviesapiExtractor
-import com.streamflixreborn.streamflix.extractors.TwoEmbedExtractor
-import com.streamflixreborn.streamflix.extractors.VidsrcNetExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcToExtractor
 import com.streamflixreborn.streamflix.extractors.VidzeeExtractor
 import com.streamflixreborn.streamflix.extractors.VideasyExtractor
 import com.streamflixreborn.streamflix.extractors.VixSrcExtractor
 import com.streamflixreborn.streamflix.extractors.VidLinkExtractor
 import com.streamflixreborn.streamflix.extractors.VidsrcRuExtractor
-import com.streamflixreborn.streamflix.extractors.VidflixExtractor
-import com.streamflixreborn.streamflix.extractors.VidrockExtractor
-import com.streamflixreborn.streamflix.extractors.VidloveExtractor
 import com.streamflixreborn.streamflix.utils.health.HealthStore
-import com.streamflixreborn.streamflix.extractors.VidemExtractor
 import com.streamflixreborn.streamflix.models.Category
 import com.streamflixreborn.streamflix.models.Episode
 import com.streamflixreborn.streamflix.models.Genre
@@ -744,27 +737,20 @@ class TmdbProvider(override val language: String) : Provider {
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
         val servers = mutableListOf<Video.Server>()
-        // Videasy first: native, ~150 ms, adaptive up to 1080p (see VideasyExtractor). Left out
-        // while its API is blocking apps, so playback doesn't start on it and fall to the next server.
-        val videasy = VideasyExtractor().let { if (it.isReachable()) it.servers(videoType) else emptyList() }
-        servers.addAll(videasy)
+        // VixSrc first: it answers in under a second and its playlists now list 1080p. The picture
+        // size each stream really delivers is still measured at start (SourceProbe), so a title
+        // where VixSrc is lower than Vidzee still starts on the sharper one.
+        servers.add(VixSrcExtractor().server(videoType))
+        // Videasy: native, ~150 ms, adaptive up to 1080p. Left out while its API is blocking apps,
+        // so playback doesn't start on it and fall to the next server.
+        servers.addAll(VideasyExtractor().let { if (it.isReachable()) it.servers(videoType) else emptyList() })
+        servers.addAll(VidzeeExtractor().servers(videoType))
         servers.addAll(listOf(
-            VixSrcExtractor().server(videoType),
-            TwoEmbedExtractor().server(videoType),
-            VidsrcNetExtractor().server(videoType),
             VidLinkExtractor().server(videoType),
             VidsrcRuExtractor().server(videoType),
-            VidflixExtractor().server(videoType),
         ))
-
-        if (videoType is Video.Type.Movie) {
-            servers.add(videasy.size + 2, MoviesapiExtractor().server(videoType))
-        }
-
-        servers.addAll(VidrockExtractor().servers(videoType))
-        servers.addAll(VidzeeExtractor().servers(videoType))
-        servers.addAll(VidemExtractor().servers(videoType, "en"))
-        servers.addAll(VidloveExtractor().servers(videoType))
+        // Removed 2026-11-12 after failing on every test title: 2Embed (404), Moviesapi and Vidlove
+        // (domains gone), Vidsrc.net (TLS refused), Vidflix (521), Videm (domain gone), Vidrock (no servers).
 
         // Torrent servers last: they are the 1080p fallback/upgrade (opt-out in Settings > Sources).
         servers.addAll(
