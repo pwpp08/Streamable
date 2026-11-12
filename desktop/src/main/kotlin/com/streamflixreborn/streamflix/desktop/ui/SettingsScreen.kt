@@ -133,7 +133,24 @@ fun SettingsScreen(onThemeChanged: () -> Unit) {
             }
 
             SettingsGroup("About") {
-                SettingRow("StreamFlix for desktop", "Version ${BuildConfig.VERSION_NAME}") {}
+                val update = com.streamflixreborn.streamflix.desktop.Updater.state
+                SettingRow(
+                    "StreamFlix for desktop",
+                    "Version ${BuildConfig.VERSION_NAME}" + when (update) {
+                        is com.streamflixreborn.streamflix.desktop.Updater.State.Available -> " · ${update.release.version} is available"
+                        is com.streamflixreborn.streamflix.desktop.Updater.State.Downloading -> " · downloading ${update.release.version}…"
+                        com.streamflixreborn.streamflix.desktop.Updater.State.UpToDate -> " · up to date"
+                        else -> ""
+                    },
+                ) {
+                    if (com.streamflixreborn.streamflix.desktop.Updater.supported) {
+                        if (update is com.streamflixreborn.streamflix.desktop.Updater.State.Available) {
+                            Button(onClick = { com.streamflixreborn.streamflix.desktop.Updater.install() }) { Text("Update") }
+                        } else {
+                            TextButton(onClick = { com.streamflixreborn.streamflix.desktop.Updater.checkNow() }) { Text("Check for updates") }
+                        }
+                    }
+                }
                 SettingRow("Data folder", StreamFlixApp.instance.dataDir.path) {
                     Button(onClick = { runCatching { java.awt.Desktop.getDesktop().open(StreamFlixApp.instance.dataDir) } }) { Text("Open") }
                 }

@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -74,6 +75,7 @@ import com.streamflixreborn.streamflix.desktop.ui.PersonScreen
 import com.streamflixreborn.streamflix.desktop.ui.QueueScreen
 import com.streamflixreborn.streamflix.desktop.ui.SearchScreen
 import com.streamflixreborn.streamflix.desktop.ui.SettingsScreen
+import com.streamflixreborn.streamflix.desktop.ui.UpdateBanner
 import com.streamflixreborn.streamflix.desktop.ui.ShowDetailsScreen
 import com.streamflixreborn.streamflix.desktop.ui.ShowsScreen
 import com.streamflixreborn.streamflix.utils.NetworkClient
@@ -100,6 +102,7 @@ fun main() {
         e.printStackTrace()
     }
     Automation.startIfEnabled()
+    Updater.start()
     Runtime.getRuntime().addShutdownHook(Thread { Library.flush() })
 
     application {
@@ -154,7 +157,10 @@ fun main() {
                     if (playing != null) {
                         PlayerScreen(playing)
                     } else {
-                        AppShell(onThemeChanged = { themeMode = UserPreferences.themeMode })
+                        Box(Modifier.fillMaxSize()) {
+                            AppShell(onThemeChanged = { themeMode = UserPreferences.themeMode })
+                            UpdateBanner(Modifier.align(Alignment.BottomEnd).padding(24.dp))
+                        }
                     }
                 }
             }

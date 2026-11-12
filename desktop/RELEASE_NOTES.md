@@ -6,6 +6,12 @@ StreamFlix for Windows and macOS: the phone app's sources and look on a big scre
 
 VLC is built in; nothing else to install.
 
+**New in 1.1.2**
+- Updates itself. When a new version is out, a card in the corner offers it (also Settings → About → Check for updates).
+  - Windows: click Update, StreamFlix closes, installs the new version in place and opens again (about a minute, no questions asked).
+  - macOS: the new .dmg downloads and opens; drag StreamFlix into Applications to replace the old one.
+- This version still has to be installed by hand once; every version after it arrives through the app.
+
 **New in 1.1.1**
 - Esc leaves the player again, also on macOS and after clicking a button or the seek bar. With a menu open, Esc closes the menu first.
 - The quality chip (1080p, 4K…) is a real button now: it opens the server list with each server's quality, so you can switch from there. Before, clicking it only paused.
