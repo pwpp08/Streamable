@@ -28,6 +28,12 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Built-in addon links
+        shell: bash
+        env:
+          DEFAULT_ADDONS: ${{ secrets.DEFAULT_ADDONS }}
+        run: echo "DEFAULT_ADDONS=$DEFAULT_ADDONS" > ../local.properties
+
       - name: Bundle VLC
         run: |
           curl -fsSL -o "$RUNNER_TEMP/vlc.zip" "https://download.videolan.org/pub/videolan/vlc/$VLC_VERSION/win64/vlc-$VLC_VERSION-win64.zip"
@@ -64,6 +70,12 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+
+      - name: Built-in addon links
+        shell: bash
+        env:
+          DEFAULT_ADDONS: ${{ secrets.DEFAULT_ADDONS }}
+        run: echo "DEFAULT_ADDONS=$DEFAULT_ADDONS" > ../local.properties
 
       - name: Bundle VLC
         run: |

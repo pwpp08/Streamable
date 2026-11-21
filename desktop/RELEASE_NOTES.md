@@ -6,6 +6,10 @@ StreamFlix for Windows and macOS: the phone app's sources and look on a big scre
 
 VLC is built in; nothing else to install.
 
+**New in 1.1.6**
+- PenguPlay leads the server list, with its files chosen for playability and named by source. Addon links can ship built in.
+- Subtitle and other fixes shared with the phone app 1.0.24.
+
 **New in 1.1.5**
 - Torrent servers, like the phone app: free 1080p for almost every film and episode. Web servers are still tried first; torrents are the fallback, or pick one yourself. Settings → Sources → Torrent servers turns them off. (macOS: Apple Silicon Macs only.)
 - Stremio addons: paste addon links in Settings → Sources to get more servers.

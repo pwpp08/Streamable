@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.12.2"
 }
 
-val appVersion = "1.1.5"
+val appVersion = "1.1.6"
 
 kotlin {
     jvmToolchain(17)
@@ -115,6 +115,7 @@ val generateBuildConfig by tasks.registering {
             |    const val APPLICATION_ID = "com.streamflixreborn.streamflix.desktop"
             |    const val VERSION_NAME = "$appVersion"
             |    const val TMDB_API_KEY = "${prop("TMDB_API_KEY", "9b4396c90d4c866105c05677002f6a15")}"
+            |    const val DEFAULT_ADDONS = "${prop("DEFAULT_ADDONS")}"
             |    const val SUBDL_API_KEY = "${prop("SUBDL_API_KEY")}"
             |    const val SUPABASE_URL = "${prop("SUPABASE_URL", "https://adxcjzotlwrrpcllabox.supabase.co")}"
             |    const val SUPABASE_KEY = "${prop("SUPABASE_KEY", "sb_publishable_-joQB1UYwiQs4nlvaL_Pnw_s1-xF6J4")}"
