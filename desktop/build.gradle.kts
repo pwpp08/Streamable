@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.12.2"
 }
 
-val appVersion = "1.1.6"
+val appVersion = "1.1.7"
 
 kotlin {
     jvmToolchain(17)
@@ -40,9 +40,12 @@ val syncSharedSources by tasks.registering(Sync::class) {
             "torrent/TorrentioClient.kt",
             "torrent/TorrentModels.kt",
             "torrent/StremioAddons.kt",
+            "torrent/TorrentBrowser.kt",
             "torrent/TorrentEngine.kt",
             "utils/TMDb3.kt",
             "utils/TmdbUtils.kt",
+            "utils/FuzzySearch.kt",
+            "utils/ContainerProbe.kt",
             "utils/JsUnpacker.kt",
             "utils/AesHelper.kt",
             "utils/DecryptHelper.kt",

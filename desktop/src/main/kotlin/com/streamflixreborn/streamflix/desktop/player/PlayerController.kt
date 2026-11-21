@@ -157,11 +157,21 @@ class PlayerController(val request: PlayRequest) {
 
     private fun start() {
         resolving = scope.launch {
-            val servers = runCatching { Sources.servers(type) }.getOrElse {
-                error = "Couldn’t get servers: ${it.message}"
-                loading = false
-                return@launch
+            val titleId = when (type) {
+                is Video.Type.Movie -> type.id
+                is Video.Type.Episode -> type.id
             }
+            val chosen = com.streamflixreborn.streamflix.torrent.TorrentChoice.take(titleId)
+            val base = runCatching { Sources.servers(type) }.getOrElse {
+                if (chosen == null) {
+                    error = "Couldn’t get servers: ${it.message}"
+                    loading = false
+                    return@launch
+                }
+                emptyList()
+            }
+            // A torrent picked on the torrents page plays first, whatever the other servers say.
+            val servers = if (chosen != null) listOf(chosen) + base.filterNot { it.id == chosen.id } else base
             if (servers.isEmpty()) {
                 error = "No servers found for this title."
                 loading = false
@@ -171,8 +181,21 @@ class PlayerController(val request: PlayRequest) {
             sources.addAll(servers.mapIndexed { i, s -> Source(s, i) })
             status = "Checking ${servers.size} servers…"
             val first = CompletableDeferred<Source?>()
+            if (chosen != null) {
+                launch {
+                    while (sources.firstOrNull { it.server.id == chosen.id }?.state is Source.State.Pending) delay(200)
+                    val picked = sources.firstOrNull { it.server.id == chosen.id }
+                    if (picked?.state is Source.State.Ready && current == null) {
+                        play(picked, request.startMs, manual = true)
+                    } else if (current == null) {
+                        error = "That torrent couldn’t be started. Try another one."
+                        loading = false
+                    }
+                }
+            }
             launch {
                 val pick = first.await()
+                if (chosen != null) return@launch
                 if (pick == null) {
                     error = if (sources.any { it.state is Source.State.Ready })
                         "No server has this in 1080p or better right now. You can still pick a lower-quality one."

@@ -6,6 +6,11 @@ StreamFlix for Windows and macOS: the phone app's sources and look on a big scre
 
 VLC is built in; nothing else to install.
 
+**New in 1.1.7**
+- Watch with torrents: a Torrents button on every film and on the show page (and on each episode) opens a page with all the torrents Torrentio and MediaFusion know, with filters for resolution, source, codec, HDR, seeders and size. Click one to play it.
+- Typos in a search still find the closest title (Intersteller finds Interstellar).
+- PenguPlay: the real picture size is read from each file, so a "1080p" label that is really 720p no longer fools the ranking. Cinejoy Sirius is tried first.
+
 **New in 1.1.6**
 - PenguPlay leads the server list, with its files chosen for playability and named by source. Addon links can ship built in.
 - Subtitle and other fixes shared with the phone app 1.0.24.

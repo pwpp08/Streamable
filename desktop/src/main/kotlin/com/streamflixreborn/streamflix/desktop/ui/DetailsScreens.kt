@@ -33,6 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -75,6 +76,8 @@ import com.streamflixreborn.streamflix.models.Movie
 import com.streamflixreborn.streamflix.models.People
 import com.streamflixreborn.streamflix.models.Show
 import com.streamflixreborn.streamflix.models.TvShow
+import com.streamflixreborn.streamflix.torrent.TorrentBrowser
+import com.streamflixreborn.streamflix.torrent.TorrentChoice
 import java.util.Calendar
 
 private fun formatRuntime(minutes: Int?) = minutes?.takeIf { it > 0 }?.let { if (it >= 60) "${it / 60}h ${it % 60}m" else "${it}m" }
@@ -180,6 +183,13 @@ private fun QueueButton(item: LibraryItem) {
 }
 
 @Composable
+private fun TorrentsButton(onClick: () -> Unit) {
+    FilledTonalButton(onClick = onClick, modifier = Modifier.height(ButtonDefaults.MediumContainerHeight)) {
+        Text("Torrents", style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
 private fun WatchedToggle(watched: Boolean, onToggle: (Boolean) -> Unit) {
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
@@ -231,6 +241,16 @@ private fun MovieDetails(movie: Movie) {
     val library by Library.items.collectAsState()
     val item = library[Library.key(false, movie.id)] ?: Library.itemFor(movie)
     val year = movie.released?.get(Calendar.YEAR)?.toString()
+    var showTorrents by remember(movie.id) { mutableStateOf(false) }
+    if (showTorrents) {
+        val type = Repo.movieType(movie)
+        TorrentsDialog(type, movie.title, year, onDismiss = { showTorrents = false }) { option ->
+            showTorrents = false
+            TorrentChoice.set(movie.id, TorrentBrowser.toServer(option))
+            Library.edit(Library.itemFor(movie)) { it }
+            Nav.play(PlayRequest(type, movie.title, year))
+        }
+    }
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             DetailsHeader(
@@ -249,6 +269,7 @@ private fun MovieDetails(movie: Movie) {
                         Nav.play(PlayRequest(Repo.movieType(movie), movie.title, year, startMs = if (resume) item.positionMs else 0))
                     }
                     QueueButton(item)
+                    TorrentsButton { showTorrents = true }
                     WatchedToggle(item.watched) { Library.setWatched(Library.itemFor(movie), it) }
                 }
                 if (item.positionMs > 0 && !item.watched) {
@@ -309,6 +330,17 @@ private fun ShowDetails(show: TvShow) {
     }
 
     val year = show.released?.get(Calendar.YEAR)?.toString()
+    var torrentEpisode by remember(show.id) { mutableStateOf<Pair<Int, Episode>?>(null) }
+    torrentEpisode?.let { (sn, ep) ->
+        val type = Repo.episodeType(show, sn, selected?.title, ep)
+        val sub = "S$sn · E${ep.number}"
+        TorrentsDialog(type, show.title, sub, onDismiss = { torrentEpisode = null }) { option ->
+            torrentEpisode = null
+            TorrentChoice.set(ep.id, TorrentBrowser.toServer(option))
+            Library.edit(Library.itemFor(show)) { it }
+            Nav.play(PlayRequest(type, show.title, sub + (ep.title?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: "")))
+        }
+    }
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             DetailsHeader(
@@ -328,6 +360,7 @@ private fun ShowDetails(show: TvShow) {
                         PrimaryPlayButton("Play") {}
                     }
                     QueueButton(item)
+                    target?.let { (sn, ep, _) -> TorrentsButton { torrentEpisode = sn to ep } }
                     WatchedToggle(item.watched) { Library.setWatched(Library.itemFor(show), it) }
                 }
             }
@@ -359,6 +392,7 @@ private fun ShowDetails(show: TvShow) {
                 episode = ep,
                 state = state,
                 onPlay = { play(sn, selected?.title, ep, if (state != null && !state.watched) state.positionMs else 0) },
+                onTorrents = { torrentEpisode = sn to ep },
                 onToggleWatched = {
                     Library.setEpisodeWatched(
                         Library.itemFor(show),
@@ -375,7 +409,7 @@ private fun ShowDetails(show: TvShow) {
 }
 
 @Composable
-private fun EpisodeRow(episode: Episode, state: EpisodeState?, onPlay: () -> Unit, onToggleWatched: () -> Unit) {
+private fun EpisodeRow(episode: Episode, state: EpisodeState?, onPlay: () -> Unit, onTorrents: () -> Unit, onToggleWatched: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     Surface(
         onClick = onPlay,
@@ -419,6 +453,8 @@ private fun EpisodeRow(episode: Episode, state: EpisodeState?, onPlay: () -> Uni
                 }
             }
             Spacer(Modifier.width(16.dp))
+            TextButton(onClick = onTorrents) { Text("Torrents") }
+            Spacer(Modifier.width(8.dp))
             FilledIconToggleButton(checked = state?.watched == true, onCheckedChange = { onToggleWatched() }, modifier = Modifier.size(48.dp)) {
                 Icon(if (state?.watched == true) Icons.Rounded.CheckCircle else Icons.Rounded.Check, if (state?.watched == true) "Watched" else "Mark watched")
             }
