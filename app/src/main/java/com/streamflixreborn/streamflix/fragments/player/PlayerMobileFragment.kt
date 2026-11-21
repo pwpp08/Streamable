@@ -406,6 +406,10 @@ class PlayerMobileFragment : Fragment() {
                         }
                     }
 
+                    is PlayerViewModel.State.ManualServerFailed -> {
+                        showPlayerMessage(getString(R.string.player_manual_server_failed, state.server.name))
+                    }
+
                     is PlayerViewModel.State.ChoiceUnavailable -> {
                         if (mainIsHealthy()) showPlayerMessage(getString(R.string.player_server_unavailable, state.server.name))
                         else viewModel.continueAfterFailedChoice()
@@ -1285,7 +1289,10 @@ class PlayerMobileFragment : Fragment() {
         analytics = built.analytics
         built.stalls.onStalled = {
             val server = currentServer
-            if (server != null && player.currentPosition > 0 && !player.currentMediaItem?.localConfiguration?.uri?.toString().isNullOrEmpty()) {
+            if (server != null && viewModel.isPinned(server)) {
+                // Picked by hand: keep buffering on it rather than moving elsewhere.
+                Log.w("PlayerMobileFragment", "${server.name} keeps stalling, staying on it (picked by hand)")
+            } else if (server != null && player.currentPosition > 0 && !player.currentMediaItem?.localConfiguration?.uri?.toString().isNullOrEmpty()) {
                 Log.w("PlayerMobileFragment", "${server.name} keeps stalling, trying the next server at ${player.currentPosition} ms")
                 com.streamflixreborn.streamflix.fragments.player.engine.StallMemory.record(server.name)
                 pendingResumeMs = player.currentPosition

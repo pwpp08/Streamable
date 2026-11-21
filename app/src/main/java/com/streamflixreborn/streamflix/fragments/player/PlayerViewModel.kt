@@ -82,6 +82,13 @@ class PlayerViewModel(
     /** The server that is really on screen; during a background switch it differs from [currentServerId]. */
     private var activeServerId: String? = null
     private var activeVideo: Video? = null
+
+    /**
+     * The server the viewer picked by hand. While it plays, nothing switches away from it on its
+     * own: no quality upgrade, no move on stalls or errors. Cleared when a new title starts.
+     */
+    @Volatile
+    private var manualServerId: String? = null
     private var upgradeJob: Job? = null
     private var resolutionJob: Job? = null
     private var playbackJob: Job? = null
@@ -201,6 +208,7 @@ class PlayerViewModel(
         ranked = ServerRanker.rank(servers, preferredName = preferredServerName, stickyName = sticky)
         failedIds.clear()
         wrongAudio.clear()
+        manualServerId = null
         Log.d(TAG, "ranked servers (preferred=$preferredServerName, sticky=$sticky): ${ranked.joinToString { it.name }}")
 
         val results = Channel<Pair<Int, Video?>>(Channel.UNLIMITED)
@@ -216,6 +224,8 @@ class PlayerViewModel(
             ranked = servers
         }
         failedIds.remove(server.id)
+        manualServerId = server.id
+        upgradeJob?.cancel()
         launchPlayback { playChosen(server) }
     }
 
@@ -239,8 +249,12 @@ class PlayerViewModel(
         playWithFailover(null, failover = true)
     }
 
+    /** Whether [server] was picked by hand and so must not be switched away from automatically. */
+    fun isPinned(server: Video.Server): Boolean = server.id == manualServerId
+
     /** A hand-picked server failed and nothing was left playing: carry on with the best of the rest. */
     fun continueAfterFailedChoice() {
+        manualServerId = null
         launchPlayback { playWithFailover(null, failover = true) }
     }
 
@@ -254,6 +268,13 @@ class PlayerViewModel(
             offlineServer = null
             currentServerId = null
             getServers(videoType, id)
+            return
+        }
+        if (failedId == manualServerId) {
+            // Picked by hand: stay on it and let the viewer decide what to try next.
+            val chosen = server ?: ranked.firstOrNull { it.id == failedId } ?: return
+            Log.w(TAG, "${chosen.name} failed, but it was picked by hand; not switching")
+            viewModelScope.launch { _state.emit(State.ManualServerFailed(chosen)) }
             return
         }
         failedIds += failedId
@@ -285,6 +306,7 @@ class PlayerViewModel(
         }
         currentServerId = previous.id
         QualityMemory.currentServer = previous.name
+        if (previous.id == manualServerId) return
         activeVideo?.let { startQualityUpgrade(it, previous) }
     }
 
@@ -478,7 +500,7 @@ class PlayerViewModel(
      */
     private fun startQualityUpgrade(playing: Video, server: Video.Server) {
         upgradeJob?.cancel()
-        if (server.id == offlineServer?.id) return
+        if (server.id == offlineServer?.id || server.id == manualServerId) return
         upgradeJob = viewModelScope.launch(Dispatchers.IO) {
             // Let playback settle first; the projector has one weak CPU cluster.
             kotlinx.coroutines.delay(UPGRADE_DELAY_MS)
@@ -715,6 +737,9 @@ class PlayerViewModel(
 
         /** A server picked by hand did not work; the stream that was playing carries on. */
         data class ChoiceUnavailable(val server: Video.Server) : State()
+
+        /** The hand-picked server stopped working; it is not replaced automatically. */
+        data class ManualServerFailed(val server: Video.Server) : State()
     }
 
     sealed class SubtitleState {
