@@ -632,7 +632,8 @@ object CloudSyncManager {
             val db = AppDatabase.getInstanceForProvider(provider.name, context, profileId)
             try {
                 val statesToApply = providerStates.filter { state ->
-                    shouldApplyRemoteState(db, state)
+                    !CloudMutationStore.changedLocallyAtOrAfter(context, profileId, state) &&
+                        shouldApplyRemoteState(db, state)
                 }
                 if (statesToApply.isEmpty()) return@forEach
                 LastDeviceStore.record(context, profileId, statesToApply)

@@ -669,6 +669,27 @@ class PlayerTvFragment : Fragment() {
         }
     }
 
+    private var silentReportedServerId: String? = null
+
+    /**
+     * A stream whose audio the device can't decode (E-AC3, DTS and the like) plays with no sound
+     * and no error. Move on to another server, unless this one was picked by hand: then say so.
+     */
+    private fun reportSilentAudio(tracks: androidx.media3.common.Tracks) {
+        val audio = tracks.groups.filter { it.type == androidx.media3.common.C.TRACK_TYPE_AUDIO }
+        if (audio.isEmpty() || audio.any { it.isSupported }) return
+        val server = currentServer ?: return
+        if (silentReportedServerId == server.id) return
+        silentReportedServerId = server.id
+        if (viewModel.isPinned(server)) {
+            showPlayerMessage(getString(R.string.player_no_audio_pinned, server.name))
+            return
+        }
+        Log.w("PlayerTvFragment", "${server.name} has no audio this device can play, switching")
+        if (player.currentPosition > 0) pendingResumeMs = player.currentPosition
+        viewModel.onPlaybackFailed(server)
+    }
+
     private fun showPlayerMessage(message: String) {
         if (_binding == null) return
         nextUi.showMessage(message)
@@ -1245,6 +1266,7 @@ class PlayerTvFragment : Fragment() {
         }
 
         override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+            reportSilentAudio(tracks)
             autoSubtitles?.onTracksChanged(tracks)
             if (::player.isInitialized) subtitleRecall.onTracksChanged(player, tracks)
             autoSubtitleFetch.onTracks(tracks)

@@ -47,6 +47,14 @@ object ServerRanker {
     /** Servers that never go above this height, whatever the title (measured). VixSrc was 720p until late 2026; it now lists 1080p. */
     private val KNOWN_HEIGHT_CAP = emptyMap<String, Int>()
 
+    /**
+     * PenguPlay (a Stremio addon the viewer adds) is the primary source: dozens of 1080p files per
+     * title. It starts ahead of everything else and loses its lead only through measured failures.
+     */
+    fun isPenguPlay(name: String) = name.startsWith("PenguPlay", ignoreCase = true)
+
+    const val PENGUPLAY_PRIOR = 90
+
     /** Score for a server nothing is known about yet. */
     const val VIDEASY_PRIOR = 70
 
@@ -74,6 +82,7 @@ object ServerRanker {
             val stalled = runCatching { StallMemory.isRecent(server.name) }.getOrDefault(false)
             val known = runCatching { score(server.name) }.getOrNull()
                 ?: when {
+                    isPenguPlay(server.name) -> PENGUPLAY_PRIOR
                     isVideasy(server.name) -> VIDEASY_PRIOR
                     isVidzee(server.name) -> VIDZEE_PRIOR
                     server.name.equals("VixSrc", ignoreCase = true) -> VIXSRC_PRIOR
@@ -91,7 +100,7 @@ object ServerRanker {
         // server is known to play in full HD.
         val fullHdExists = servers.any { server ->
             !isTorrentServer(server.name) &&
-                (isVideasy(server.name) || isVidzee(server.name) || (heights.getValue(server) ?: 0) >= 1080)
+                (isVideasy(server.name) || isVidzee(server.name) || isPenguPlay(server.name) || (heights.getValue(server) ?: 0) >= 1080)
         }
         val stickyHeight = servers.firstOrNull { it.name.equals(stickyName, ignoreCase = true) }
             ?.let { heights.getValue(it) }

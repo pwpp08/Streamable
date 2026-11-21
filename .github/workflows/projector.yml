@@ -27,6 +27,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           LOCAL_PROPERTIES_BASE64: ${{ secrets.LOCAL_PROPERTIES_BASE64 }}
+          DEFAULT_ADDONS: ${{ secrets.DEFAULT_ADDONS }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/streamable.jks"
           {
@@ -37,6 +38,8 @@ jobs:
           } > "$RUNNER_TEMP/keystore.properties"
           echo "STREAMABLE_KEYSTORE_PROPS=$RUNNER_TEMP/keystore.properties" >> "$GITHUB_ENV"
           echo "$LOCAL_PROPERTIES_BASE64" | base64 -d > local.properties
+          echo "" >> local.properties
+          echo "DEFAULT_ADDONS=$DEFAULT_ADDONS" >> local.properties
 
       - name: Build TV 64-bit APK (arm64-v8a)
         run: |

@@ -1,5 +1,6 @@
 package com.streamflixreborn.streamflix.providers
 
+import kotlinx.coroutines.async
 import com.streamflixreborn.streamflix.adapters.AppAdapter
 import com.streamflixreborn.streamflix.extractors.Extractor
 import com.streamflixreborn.streamflix.extractors.VidsrcToExtractor
@@ -737,6 +738,18 @@ class TmdbProvider(override val language: String) : Provider {
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
         val servers = mutableListOf<Video.Server>()
+        // Torrents and addons are asked while the web servers are listed, so neither waits for the other.
+        val (addonServers, torrentServers) = kotlinx.coroutines.coroutineScope {
+            val addons = async {
+                runCatching { kotlinx.coroutines.withTimeoutOrNull(12_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
+                    .getOrNull().orEmpty()
+            }
+            val torrents = async {
+                runCatching { kotlinx.coroutines.withTimeoutOrNull(8_000L) { TorrentServers().servers(videoType) } }
+                    .getOrNull().orEmpty()
+            }
+            addons.await() to torrents.await()
+        }
         // VixSrc first: it answers in under a second and its playlists now list 1080p. The picture
         // size each stream really delivers is still measured at start (SourceProbe), so a title
         // where VixSrc is lower than Vidzee still starts on the sharper one.
@@ -753,16 +766,9 @@ class TmdbProvider(override val language: String) : Provider {
         // (domains gone), Vidsrc.net (TLS refused), Vidflix (521), Videm (domain gone), Vidrock (no servers).
 
         // Torrent servers last: they are the 1080p fallback/upgrade (opt-out in Settings > Sources).
-        servers.addAll(
-            runCatching { kotlinx.coroutines.withTimeoutOrNull(8_000L) { TorrentServers().servers(videoType) } }
-                .getOrNull().orEmpty()
-        )
-
-        // Stremio addons the viewer added (Settings > Sources), asked in parallel.
-        servers.addAll(
-            runCatching { kotlinx.coroutines.withTimeoutOrNull(12_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
-                .getOrNull().orEmpty()
-        )
+        servers.addAll(torrentServers)
+        // Addon servers (PenguPlay and friends) lead: the ranker decides, and they win until proven otherwise.
+        servers.addAll(0, addonServers)
 
         // Servers that failed the last two health runs only slow playback down; keep them if nothing else is left.
         val unique = servers.distinctBy { it.id }
