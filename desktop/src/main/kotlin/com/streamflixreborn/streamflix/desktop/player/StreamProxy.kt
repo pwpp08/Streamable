@@ -2,6 +2,8 @@ package com.streamflixreborn.streamflix.desktop.player
 
 import android.util.Log
 import com.streamflixreborn.streamflix.models.Video
+import com.streamflixreborn.streamflix.torrent.TorrentEngine
+import com.streamflixreborn.streamflix.torrent.TorrentSpec
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
@@ -33,6 +35,7 @@ object StreamProxy {
     )
 
     private val sessions = ConcurrentHashMap<String, Session>()
+    private val torrents = ConcurrentHashMap<String, TorrentSpec>()
 
     private val server: HttpServer by lazy {
         HttpServer.create(InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 128).apply {
@@ -60,6 +63,7 @@ object StreamProxy {
             .connectionPool(okhttp3.ConnectionPool())
             .build() else NetworkClient.default
         val src = video.source
+        TorrentSpec.parse(src)?.let { return registerTorrent(it) }
         return when {
             src.startsWith("data:") -> {
                 val comma = src.indexOf(',')
@@ -76,6 +80,14 @@ object StreamProxy {
         }
     }
 
+    /** A torrent file served with byte ranges from the torrent engine, as it downloads. */
+    private fun registerTorrent(spec: TorrentSpec): String {
+        val id = UUID.randomUUID().toString().take(8)
+        torrents[id] = spec
+        val ext = spec.name?.substringAfterLast('.', "")?.lowercase()?.takeIf { it.matches(Regex("[a-z0-9]{2,4}")) } ?: "mkv"
+        return "$base/t/$id/video.$ext"
+    }
+
     /** Subtitle files sometimes need the same headers. */
     fun registerSubtitle(video: Video, url: String): String {
         if (!url.startsWith("http")) return url
@@ -87,6 +99,7 @@ object StreamProxy {
     fun release(url: String?) {
         val id = url?.removePrefix(base)?.split('/')?.getOrNull(2) ?: return
         sessions.remove(id)
+        torrents.remove(id)
     }
 
     private fun proxied(id: String, url: String): String {
@@ -99,6 +112,11 @@ object StreamProxy {
     private fun handle(ex: HttpExchange) {
         val parts = ex.requestURI.rawPath.split('/').filter { it.isNotEmpty() }
         val kind = parts.getOrNull(0)
+        if (kind == "t") {
+            val spec = parts.getOrNull(1)?.let(torrents::get)
+            if (spec == null) { ex.sendResponseHeaders(404, -1); ex.close() } else serveTorrent(ex, spec)
+            return
+        }
         val session = parts.getOrNull(1)?.let(sessions::get)
         if (session == null) {
             ex.sendResponseHeaders(404, -1)
@@ -115,6 +133,53 @@ object StreamProxy {
                 ex.responseBody.use { it.write(body) }
             }
             else -> { ex.sendResponseHeaders(404, -1); ex.close() }
+        }
+    }
+
+    private fun serveTorrent(ex: HttpExchange, spec: TorrentSpec) {
+        val reader = try {
+            TorrentEngine.open(spec)
+        } catch (e: IOException) {
+            Log.w(TAG, "torrent unavailable: ${e.message}")
+            ex.sendResponseHeaders(503, -1)
+            ex.close()
+            return
+        }
+        try {
+            val size = reader.fileSize
+            val range = ex.requestHeaders.getFirst("Range")?.removePrefix("bytes=")?.split('-')
+            val start = range?.getOrNull(0)?.toLongOrNull()?.coerceIn(0, maxOf(0, size - 1)) ?: 0L
+            val end = range?.getOrNull(1)?.toLongOrNull()?.coerceAtMost(size - 1) ?: (size - 1)
+            val partial = range != null
+            val type = when (spec.name?.substringAfterLast('.', "")?.lowercase()) {
+                "mp4", "m4v" -> "video/mp4"
+                "avi" -> "video/x-msvideo"
+                "webm" -> "video/webm"
+                else -> "video/x-matroska"
+            }
+            ex.responseHeaders.add("Accept-Ranges", "bytes")
+            ex.responseHeaders.add("Content-Type", type)
+            if (partial) ex.responseHeaders.add("Content-Range", "bytes $start-$end/$size")
+            val length = end - start + 1
+            if (ex.requestMethod == "HEAD") {
+                ex.responseHeaders.add("Content-Length", size.toString())
+                ex.sendResponseHeaders(if (partial) 206 else 200, -1)
+                ex.close()
+                return
+            }
+            ex.sendResponseHeaders(if (partial) 206 else 200, length)
+            ex.responseBody.use { out ->
+                val buf = ByteArray(256 * 1024)
+                var pos = start
+                while (pos <= end) {
+                    val n = reader.read(pos, buf, 0, minOf(buf.size.toLong(), end - pos + 1).toInt())
+                    if (n <= 0) break
+                    out.write(buf, 0, n)
+                    pos += n
+                }
+            }
+        } finally {
+            reader.close()
         }
     }
 

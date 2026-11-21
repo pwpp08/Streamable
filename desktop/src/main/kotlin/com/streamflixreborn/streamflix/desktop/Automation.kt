@@ -16,6 +16,7 @@ import java.net.URLDecoder
 object Automation {
     var status: () -> String = { "" }
     var pause: () -> Unit = {}
+    var pick: (String) -> Boolean = { false }
 
     fun startIfEnabled() {
         val port = System.getProperty("streamflix.automation")?.toIntOrNull() ?: return
@@ -57,6 +58,7 @@ object Automation {
         }
         "/status" -> "inPlayer=${Nav.playing != null} " + status()
         "/pause" -> { ui { pause() }; "ok" }
+        "/pick" -> { var ok = false; ui { ok = pick(q["server"].orEmpty()) }; if (ok) "ok" else "no such ready server" }
         else -> "unknown"
     }
 }

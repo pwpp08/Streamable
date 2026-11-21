@@ -1,5 +1,7 @@
 package com.streamflixreborn.streamflix.desktop.ui
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
@@ -118,6 +120,19 @@ fun SettingsScreen(onThemeChanged: () -> Unit) {
                 SettingRow("TMDB API key", "Leave empty to use the built-in key.") {
                     OutlinedTextField(key, { key = it; UserPreferences.tmdbApiKey = it.trim() }, singleLine = true, modifier = Modifier.width(320.dp))
                 }
+                SettingRow(
+                    "Torrent servers",
+                    if (com.streamflixreborn.streamflix.desktop.player.TorrentSupport.available)
+                        "Free 1080p for almost every title. Slower to start, and your IP address is shared with other peers while playing."
+                    else "Not available on this computer.",
+                ) {
+                    Switch(
+                        UserPreferences.torrentEnabled && com.streamflixreborn.streamflix.desktop.player.TorrentSupport.available,
+                        { UserPreferences.torrentEnabled = it },
+                        enabled = com.streamflixreborn.streamflix.desktop.player.TorrentSupport.available,
+                    )
+                }
+                AddonLinks()
                 SettingRow("Clear cached pages", "Reloads home rows and details from the provider.") {
                     TextButton(onClick = { Repo.clear() }) { Text("Clear") }
                 }
@@ -165,3 +180,49 @@ fun SettingsScreen(onThemeChanged: () -> Unit) {
         }
     }
 }
+
+
+/** Stremio addon links, one per line; each is checked when saved. */
+@Composable
+private fun AddonLinks() {
+    var text by remember { mutableStateOf(UserPreferences.stremioAddons) }
+    var status by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Text("Stremio addons", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "Paste addon links (one per line) from the setup page of an addon for more servers. Torrentio is already built in.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(text, { text = it }, minLines = 3, maxLines = 8, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Button(
+                onClick = {
+                    val clean = text.lines().map { it.trim() }.filter { it.isNotEmpty() }.joinToString(NEWLINE)
+                    text = clean
+                    UserPreferences.stremioAddons = clean
+                    val urls = com.streamflixreborn.streamflix.torrent.StremioAddons.configured(clean)
+                    status = if (urls.isEmpty()) "No addons" else "Checking..."
+                    if (urls.isNotEmpty()) scope.launch {
+                        val results = urls.map { it to com.streamflixreborn.streamflix.torrent.StremioAddons.manifest(it) }
+                        val good = results.mapNotNull { it.second?.name }
+                        val bad = results.filter { it.second == null }.map { it.first.substringAfter("://").substringBefore('/') }
+                        status = listOfNotNull(
+                            good.takeIf { it.isNotEmpty() }?.let { "Working: " + it.joinToString() },
+                            bad.takeIf { it.isNotEmpty() }?.let { "Not a stream addon: " + it.joinToString() },
+                        ).joinToString(" / ")
+                    }
+                },
+            ) { Text("Save") }
+            status?.let {
+                Spacer(Modifier.width(16.dp))
+                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+private const val NEWLINE = "\n"

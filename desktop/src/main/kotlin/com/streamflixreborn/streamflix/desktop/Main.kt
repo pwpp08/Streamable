@@ -103,6 +103,8 @@ fun main() {
     }
     Automation.startIfEnabled()
     Updater.start()
+    // Pieces of torrents from a previous run.
+    runCatching { com.streamflixreborn.streamflix.torrent.TorrentEngine.cleanStaleFiles() }
     Runtime.getRuntime().addShutdownHook(Thread { Library.flush() })
 
     application {

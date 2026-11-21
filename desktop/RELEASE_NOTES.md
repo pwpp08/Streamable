@@ -6,6 +6,11 @@ StreamFlix for Windows and macOS: the phone app's sources and look on a big scre
 
 VLC is built in; nothing else to install.
 
+**New in 1.1.5**
+- Torrent servers, like the phone app: free 1080p for almost every film and episode. Web servers are still tried first; torrents are the fallback, or pick one yourself. Settings → Sources → Torrent servers turns them off. (macOS: Apple Silicon Macs only.)
+- Stremio addons: paste addon links in Settings → Sources to get more servers.
+- Releases with subtitles burned into the picture are skipped.
+
 **New in 1.1.4**
 - A server you pick yourself stays on: no automatic 4K upgrade, no switching away when it is below 1080p or has a problem. If it fails, the player says so and offers the server list.
 

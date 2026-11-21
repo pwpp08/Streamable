@@ -110,6 +110,9 @@ class PlayerController(val request: PlayRequest) {
                 "sources=" + sources.joinToString { it.server.name + "=" + it.label }
         }
         com.streamflixreborn.streamflix.desktop.Automation.pause = { togglePause() }
+        com.streamflixreborn.streamflix.desktop.Automation.pick = { name ->
+            sources.firstOrNull { it.server.name.contains(name, true) && it.video != null }?.let { play(it, manual = true); true } ?: false
+        }
         player = newPlayer(frames)?.also(::attach)
         if (player != null) start()
     }
@@ -229,7 +232,8 @@ class PlayerController(val request: PlayRequest) {
         }
         watchdog?.cancel()
         watchdog = scope.launch {
-            delay(25_000)
+            // A torrent first has to find peers and fetch its metadata.
+            delay(if (com.streamflixreborn.streamflix.torrent.TorrentSpec.isTorrentUri(video.source)) 90_000 else 25_000)
             if (!started) failover("${source.server.name} didn’t start")
         }
     }

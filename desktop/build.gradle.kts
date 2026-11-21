@@ -8,7 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.12.2"
 }
 
-val appVersion = "1.1.4"
+val appVersion = "1.1.5"
 
 kotlin {
     jvmToolchain(17)
@@ -39,6 +39,8 @@ val syncSharedSources by tasks.registering(Sync::class) {
             "extractors/**",
             "torrent/TorrentioClient.kt",
             "torrent/TorrentModels.kt",
+            "torrent/StremioAddons.kt",
+            "torrent/TorrentEngine.kt",
             "utils/TMDb3.kt",
             "utils/TmdbUtils.kt",
             "utils/JsUnpacker.kt",
@@ -155,6 +157,17 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
     implementation("uk.co.caprica:vlcj:4.12.1")
+
+    // Torrents: the same engine as the phone app, with the native library for the system being built.
+    implementation("org.libtorrent4j:libtorrent4j:2.1.0-39")
+    val os = System.getProperty("os.name").lowercase()
+    implementation(
+        when {
+            os.contains("win") -> "org.libtorrent4j:libtorrent4j-windows:2.1.0-39"
+            os.contains("mac") -> "org.libtorrent4j:libtorrent4j-macos:2.1.0-39"
+            else -> "org.libtorrent4j:libtorrent4j-linux:2.1.0-39"
+        },
+    )
 }
 
 compose.desktop {

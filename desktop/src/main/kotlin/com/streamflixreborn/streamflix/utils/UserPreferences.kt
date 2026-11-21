@@ -82,8 +82,15 @@ object UserPreferences {
         get() = get("TMDB_API_KEY").orEmpty()
         set(value) = set("TMDB_API_KEY", value.ifBlank { null })
 
-    /** Desktop streams only: torrents start too slowly to be worth it here. */
-    val torrentEnabled: Boolean get() = false
+    /** Torrent servers; they share the IP address with other peers while playing. */
+    var torrentEnabled: Boolean
+        get() = bool("TORRENT_ENABLED", true)
+        set(value) = set("TORRENT_ENABLED", value.toString())
+
+    /** Extra Stremio addons, one manifest link per line. */
+    var stremioAddons: String
+        get() = get("STREMIO_ADDONS").orEmpty()
+        set(value) = set("STREMIO_ADDONS", value.ifBlank { null })
 
     var enableTmdb: Boolean
         get() = bool("ENABLE_TMDB", true)

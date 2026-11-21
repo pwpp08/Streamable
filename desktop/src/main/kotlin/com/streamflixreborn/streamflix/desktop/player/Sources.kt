@@ -4,6 +4,7 @@ import android.util.Log
 import com.streamflixreborn.streamflix.desktop.data.Repo
 import com.streamflixreborn.streamflix.extractors.BROWSER_ONLY
 import com.streamflixreborn.streamflix.models.Video
+import com.streamflixreborn.streamflix.torrent.TorrentSpec
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import com.streamflixreborn.streamflix.utils.health.HlsPlaylistParser
@@ -71,13 +72,17 @@ object Sources {
             is Video.Type.Movie -> type.id
             is Video.Type.Episode -> type.id
         }
-        Repo.provider.getServers(id, type).filter { it.name !in BROWSER_ONLY && !it.src.startsWith("torrent:") }
+        val torrents = UserPreferences.torrentEnabled && TorrentSupport.available
+        Repo.provider.getServers(id, type).filter { it.name !in BROWSER_ONLY && (torrents || !TorrentSpec.isTorrentUri(it.src)) }
     }
 
     suspend fun resolve(server: Video.Server): Source.State = withContext(Dispatchers.IO) {
         runCatching {
             val video = withTimeoutOrNull(25_000) { Repo.provider.getVideo(server) } ?: error("timed out")
-            Source.State.Ready(video, probeHeight(video))
+            // Torrents and addon links say their height in the name; playlists are read.
+            val named = TorrentSpec.heightOf(video.source)
+                ?: Regex("(?<![0-9])(2160|1440|1080|720)p").find(server.name)?.groupValues?.get(1)?.toIntOrNull()
+            Source.State.Ready(video, if (TorrentSpec.isTorrentUri(video.source)) named else probeHeight(video) ?: named)
         }.getOrElse { Source.State.Failed(it.message ?: it.javaClass.simpleName) }
     }
 
@@ -106,8 +111,11 @@ object Sources {
 
     fun rank(sources: List<Source>): List<Source> {
         val cap = UserPreferences.START_RESOLUTION
+        // Torrents take longer to start, so web servers that may be 1080p go first and torrents
+        // are the fallback; among each, the sharpest known picture first.
         return sources.filter(::eligible).sortedWith(
-            compareByDescending<Source> { s -> s.height?.let { minOf(it, cap) } ?: (UserPreferences.MIN_RESOLUTION - 1) }
+            compareBy<Source> { TorrentSpec.isTorrentUri(it.video?.source) }
+                .thenByDescending { s -> s.height?.let { minOf(it, cap) } ?: (UserPreferences.MIN_RESOLUTION - 1) }
                 .thenBy { it.order },
         )
     }
@@ -142,10 +150,14 @@ object Sources {
                     val source = Source(server, i, state)
                     results[i] = source
                     onUpdate(source)
-                    if (eligible(source)) {
+                    // Torrents resolve at once but start slowly: they never cut the wait for web servers short.
+                    val torrent = TorrentSpec.isTorrentUri(source.video?.source)
+                    if (eligible(source) && !torrent) {
                         if (firstReadyAt == 0L) firstReadyAt = System.currentTimeMillis()
                         val h = source.height
                         if (h != null && h >= cap) firstPick.complete(source)
+                    } else if (torrent) {
+                        Unit
                     } else if (state is Source.State.Ready) {
                         Log.i(TAG, "${server.name}: below 1080p (${source.height}p), skipped")
                     } else {
