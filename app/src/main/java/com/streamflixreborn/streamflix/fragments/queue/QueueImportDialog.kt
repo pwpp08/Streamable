@@ -14,6 +14,19 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.DialogQueueImportBinding
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestOptions
+import com.streamflixreborn.streamflix.adapters.AppAdapter
+import com.streamflixreborn.streamflix.databinding.ItemQueueImportChoiceBinding
+import com.streamflixreborn.streamflix.models.Movie
+import com.streamflixreborn.streamflix.models.TvShow
+import java.util.Calendar
+import kotlin.coroutines.resume
 
 /** Paste a list (notes, spreadsheet column, numbered list) and add every title found. */
 object QueueImportDialog {
@@ -72,11 +85,11 @@ object QueueImportDialog {
                 binding.llQueueImportProgress.isVisible = true
                 binding.tvQueueImportResult.isVisible = false
                 fragment.viewLifecycleOwner.lifecycleScope.launch {
-                    val result = viewModel.import(context.applicationContext, text, target) { done, total ->
+                    val result = viewModel.import(context.applicationContext, text, target, choose = { line, options -> choose(context, line, options) }) { done, total ->
                         binding.tvQueueImportProgress.text =
                             context.getString(R.string.queue_import_progress, (done + 1).coerceAtMost(total), total)
                     }
-                    val total = result.added.size + result.notFound.size
+                    val total = result.added.size + result.notFound.size + result.skipped.size
                     binding.llQueueImportProgress.isVisible = false
                     binding.tvQueueImportResult.isVisible = true
                     binding.tvQueueImportResult.text = buildString {
@@ -87,6 +100,10 @@ object QueueImportDialog {
                                 context.getString(R.string.queue_import_done, result.added.size, total)
                             },
                         )
+                        if (result.skipped.isNotEmpty()) {
+                            append("\n\n")
+                            append(context.getString(R.string.queue_import_skipped, result.skipped.joinToString(", ")))
+                        }
                         if (result.notFound.isNotEmpty()) {
                             append("\n\n")
                             append(context.getString(R.string.queue_import_not_found, result.notFound.joinToString(", ")))
@@ -101,4 +118,38 @@ object QueueImportDialog {
         }
         dialog.show()
     }
+
+    /** Several titles match a line equally well: show them with posters and let the viewer pick. */
+    private suspend fun choose(context: Context, line: String, options: List<AppAdapter.Item>): AppAdapter.Item? =
+        suspendCancellableCoroutine { cont ->
+            val adapter = object : ArrayAdapter<AppAdapter.Item>(context, 0, options) {
+                override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                    val row = ItemQueueImportChoiceBinding.inflate(LayoutInflater.from(context), parent, false)
+                    val item = getItem(position)
+                    val choice = when (item) {
+                        is Movie -> ChoiceRow(item.title, item.poster ?: item.banner, item.released?.get(Calendar.YEAR), false)
+                        is TvShow -> ChoiceRow(item.title, item.poster ?: item.banner, item.released?.get(Calendar.YEAR), true)
+                        else -> ChoiceRow("", null, null, false)
+                    }
+                    row.tvChoiceTitle.text = choice.title
+                    val type = context.getString(if (choice.isTv) R.string.search_suggestion_tv else R.string.search_suggestion_movie)
+                    row.tvChoiceMeta.text = choice.year?.let { context.getString(R.string.search_suggestion_meta, it.toString(), type) } ?: type
+                    val radius = (6 * context.resources.displayMetrics.density).toInt()
+                    Glide.with(context).load(choice.poster)
+                        .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(radius)))
+                        .into(row.ivChoicePoster)
+                    return row.root
+                }
+            }
+            val dialog = MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.queue_import_choose_title, line))
+                .setAdapter(adapter) { _, which -> if (cont.isActive) cont.resume(options[which]) }
+                .setNegativeButton(R.string.queue_import_skip, null)
+                .setOnDismissListener { if (cont.isActive) cont.resume(null) }
+                .create()
+            cont.invokeOnCancellation { dialog.dismiss() }
+            dialog.show()
+        }
+
+    private data class ChoiceRow(val title: String, val poster: String?, val year: Int?, val isTv: Boolean)
 }

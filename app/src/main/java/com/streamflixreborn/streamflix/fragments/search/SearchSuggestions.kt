@@ -54,6 +54,9 @@ data class SearchSuggestion(val title: String, val year: String?, val type: Type
     var tmdbId: String? = null
     var releasedMillis: Long? = null
 
+    /** Small TMDb poster shown beside the title. */
+    var poster: String? = null
+
     companion object {
         const val MIN_CHARS = 2
         const val LIMIT = 8
@@ -68,15 +71,23 @@ data class SearchSuggestion(val title: String, val year: String?, val type: Type
                             SearchSuggestion(it.trim(), yearOf(item.releaseDate), Type.MOVIE).also { found ->
                                 found.tmdbId = item.id.toString()
                                 found.releasedMillis = CinemaStatus.parseDate(item.releaseDate)
+                                found.poster = posterUrl(item.posterPath)
                             }
                         }
                     is TMDb3.Tv -> item.name.takeIf { it.isNotBlank() }
-                        ?.let { SearchSuggestion(it.trim(), yearOf(item.firstAirDate), Type.TV) }
+                        ?.let {
+                            SearchSuggestion(it.trim(), yearOf(item.firstAirDate), Type.TV).also { found ->
+                                found.poster = posterUrl(item.posterPath)
+                            }
+                        }
                     else -> null
                 }
             }
                 .distinctBy { Triple(it.title.lowercase(), it.year, it.type) }
                 .take(limit)
+
+        fun posterUrl(path: String?): String? =
+            path?.takeIf { it.startsWith("/") }?.let { "https://image.tmdb.org/t/p/w154$it" }
 
         fun yearOf(date: String?): String? = date?.trim()?.take(4)?.takeIf { it.length == 4 && it.all(Char::isDigit) }
     }

@@ -90,6 +90,8 @@ class PlayerViewModel(
      */
     @Volatile
     private var manualServerId: String? = null
+    private var chosenTorrentId: String? = null
+    private var chosenTorrentName: String? = null
     private var upgradeJob: Job? = null
     private var resolutionJob: Job? = null
     private var playbackJob: Job? = null
@@ -184,7 +186,12 @@ class PlayerViewModel(
         try {
             val provider = UserPreferences.currentProvider!!
             val prefetched = NextEpisodePrefetch.take(id, provider.name)
-            val servers = prefetched?.servers ?: provider.getServers(id, videoType)
+            val base = prefetched?.servers ?: runCatching { provider.getServers(id, videoType) }.getOrDefault(emptyList())
+            // A torrent picked on the torrents page plays first, whatever the provider offers.
+            val chosen = com.streamflixreborn.streamflix.torrent.TorrentChoice.take(id)
+            chosenTorrentId = chosen?.id
+            chosenTorrentName = chosen?.name
+            val servers = if (chosen != null) listOf(chosen) + base.filterNot { it.id == chosen.id } else base
             if (servers.isEmpty()) throw Exception("No servers found")
             prefetched?.resolved?.forEach { (serverId, video) -> resolved[serverId] = Resolved(video, prefetched.createdAt) }
 
@@ -206,10 +213,13 @@ class PlayerViewModel(
         this.servers = servers
         val sticky = StickyServers.get(StreamFlixApp.instance, stickyKey)
         stickyName = sticky
-        ranked = ServerRanker.rank(servers, preferredName = preferredServerName, stickyName = sticky)
+        ranked = ServerRanker.rank(servers, preferredName = chosenTorrentName ?: preferredServerName, stickyName = sticky)
         failedIds.clear()
         wrongAudio.clear()
-        manualServerId = null
+        // A torrent the viewer picked by hand is pinned like any manual choice.
+        manualServerId = chosenTorrentId?.takeIf { id -> servers.any { it.id == id } }
+        chosenTorrentId = null
+        chosenTorrentName = null
         Log.d(TAG, "ranked servers (preferred=$preferredServerName, sticky=$sticky): ${ranked.joinToString { it.name }}")
 
         val results = Channel<Pair<Int, Video?>>(Channel.UNLIMITED)

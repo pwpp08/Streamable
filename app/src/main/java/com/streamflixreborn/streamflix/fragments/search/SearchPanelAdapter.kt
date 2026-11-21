@@ -8,6 +8,10 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestOptions
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.databinding.ItemSearchPanelHeaderBinding
 import com.streamflixreborn.streamflix.databinding.ItemSearchPanelRowBinding
@@ -60,6 +64,10 @@ class SearchPanelAdapter(
             width = (24 * density).toInt()
             height = (24 * density).toInt()
         }
+        binding.ivSearchPanelPoster.layoutParams = binding.ivSearchPanelPoster.layoutParams.apply {
+            width = (48 * density).toInt()
+            height = (72 * density).toInt()
+        }
         binding.tvSearchPanelRow.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
         binding.tvSearchPanelMeta.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
     }
@@ -80,6 +88,7 @@ class SearchPanelAdapter(
             binding.tvSearchPanelMeta.visibility = View.GONE
             binding.tvSearchPanelBadge.visibility = View.GONE
             binding.ivSearchPanelIcon.visibility = View.VISIBLE
+            binding.ivSearchPanelPoster.visibility = View.GONE
             when (row) {
                 is SearchPanelRow.History -> {
                     binding.ivSearchPanelIcon.setImageResource(R.drawable.ic_sf_history)
@@ -102,7 +111,17 @@ class SearchPanelAdapter(
                         if (suggestion.type == SearchSuggestion.Type.MOVIE) R.string.search_suggestion_movie
                         else R.string.search_suggestion_tv
                     )
-                    binding.ivSearchPanelIcon.setImageResource(R.drawable.ic_search)
+                    val poster = suggestion.poster
+                    if (poster != null) {
+                        binding.ivSearchPanelIcon.visibility = View.GONE
+                        binding.ivSearchPanelPoster.visibility = View.VISIBLE
+                        val radius = (6 * context.resources.displayMetrics.density).toInt()
+                        Glide.with(context).load(poster)
+                            .apply(RequestOptions().transform(CenterCrop(), RoundedCorners(radius)))
+                            .into(binding.ivSearchPanelPoster)
+                    } else {
+                        binding.ivSearchPanelIcon.setImageResource(R.drawable.ic_search)
+                    }
                     binding.tvSearchPanelRow.text = suggestion.title
                     binding.tvSearchPanelMeta.apply {
                         text = suggestion.year

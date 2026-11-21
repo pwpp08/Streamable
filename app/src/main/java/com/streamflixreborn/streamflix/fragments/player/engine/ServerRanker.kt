@@ -54,6 +54,8 @@ object ServerRanker {
     fun isPenguPlay(name: String) = name.startsWith("PenguPlay", ignoreCase = true)
 
     const val PENGUPLAY_PRIOR = 90
+    /** PenguPlay's Cinejoy "Sirius" streams: the best-behaved full HD source. */
+    const val PENGUPLAY_SIRIUS_PRIOR = 100
 
     /** Score for a server nothing is known about yet. */
     const val VIDEASY_PRIOR = 70
@@ -82,6 +84,7 @@ object ServerRanker {
             val stalled = runCatching { StallMemory.isRecent(server.name) }.getOrDefault(false)
             val known = runCatching { score(server.name) }.getOrNull()
                 ?: when {
+                    isPenguPlay(server.name) && server.name.contains("sirius", ignoreCase = true) -> PENGUPLAY_SIRIUS_PRIOR
                     isPenguPlay(server.name) -> PENGUPLAY_PRIOR
                     isVideasy(server.name) -> VIDEASY_PRIOR
                     isVidzee(server.name) -> VIDZEE_PRIOR

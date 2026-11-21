@@ -167,8 +167,14 @@ class ProviderHealthChecker(
         null
     }
 
+    /** HLS: the picture header of a segment. A plain MKV/MP4 link: its container header. */
     private suspend fun pictureHeight(video: Video): Int? =
         com.streamflixreborn.streamflix.fragments.player.engine.SourceProbe.measure(video)?.height?.takeIf { it > 0 }
+            ?: if (video.source.startsWith("http", ignoreCase = true) && !isHls(video)) {
+                com.streamflixreborn.streamflix.utils.ContainerProbe.height(video.source, video.headers, video.type)
+            } else {
+                null
+            }
 
     private suspend fun estimateFromBitrate(video: Video): Int? {
         if (!video.source.startsWith("http", ignoreCase = true)) return null

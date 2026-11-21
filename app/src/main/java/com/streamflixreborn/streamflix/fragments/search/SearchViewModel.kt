@@ -137,7 +137,23 @@ class SearchViewModel(private val database: AppDatabase) : ViewModel() {
             } else {
                 text to try {
                     SearchSuggestion.fromTmdb(
-                        TMDb3.Search.multi(text, includeAdult = false, language = MetadataLanguage.get()).results
+                        com.streamflixreborn.streamflix.utils.FuzzySearch.search(
+                            text,
+                            titleOf = { item: TMDb3.MultiItem? ->
+                                when (item) {
+                                    is TMDb3.Movie -> item.title
+                                    is TMDb3.Tv -> item.name
+                                    else -> null
+                                }
+                            },
+                            keyOf = { item: TMDb3.MultiItem? ->
+                                when (item) {
+                                    is TMDb3.Movie -> "m${item.id}"
+                                    is TMDb3.Tv -> "t${item.id}"
+                                    else -> item.toString()
+                                }
+                            },
+                        ) { q -> TMDb3.Search.multi(q, includeAdult = false, language = MetadataLanguage.get()).results }
                     )
                 } catch (e: Exception) {
                     Log.w("SearchViewModel", "suggestions: ", e)

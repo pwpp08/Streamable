@@ -3,6 +3,7 @@ package com.streamflixreborn.streamflix.torrent
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.streamflixreborn.streamflix.models.Video
+import com.streamflixreborn.streamflix.utils.ContainerProbe
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +65,7 @@ object StremioAddons {
         }.getOrNull()
     }
 
-    private suspend fun nameOf(baseUrl: String): String = names[baseUrl] ?: manifest(baseUrl)?.name
+    suspend fun nameOf(baseUrl: String): String = names[baseUrl] ?: manifest(baseUrl)?.name
         ?: baseUrl.substringAfter("://").substringBefore('/')
 
     /** Builds servers from every configured addon, asked in parallel; slow or broken ones are skipped. */
@@ -89,12 +90,29 @@ object StremioAddons {
                             runCatching {
                                 val json = client().newCall(Request.Builder().url("$base/stream/$path.json").build()).execute()
                                     .use { if (it.isSuccessful) it.body?.string() else null } ?: return@runCatching emptyList()
-                                toServers(nameOf(base), AddonStreamParser.parse(json), torrentsAllowed())
+                                toServers(nameOf(base), measured(AddonStreamParser.parse(json)), torrentsAllowed())
                             }.getOrNull()
                         }.orEmpty()
                     }
                 }.awaitAll().flatten()
             }
+        }
+    }
+
+    /**
+     * Addons label files by what the release says, and a "1080p" file is sometimes 720p. Looks at the
+     * header of the best-looking candidates and replaces the label's height with the real one.
+     */
+    suspend fun measured(streams: List<AddonStream>): List<AddonStream> = coroutineScope {
+        val candidates = DirectPicker.pick(streams.mapNotNull { it.direct }, max = MEASURE_CANDIDATES, perSource = 4)
+        val heights = withTimeoutOrNull(MEASURE_TIMEOUT_MS) {
+            candidates.map { d -> async(Dispatchers.IO) { d.url to ContainerProbe.height(d.url, d.headers.takeIf { it.isNotEmpty() }, DirectPicker.mimeOf(d)) } }
+                .awaitAll().toMap()
+        }.orEmpty()
+        streams.map { s ->
+            val d = s.direct ?: return@map s
+            val real = heights[d.url] ?: return@map s
+            s.copy(direct = d.copy(height = real, measured = true))
         }
     }
 
@@ -104,11 +122,12 @@ object StremioAddons {
             TorrentServers.toServers(TorrentCandidateSelector.select(streams.mapNotNull { it.torrent }, max = 2))
                 .map { s -> Video.Server(s.id, s.name.replace(Regex("\\(([^)]*)\\)"), "($addon)"), s.src) }
         val used = mutableSetOf<String>()
-        val direct = DirectPicker.pick(streams.mapNotNull { it.direct }).map { d ->
+        val direct = DirectPicker.pick(streams.mapNotNull { it.direct }, perSource = 3).map { d ->
             val source = DirectPicker.sourceOf(d.label)
             val base = buildString {
                 append(addon)
-                if (d.height > 0) append(' ').append(d.height).append('p')
+                // Only a height read from the file itself is shown; a release label can be wrong.
+                if (d.measured && d.height > 0) append(' ').append(d.height).append('p')
                 if (source != null) append(" \u00b7 ").append(source)
             }
             var name = base
@@ -133,12 +152,14 @@ object StremioAddons {
 
     fun videoFor(server: Video.Server): Video = server.video ?: videos[server.id] ?: Video(source = server.src)
 
-    private const val ADDON_TIMEOUT_MS = 10_000L
+    private const val ADDON_TIMEOUT_MS = 13_000L
+    private const val MEASURE_TIMEOUT_MS = 5_000L
+    private const val MEASURE_CANDIDATES = 12
 }
 
 /** One stream an addon offered: a torrent, a direct web link, or something the app can't play. */
 data class AddonStream(val torrent: TorrentStream? = null, val direct: Direct? = null) {
-    data class Direct(val url: String, val height: Int, val label: String, val headers: Map<String, String>)
+    data class Direct(val url: String, val height: Int, val label: String, val headers: Map<String, String>, val measured: Boolean = false)
 }
 
 /** Reads Stremio stream answers from any addon (Torrentio's emoji lines, MediaFusion's, plain ones). */
@@ -229,12 +250,14 @@ object DirectPicker {
     private val safeAudio = Regex("(?<![a-z0-9])(aac|ac-?3|dd ?5[. ]?1|dd ?2[. ]?0|opus|mp3)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val hevc = Regex("(?<![a-z0-9])(x265|h[. ]?265|hevc|av1)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val tenBit = Regex("(?<![a-z0-9])(10[ -]?bit|hi10p?)(?![a-z0-9])", RegexOption.IGNORE_CASE)
-    private val hdr = Regex("(?<![a-z0-9])(hdr10?\\+?|dv|dovi|dolby[ .]?vision)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val hdr = Regex("(?<![a-z0-9])(hdr(10)?\\+?|dv|dovi|dolby[ .]?vision)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val h264 = Regex("(?<![a-z0-9])(x264|h[. ]?264|avc)(?![a-z0-9])", RegexOption.IGNORE_CASE)
     private val sizeGb = Regex("([0-9]+(?:[.,][0-9]+)?)\\s*(GB|MB)", RegexOption.IGNORE_CASE)
     private val audioLine = Regex("Audio:\\s*([^|\\u2022]*)", RegexOption.IGNORE_CASE)
     private val englishOk = Regex("english|(?<![a-z])eng(?![a-z])|multi|dual", RegexOption.IGNORE_CASE)
     private val sourceName = Regex("Source:\\s*([^|]+)")
+    private val sirius = Regex("sirius", RegexOption.IGNORE_CASE)
+    private val cinejoy = Regex("cinejoy", RegexOption.IGNORE_CASE)
 
     fun sourceOf(label: String): String? =
         sourceName.find(label)?.groupValues?.get(1)?.trim()?.replace(Regex("\\s+"), " ")?.takeIf { it.isNotEmpty() }
@@ -265,8 +288,13 @@ object DirectPicker {
             d.height == 0 -> 150
             else -> 0
         }
+        if (d.measured) score += 25
         val mime = mimeOf(d)
         if (mime == "video/mp4" || mime == "application/x-mpegURL") score += 40
+        // PenguPlay's Cinejoy "Sirius" HLS streams are the dependable ones, at full HD.
+        val haystack = text + " " + d.url
+        if (sirius.containsMatchIn(haystack)) score += if (d.height >= 1000 || d.height == 0) 250 else 60
+        else if (cinejoy.containsMatchIn(haystack)) score += 80
         if (h264.containsMatchIn(text)) score += 40
         if (hevc.containsMatchIn(text)) score -= 30
         if (tenBit.containsMatchIn(text)) score -= 20
@@ -286,17 +314,17 @@ object DirectPicker {
     }
 
     /** The best few, at most two per source site so one failing host can't take them all. */
-    fun pick(all: List<AddonStream.Direct>, max: Int = 6): List<AddonStream.Direct> {
+    fun pick(all: List<AddonStream.Direct>, max: Int = 6, perSource: Int = 2): List<AddonStream.Direct> {
         val usable = all
             .filter { it.height == 0 || it.height >= 720 }
             .filterNot { AddonStreamParser.hardcodedSubs.containsMatchIn(it.label) }
             .filter { hasEnglish(it.label) }
             .distinctBy { it.url.substringBefore('?') }
-        val perSource = HashMap<String, Int>()
+        val counts = HashMap<String, Int>()
         return usable.sortedByDescending(::score).filter { d ->
             val key = sourceOf(d.label) ?: "?"
-            val count = perSource.merge(key, 1, Int::plus) ?: 1
-            count <= 2
+            val count = counts.merge(key, 1, Int::plus) ?: 1
+            count <= perSource
         }.take(max)
     }
 }

@@ -398,7 +398,28 @@ class TmdbProvider(override val language: String) : Provider {
             return genres
         }
 
-        val results = TMDb3.Search.multi(query, page = page, language = language).results.mapNotNull { multi ->
+        val raw = if (page == 1) {
+            com.streamflixreborn.streamflix.utils.FuzzySearch.search(
+                query,
+                titleOf = { multi: TMDb3.MultiItem ->
+                    when (multi) {
+                        is TMDb3.Movie -> multi.title
+                        is TMDb3.Tv -> multi.name
+                        else -> null
+                    }
+                },
+                keyOf = { multi: TMDb3.MultiItem ->
+                    when (multi) {
+                        is TMDb3.Movie -> "m${multi.id}"
+                        is TMDb3.Tv -> "t${multi.id}"
+                        else -> multi
+                    }
+                },
+            ) { text -> TMDb3.Search.multi(text, page = 1, language = language).results }
+        } else {
+            TMDb3.Search.multi(query, page = page, language = language).results
+        }
+        val results = raw.mapNotNull { multi ->
             when (multi) {
                 is TMDb3.Movie -> Movie(
                     id = multi.id.toString(),
