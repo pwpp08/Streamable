@@ -6,6 +6,9 @@ StreamFlix for Windows and macOS: the phone app's sources and look on a big scre
 
 VLC is built in; nothing else to install.
 
+**New in 1.1.4**
+- A server you pick yourself stays on: no automatic 4K upgrade, no switching away when it is below 1080p or has a problem. If it fails, the player says so and offers the server list.
+
 **New in 1.1.3**
 - Same sources as the phone app 1.0.21: VixSrc is tried first, and servers that no longer work (2Embed, Moviesapi, Vidsrc.net, Vidflix, Vidlove, Videm, Vidrock) are gone, so playback starts faster.
 - OpenSubtitles fixes and the other shared improvements from the phone app 1.0.15 to 1.0.21.

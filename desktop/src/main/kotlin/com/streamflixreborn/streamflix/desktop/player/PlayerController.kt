@@ -86,6 +86,9 @@ class PlayerController(val request: PlayRequest) {
     private var proxyUrl: String? = null
     private var watchdog: Job? = null
     private val tried = mutableSetOf<String>()
+
+    /** True while a server picked by hand plays: nothing switches away from it on its own. */
+    private var pinned = false
     private var resolving: Job? = null
 
     private val type = request.videoType
@@ -198,6 +201,7 @@ class PlayerController(val request: PlayRequest) {
         val video = source.video ?: return
         tried += source.server.id
         current = source
+        pinned = manual
         started = false
         loading = true
         finished = false
@@ -254,6 +258,7 @@ class PlayerController(val request: PlayRequest) {
     /** A stream that turns out to be well below 1080p (adaptive ones sometimes start low) is dropped. */
     private fun guardQuality() {
         val src = current ?: return
+        if (pinned) return
         guard?.cancel()
         guard = scope.launch {
             repeat(12) {
@@ -288,7 +293,7 @@ class PlayerController(val request: PlayRequest) {
      * a while; then the second player is lined up with the first and swapped in.
      */
     private fun maybeUpgrade() {
-        if (!UserPreferences.upgrade4k || VlcEngine.factory == null) return
+        if (!UserPreferences.upgrade4k || VlcEngine.factory == null || pinned) return
         val cur = current ?: return
         upgrading?.cancel()
         upgrading = scope.launch {
@@ -447,6 +452,13 @@ class PlayerController(val request: PlayRequest) {
     /** Moves on to the next best untried server, keeping the position. */
     private fun failover(reason: String) {
         if (finished) return
+        if (pinned) {
+            // Picked by hand: say what happened and let the viewer choose the next server.
+            Log.w("Player", "not switching (picked by hand): $reason")
+            error = "$reason. Pick another server from the list."
+            loading = false
+            return
+        }
         Log.w("Player", "failover: $reason")
         val next = Sources.rank(sources).firstOrNull { it.server.id !in tried }
         if (next != null) {
