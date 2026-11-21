@@ -385,6 +385,11 @@ object UserPreferences {
         get() = Key.TORRENT_ENABLED.getBoolean() ?: true
         set(value) = Key.TORRENT_ENABLED.setBoolean(value)
 
+    /** Extra Stremio addons, one manifest link per line (Settings > Sources). */
+    var stremioAddons: String
+        get() = Key.STREMIO_ADDONS.getString() ?: ""
+        set(value) = Key.STREMIO_ADDONS.setString(value)
+
     var enableTmdb: Boolean
         get() = Key.ENABLE_TMDB.getBoolean() ?: true
         set(value) {
@@ -738,6 +743,7 @@ object UserPreferences {
         SERVER_AUTO_SUBTITLES_DISABLED,
         ENABLE_TMDB,
         TORRENT_ENABLED,
+        STREMIO_ADDONS,
         TMDB_CATEGORIES,
         ENABLE_RECENTLY_WATCHED,
         PARENTAL_CONTROL_PIN,

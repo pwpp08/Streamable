@@ -8,6 +8,7 @@ import androidx.preference.TwoStatePreference
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.providers.StreamingCommunityProvider
 import com.streamflixreborn.streamflix.providers.TmdbProvider
+import com.streamflixreborn.streamflix.torrent.StremioAddons
 import com.streamflixreborn.streamflix.utils.DnsResolver
 import com.streamflixreborn.streamflix.utils.ProviderChangeNotifier
 import com.streamflixreborn.streamflix.utils.UserPreferences
@@ -28,6 +29,7 @@ class SourcesController(
         host.onClick(KEY_HEALTH) { host.navigate(R.id.provider_health) }
         host.bindSwitch(KEY_TORRENT, { UserPreferences.torrentEnabled }) { UserPreferences.torrentEnabled = it }
         bindDoh()
+        bindAddons()
         bindTmdb()
         bindStreamingCommunity()
         refresh()
@@ -48,6 +50,7 @@ class SourcesController(
             summary = entry
         }
         host.refreshSwitch(KEY_TORRENT) { UserPreferences.torrentEnabled }
+        refreshAddons()
         host.refreshSwitch(KEY_ENABLE_TMDB) { UserPreferences.enableTmdb }
         host.find<EditTextPreference>(KEY_TMDB_API)?.apply {
             text = UserPreferences.tmdbApiKey
@@ -69,6 +72,45 @@ class SourcesController(
                 host.toast(R.string.doh_provider_updated, long = true)
             }
             false
+        }
+    }
+
+    private fun bindAddons() {
+        host.find<EditTextPreference>(KEY_ADDONS)?.apply {
+            setOnBindEditTextListener { field ->
+                field.isSingleLine = false
+                field.minLines = 3
+                field.maxLines = 8
+                field.setHorizontallyScrolling(false)
+            }
+            setOnPreferenceChangeListener { pref, newValue ->
+                val text = (newValue as String).lines().map { it.trim() }.filter { it.isNotEmpty() }.joinToString(NEWLINE)
+                UserPreferences.stremioAddons = text
+                (pref as EditTextPreference).text = text
+                refreshAddons()
+                val urls = StremioAddons.configured(text)
+                if (urls.isNotEmpty()) {
+                    host.toast(R.string.settings_addons_checking)
+                    host.scope.launch {
+                        val results = urls.map { it to StremioAddons.manifest(it) }
+                        val bad = results.filter { it.second == null }.map { it.first.substringAfter("://").substringBefore('/') }
+                        val good = results.mapNotNull { it.second?.name }
+                        if (good.isNotEmpty()) host.toast(host.string(R.string.settings_addons_ok, good.joinToString()), long = true)
+                        if (bad.isNotEmpty()) host.toast(host.string(R.string.settings_addons_bad, bad.joinToString()), long = true)
+                        refreshAddons()
+                    }
+                }
+                false
+            }
+        }
+    }
+
+    private fun refreshAddons() {
+        host.find<EditTextPreference>(KEY_ADDONS)?.apply {
+            text = UserPreferences.stremioAddons
+            val urls = StremioAddons.configured()
+            summary = if (urls.isEmpty()) host.string(R.string.settings_addons_none)
+            else urls.joinToString(NEWLINE) { it.substringAfter("://").substringBefore('/') }
         }
     }
 
@@ -146,6 +188,8 @@ class SourcesController(
         const val KEY_HEALTH = "sources_health"
         const val KEY_DOH = "p_doh_provider_url"
         const val KEY_TORRENT = "TORRENT_ENABLED"
+        const val KEY_ADDONS = "STREMIO_ADDONS"
+        const val NEWLINE = "\n"
         const val KEY_ENABLE_TMDB = "ENABLE_TMDB"
         const val KEY_TMDB_CATEGORIES = "TMDB_CATEGORIES"
         const val KEY_TMDB_API = "TMDB_API_KEY"

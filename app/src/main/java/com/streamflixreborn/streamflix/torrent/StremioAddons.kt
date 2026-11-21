@@ -1,0 +1,221 @@
+package com.streamflixreborn.streamflix.torrent
+
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.streamflixreborn.streamflix.models.Video
+import com.streamflixreborn.streamflix.utils.NetworkClient
+import com.streamflixreborn.streamflix.utils.UserPreferences
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * Stremio addons the viewer added in Settings > Sources (one manifest link per line). Each one is
+ * asked for a title's streams the way Stremio asks: `<base>/stream/<type>/<imdb>.json`. Torrent
+ * answers go through the same rules as Torrentio's; direct web links become servers of their own.
+ */
+object StremioAddons {
+
+    data class Addon(val baseUrl: String, val name: String)
+
+    /** One addon link as pasted: `stremio://`, a `/manifest.json` link or the bare base all work. */
+    fun normalize(raw: String): String? {
+        var url = raw.trim()
+        if (url.isEmpty() || url.startsWith("#")) return null
+        if (url.startsWith("stremio://", ignoreCase = true)) url = "https://" + url.substring("stremio://".length)
+        if (!url.startsWith("http://", true) && !url.startsWith("https://", true)) return null
+        url = url.substringBefore('#').trimEnd('/')
+        if (url.endsWith("/manifest.json", ignoreCase = true)) url = url.dropLast("/manifest.json".length)
+        // Torrentio is built in (Settings > Sources > Torrent); a pasted copy would only list it twice.
+        if (url.substringAfter("://").substringBefore('/').equals("torrentio.strem.fun", true)) return null
+        return url.takeIf { it.length > 10 }
+    }
+
+    fun configured(text: String = UserPreferences.stremioAddons): List<String> =
+        text.lines().mapNotNull(::normalize).distinct()
+
+    private val names = ConcurrentHashMap<String, String>()
+
+    /** Reads an addon's manifest; null when it isn't a Stremio addon that offers streams. */
+    suspend fun manifest(baseUrl: String, client: OkHttpClient = NetworkClient.default): Addon? = withContext(Dispatchers.IO) {
+        runCatching {
+            val body = client.newCall(Request.Builder().url("$baseUrl/manifest.json").build()).execute().use {
+                if (it.isSuccessful) it.body?.string() else null
+            } ?: return@runCatching null
+            val json = JsonParser.parseString(body).asJsonObject
+            val resources = json.getAsJsonArray("resources")?.mapNotNull { r ->
+                when {
+                    r.isJsonPrimitive -> r.asString
+                    r.isJsonObject -> r.asJsonObject.get("name")?.asString
+                    else -> null
+                }
+            }.orEmpty()
+            if ("stream" !in resources) return@runCatching null
+            val name = json.get("name")?.asString?.trim().orEmpty().ifBlank { "Addon" }
+            names[baseUrl] = name
+            Addon(baseUrl, name)
+        }.getOrNull()
+    }
+
+    private suspend fun nameOf(baseUrl: String): String = names[baseUrl] ?: manifest(baseUrl)?.name
+        ?: baseUrl.substringAfter("://").substringBefore('/')
+
+    /** Builds servers from every configured addon, asked in parallel; slow or broken ones are skipped. */
+    class Servers(
+        private val client: () -> OkHttpClient = { NetworkClient.default },
+        private val imdbIdFor: suspend (Video.Type) -> String? = { TorrentImdb.resolve(it) },
+        private val addons: () -> List<String> = { configured() },
+        private val torrentsAllowed: () -> Boolean = { UserPreferences.torrentEnabled },
+    ) {
+        suspend fun servers(videoType: Video.Type): List<Video.Server> {
+            val bases = addons()
+            if (bases.isEmpty()) return emptyList()
+            val imdb = imdbIdFor(videoType) ?: return emptyList()
+            val path = when (videoType) {
+                is Video.Type.Movie -> "movie/$imdb"
+                is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
+            }
+            return coroutineScope {
+                bases.map { base ->
+                    async(Dispatchers.IO) {
+                        withTimeoutOrNull(ADDON_TIMEOUT_MS) {
+                            runCatching {
+                                val json = client().newCall(Request.Builder().url("$base/stream/$path.json").build()).execute()
+                                    .use { if (it.isSuccessful) it.body?.string() else null } ?: return@runCatching emptyList()
+                                toServers(nameOf(base), AddonStreamParser.parse(json), torrentsAllowed())
+                            }.getOrNull()
+                        }.orEmpty()
+                    }
+                }.awaitAll().flatten()
+            }
+        }
+    }
+
+    /** Torrents: the usual 1080p rules, at most two per addon. Web links: 720p and up, at most three. */
+    fun toServers(addon: String, streams: List<AddonStream>, torrentsAllowed: Boolean): List<Video.Server> {
+        val torrents = if (!torrentsAllowed) emptyList() else
+            TorrentServers.toServers(TorrentCandidateSelector.select(streams.mapNotNull { it.torrent }, max = 2))
+                .map { s -> Video.Server(s.id, s.name.replace(Regex("\\(([^)]*)\\)"), "($addon)"), s.src) }
+        val used = mutableSetOf<String>()
+        val direct = streams.mapNotNull { it.direct }
+            .filter { it.height == 0 || it.height >= 720 }
+            .filterNot { AddonStreamParser.hardcodedSubs.containsMatchIn(it.label) }
+            .sortedByDescending { if (it.height in 1..1080) it.height else if (it.height > 1080) 1000 else 500 }
+            .take(3)
+            .map { d ->
+                var name = if (d.height > 0) "$addon ${d.height}p" else addon
+                var n = 2
+                while (!used.add(name)) name = (if (d.height > 0) "$addon ${d.height}p" else addon) + " #${n++}"
+                val id = "addon:${d.url.hashCode()}"
+                Video.Server(id = id, name = name, src = d.url).apply {
+                    video = Video(
+                        source = d.url,
+                        headers = d.headers.takeIf { it.isNotEmpty() },
+                        type = when {
+                            d.url.substringBefore('?').endsWith(".m3u8", true) -> "application/x-mpegURL"
+                            d.url.substringBefore('?').endsWith(".mp4", true) -> "video/mp4"
+                            d.url.substringBefore('?').endsWith(".mkv", true) -> "video/x-matroska"
+                            else -> null
+                        },
+                    ).also { videos[id] = it }
+                }
+            }
+        return direct + torrents
+    }
+
+    /** Direct links keep their headers here, so a copied server object still plays. */
+    private val videos = ConcurrentHashMap<String, Video>()
+
+    fun isAddonServer(server: Video.Server) = server.id.startsWith("addon:")
+
+    fun videoFor(server: Video.Server): Video = server.video ?: videos[server.id] ?: Video(source = server.src)
+
+    private const val ADDON_TIMEOUT_MS = 10_000L
+}
+
+/** One stream an addon offered: a torrent, a direct web link, or something the app can't play. */
+data class AddonStream(val torrent: TorrentStream? = null, val direct: Direct? = null) {
+    data class Direct(val url: String, val height: Int, val label: String, val headers: Map<String, String>)
+}
+
+/** Reads Stremio stream answers from any addon (Torrentio's emoji lines, MediaFusion's, plain ones). */
+object AddonStreamParser {
+    private val hashRegex = Regex("[0-9a-f]{40}")
+    private val seedersRegex = Regex("(?:👤|👥|seeders?:?)\\s*(\\d+)", RegexOption.IGNORE_CASE)
+    private val sizeRegex = Regex("(?:💾|📦)?\\s*([\\d.,]+)\\s*(TB|GB|MB)\\b", RegexOption.IGNORE_CASE)
+    private val heightRegex = Regex("(?<![0-9])(2160|1440|1080|720|576|480)p", RegexOption.IGNORE_CASE)
+    private val fourK = Regex("(?<![a-z0-9])(4k|uhd)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    // Placeholder entries some addons send ("You must sign in", "Configure me"); they aren't video.
+    private val placeholder = Regex("sign ?in|log ?in|configure|authenticat|invalid|revoked|expired|error", RegexOption.IGNORE_CASE)
+
+    /** Subtitles burned into the picture: release names say so with these tags. */
+    val hardcodedSubs = Regex(
+        "(?<![a-z0-9])(hc|hardsub(bed|s)?|hard[ .-]?coded|hcsub(s)?|korsub|hc[ .-]?subs?)(?![a-z0-9])",
+        RegexOption.IGNORE_CASE,
+    )
+
+    fun parse(json: String): List<AddonStream> {
+        val streams = runCatching { JsonParser.parseString(json).asJsonObject.getAsJsonArray("streams") }.getOrNull()
+            ?: return emptyList()
+        return streams.mapNotNull { e -> (e as? JsonObject)?.let { runCatching { parseOne(it) }.getOrNull() } }
+    }
+
+    private fun str(o: JsonObject?, key: String): String? = o?.get(key)?.takeIf { it.isJsonPrimitive }?.asString
+
+    private fun parseOne(o: JsonObject): AddonStream? {
+        val name = str(o, "name").orEmpty()
+        val title = str(o, "title").orEmpty()
+        val description = str(o, "description").orEmpty()
+        val text = listOf(name, title, description).filter { it.isNotBlank() }.joinToString("\n")
+        val hints = o.getAsJsonObject("behaviorHints")
+        val fileName = str(hints, "filename")
+        val height = heightRegex.find(text)?.groupValues?.get(1)?.toIntOrNull()
+            ?: if (fourK.containsMatchIn(text)) 2160 else 0
+
+        val hash = str(o, "infoHash")?.lowercase()
+        if (hash != null) {
+            if (!hashRegex.matches(hash)) return null
+            val lines = (title.ifBlank { description }).lines().map { it.trim() }.filter { it.isNotEmpty() }
+            val release = lines.firstOrNull() ?: fileName ?: return null
+            val size = sizeRegex.find(text)?.let {
+                val n = it.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return@let 0L
+                val unit = when (it.groupValues[2].uppercase()) { "TB" -> 1L shl 40; "GB" -> 1L shl 30; else -> 1L shl 20 }
+                (n * unit).toLong()
+            } ?: 0L
+            val trackers = o.getAsJsonArray("sources")
+                ?.mapNotNull { s -> s.takeIf { it.isJsonPrimitive }?.asString }
+                ?.filter { it.startsWith("tracker:") }
+                ?.map { it.removePrefix("tracker:") }
+                .orEmpty()
+            return AddonStream(
+                torrent = TorrentStream(
+                    infoHash = hash,
+                    fileIdx = o.get("fileIdx")?.takeIf { it.isJsonPrimitive }?.asInt,
+                    release = release,
+                    fileName = fileName ?: lines.getOrNull(1),
+                    // Addons that don't report seeders still list live torrents; count them as healthy.
+                    seeders = seedersRegex.find(text)?.groupValues?.get(1)?.toIntOrNull() ?: TorrentCandidateSelector.MIN_SEEDERS,
+                    sizeBytes = size,
+                    site = "",
+                    languages = "",
+                    height = height,
+                    trackers = trackers,
+                ),
+            )
+        }
+
+        val url = str(o, "url") ?: return null
+        if (!url.startsWith("http", true)) return null
+        if (height == 0 && placeholder.containsMatchIn(text)) return null
+        val headers = hints?.getAsJsonObject("proxyHeaders")?.getAsJsonObject("request")
+            ?.entrySet()?.mapNotNull { (k, v) -> v.takeIf { it.isJsonPrimitive }?.let { k to it.asString } }?.toMap()
+            .orEmpty()
+        return AddonStream(direct = AddonStream.Direct(url, height, text.replace('\n', ' '), headers))
+    }
+}

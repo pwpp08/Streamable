@@ -225,4 +225,12 @@
     <string name="settings_category_torrent">Torrent</string>
     <string name="settings_torrent_title">Torrent sources (P2P)</string>
     <string name="settings_torrent_summary">Torrent playback shares your IP address with other peers. Consider a VPN.</string>
+    <string name="settings_category_addons">Stremio addons</string>
+    <string name="settings_addons_title">Addon links</string>
+    <string name="settings_addons_summary">Paste Stremio addon links (one per line) to get more servers. Torrentio is already built in.</string>
+    <string name="settings_addons_dialog">One link per line, exactly as the setup page of the addon gives it (stremio:// or https:// ending in manifest.json).</string>
+    <string name="settings_addons_none">None added. Paste Stremio addon links (one per line) to get more servers.</string>
+    <string name="settings_addons_checking">Checking addons…</string>
+    <string name="settings_addons_ok">Addons: %1$s</string>
+    <string name="settings_addons_bad">Not a Stremio stream addon: %1$s</string>
 </resources>
