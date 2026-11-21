@@ -31,7 +31,7 @@ class StremioAddonsTest {
         ]}"""
         val servers = StremioAddons.toServers("PenguPlay", AddonStreamParser.parse(json), torrentsAllowed = true)
         assertEquals(1, servers.size)
-        assertEquals("PenguPlay 1080p", servers[0].name)
+        assertEquals("PenguPlay", servers[0].name)
         val video = StremioAddons.videoFor(servers[0])
         assertEquals("https://site.example/", video.headers?.get("Referer"))
         assertEquals("application/x-mpegURL", video.type)

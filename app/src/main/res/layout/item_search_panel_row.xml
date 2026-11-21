@@ -29,6 +29,15 @@
         android:src="@drawable/ic_sf_history"
         android:tint="?attr/colorOnSurfaceVariant" />
 
+    <ImageView
+        android:id="@+id/iv_search_panel_poster"
+        android:layout_width="36dp"
+        android:layout_height="54dp"
+        android:layout_marginEnd="12dp"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/tv_search_panel_row"
         android:layout_width="0dp"

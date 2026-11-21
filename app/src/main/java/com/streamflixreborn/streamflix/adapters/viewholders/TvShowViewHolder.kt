@@ -780,6 +780,11 @@ class TvShowViewHolder(
                         handleTrailerClick(trailer)
                     })
                 }
+                (context.toActivity() as? androidx.fragment.app.FragmentActivity)?.let { host ->
+                    add(DetailsUi.MenuAction(context.getString(R.string.torrents_menu)) {
+                        com.streamflixreborn.streamflix.fragments.torrents.TorrentPickerSheet.show(host, tvShow)
+                    })
+                }
                 add(DetailsUi.MenuAction(context.getString(R.string.details_more_options)) {
                     ShowOptionsMobileDialog(context, tvShow).show()
                 })

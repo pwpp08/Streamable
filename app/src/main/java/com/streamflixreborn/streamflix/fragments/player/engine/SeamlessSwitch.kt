@@ -104,12 +104,27 @@ class SeamlessSwitch(
         Log.d(TAG, "preparing ${server.name} from $startMs ms while ${if (main.isPlaying) "playing at ${main.currentPosition}" else "not playing"}")
 
         // 1. Ready: first frame decoded, a few seconds buffered.
+        var dataSince = 0L
         while (true) {
             currentCoroutineContext().ensureActive()
             if (host.player !== main) return drop()
             if (p.playerError != null) return fail(server, p.playerError)
             if (p.playbackState == Player.STATE_READY && p.bufferedPosition >= startMs + SwitchPlan.MIN_AHEAD_MS.coerceAtMost(1_500)) break
-            if (SystemClock.elapsedRealtime() > deadline) return fail(server, null)
+            val now = SystemClock.elapsedRealtime()
+            // The data is here but the picture never gets ready: a TV box with a single hardware video
+            // decoder can't start a second one while the first is busy. Switch on the same player.
+            if (p.playbackState != Player.STATE_READY && p.bufferedPosition >= startMs + DATA_AHEAD_MS) {
+                if (dataSince == 0L) dataSince = now
+                else if (now - dataSince > DECODER_STUCK_MS) {
+                    Log.w(TAG, "${server.name}: buffered but never ready, no second decoder? switching on the same player")
+                    pending = null
+                    standby.release()
+                    return host.fallBack(video, server)
+                }
+            } else {
+                dataSince = 0L
+            }
+            if (now > deadline) return fail(server, null)
             delay(POLL_MS)
         }
         if (standby.built.decoder.isSoftware && !host.mainUsesSoftwareDecoder()) {
@@ -245,7 +260,9 @@ class SeamlessSwitch(
     companion object {
         private const val TAG = "SFSeamless"
         private const val POLL_MS = 100L
-        private const val WEB_TIMEOUT_MS = 40_000L
+        private const val WEB_TIMEOUT_MS = 30_000L
+        private const val DATA_AHEAD_MS = 2_000L
+        private const val DECODER_STUCK_MS = 4_000L
         private const val TORRENT_TIMEOUT_MS = 150_000L
         private const val MAX_ATTEMPTS = 4
         private const val STALL_GRACE_MS = 1_500L

@@ -720,4 +720,27 @@
     <string name="queue_action_play_title">Play %1$s</string>
     <string name="queue_close">Close</string>
     <string name="queue_done">Done</string>
+    <string name="queue_import_choose_title">Which one is \u201c%1$s\u201d?</string>
+    <string name="queue_import_skip">Skip</string>
+    <string name="queue_import_skipped">Skipped: %s</string>
+    <string name="torrents_menu">Watch with torrents</string>
+    <string name="torrents_title">Torrents</string>
+    <string name="torrents_filters">Filters</string>
+    <string name="torrents_loading">Looking for torrents\u2026</string>
+    <string name="torrents_none">No torrents found for this title</string>
+    <string name="torrents_none_filtered">Nothing matches these filters</string>
+    <string name="torrents_count">%1$d of %2$d torrents</string>
+    <string name="torrents_season">Season</string>
+    <string name="torrents_episode">Episode</string>
+    <string name="torrents_resolution">Resolution</string>
+    <string name="torrents_source">Source</string>
+    <string name="torrents_codec">Codec</string>
+    <string name="torrents_hdr">HDR</string>
+    <string name="torrents_seeders">Seeders</string>
+    <string name="torrents_size">Size</string>
+    <string name="torrents_any">Any</string>
+    <string name="torrents_sort">Sort by</string>
+    <string name="torrents_sort_seeders">Seeders</string>
+    <string name="torrents_sort_quality">Quality</string>
+    <string name="torrents_sort_size">Size</string>
 </resources>

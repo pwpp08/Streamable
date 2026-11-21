@@ -367,7 +367,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
 
     // ---- Import --------------------------------------------------------------------------------
 
-    data class ImportResult(val added: List<String>, val notFound: List<String>)
+    data class ImportResult(val added: List<String>, val notFound: List<String>, val skipped: List<String> = emptyList())
 
     /** Where imported titles go: the Watchlist, or straight to Watched with this rating. */
     sealed interface ImportTarget {
@@ -384,6 +384,8 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
         context: Context,
         text: String,
         target: ImportTarget = ImportTarget.Watchlist,
+        /** Called when several titles match a line equally well; null skips the line. */
+        choose: (suspend (line: String, options: List<AppAdapter.Item>) -> AppAdapter.Item?)? = null,
         onProgress: (done: Int, total: Int) -> Unit,
     ): ImportResult =
         withContext(Dispatchers.IO) {
@@ -391,12 +393,26 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
             val lines = text.lines().map(::cleanLine).filter { it.first.isNotBlank() }.distinct().take(100)
             val added = mutableListOf<String>()
             val notFound = mutableListOf<String>()
+            val skipped = mutableListOf<String>()
             lines.forEachIndexed { index, (title, year) ->
                 withContext(Dispatchers.Main) { onProgress(index, lines.size) }
-                val match = runCatching { provider.search(title, 1) }.getOrNull().orEmpty()
-                    .filter { it is Movie || it is TvShow }
-                    .maxByOrNull { score(it, title, year) }
-                    ?.takeIf { score(it, title, year) > 0 }
+                val found = runCatching {
+                    com.streamflixreborn.streamflix.utils.FuzzySearch.search<AppAdapter.Item>(
+                        title,
+                        titleOf = { (it as? Movie)?.title ?: (it as? TvShow)?.title },
+                        keyOf = { if (it is Movie) "m${it.id}" else if (it is TvShow) "t${it.id}" else it },
+                    ) { text -> provider.search(text, 1) }
+                }.getOrNull().orEmpty().filter { it is Movie || it is TvShow }
+                val scored = found.map { it to score(it, title, year) }.filter { it.second > 0 }
+                val top = scored.maxOfOrNull { it.second }
+                val ties = scored.filter { it.second == top }.map { it.first }
+                var wasSkipped = false
+                val match = when {
+                    ties.isEmpty() -> null
+                    ties.size == 1 || choose == null -> ties.first()
+                    else -> withContext(Dispatchers.Main) { choose(title, ties.take(MAX_CHOICES)) }
+                        .also { if (it == null) wasSkipped = true }
+                }
                 when (match) {
                     is Movie -> {
                         if (target is ImportTarget.Rated) {
@@ -420,11 +436,11 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                         }
                         added += match.title
                     }
-                    else -> notFound += title
+                    else -> if (wasSkipped) skipped += title else notFound += title
                 }
             }
             withContext(Dispatchers.Main) { onProgress(lines.size, lines.size) }
-            ImportResult(added, notFound)
+            ImportResult(added, notFound, skipped)
         }
 
     private fun markRated(
@@ -463,7 +479,8 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
             a == b -> 10
             a.startsWith(b) || b.startsWith(a) -> 5
             a.contains(b) || b.contains(a) -> 2
-            else -> 0
+            // A typo in the pasted name still lands on the closest title.
+            else -> if (com.streamflixreborn.streamflix.utils.FuzzySearch.similarity(title, itemTitle) >= com.streamflixreborn.streamflix.utils.FuzzySearch.GOOD) 1 else 0
         }
         if (score > 0 && year != null && itemYear == year) score += 5
         return score
@@ -478,6 +495,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
     companion object {
         private const val TAG = "QueueViewModel"
         private const val MAX_EPISODES_PER_SHOW = 4
+        private const val MAX_CHOICES = 8
     }
 }
 
