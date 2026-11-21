@@ -758,14 +758,23 @@ class TmdbProvider(override val language: String) : Provider {
                 .getOrNull().orEmpty()
         )
 
+        // Stremio addons the viewer added (Settings > Sources), asked in parallel.
+        servers.addAll(
+            runCatching { kotlinx.coroutines.withTimeoutOrNull(12_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
+                .getOrNull().orEmpty()
+        )
+
         // Servers that failed the last two health runs only slow playback down; keep them if nothing else is left.
         val unique = servers.distinctBy { it.id }
-        val alive = unique.filterNot { !TorrentServers.isTorrentServer(it) && HealthStore.isDead(it.name) }
+        val alive = unique.filterNot {
+            !TorrentServers.isTorrentServer(it) && !com.streamflixreborn.streamflix.torrent.StremioAddons.isAddonServer(it) && HealthStore.isDead(it.name)
+        }
         return if (alive.size >= 2) alive else unique
     }
 
     override suspend fun getVideo(server: Video.Server): Video {
         if (TorrentServers.isTorrentServer(server)) return TorrentServers.videoFor(server)
+        if (com.streamflixreborn.streamflix.torrent.StremioAddons.isAddonServer(server)) return com.streamflixreborn.streamflix.torrent.StremioAddons.videoFor(server)
         val url = server.src.ifEmpty { server.id }
         return server.video ?: Extractor.extract(url, server)
     }

@@ -99,6 +99,7 @@ object SettingsSync {
         Entry("autoplay", { UserPreferences.autoplay.toString() }, { UserPreferences.autoplay = it.toBoolean() }),
         Entry("show_all_track_languages", { UserPreferences.showAllTrackLanguages.toString() },
             { UserPreferences.showAllTrackLanguages = it.toBoolean() }),
+        Entry("stremio_addons", { UserPreferences.stremioAddons }, { UserPreferences.stremioAddons = it }),
         Entry("torrent_enabled", { UserPreferences.torrentEnabled.toString() }, { UserPreferences.torrentEnabled = it.toBoolean() }),
         // Queue reactions and titles marked seen (per provider, inside one document).
         Entry("queue", { com.streamflixreborn.streamflix.fragments.queue.QueueStore.exportForSync() },

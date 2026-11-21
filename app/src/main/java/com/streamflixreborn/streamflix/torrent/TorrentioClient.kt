@@ -137,6 +137,8 @@ object TorrentCandidateSelector {
         if (cyrillic.containsMatchIn(text)) return false
         if (badCodec.containsMatchIn(text)) return false
         if (badSource.containsMatchIn(text)) return false
+        // Subtitles burned into the picture can't be turned off.
+        if (AddonStreamParser.hardcodedSubs.containsMatchIn(text)) return false
         // Audio the box cannot decode plays silently; skip those releases instead of just ranking them lower.
         if (heavyAudio.containsMatchIn(text)) return false
         // Torrentio lists flags only for releases that are not English-only; none means English.

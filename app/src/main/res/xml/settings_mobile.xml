@@ -346,6 +346,19 @@
             </PreferenceCategory>
 
             <PreferenceCategory
+                android:key="pc_stremio_addons"
+                android:title="@string/settings_category_addons"
+                app:iconSpaceReserved="false">
+
+                <EditTextPreference
+                    android:key="STREMIO_ADDONS"
+                    android:title="@string/settings_addons_title"
+                    android:summary="@string/settings_addons_summary"
+                    android:dialogMessage="@string/settings_addons_dialog"
+                    app:iconSpaceReserved="false" />
+            </PreferenceCategory>
+
+            <PreferenceCategory
                 android:key="pc_tmdb_settings"
                 android:title="@string/settings_category_tmdb"
                 app:iconSpaceReserved="false">
