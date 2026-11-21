@@ -12,8 +12,25 @@ object CloudMutationStore {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val serializer = ListSerializer(RemoteMediaState.serializer())
 
+    /**
+     * When each item was last changed on this device. Clearing a movie's progress also clears the
+     * timestamps that said the local copy was newer, so without this an older cloud copy that
+     * arrives a moment later (realtime sync) would bring a removed item straight back.
+     */
+    private val lastLocalChange = java.util.concurrent.ConcurrentHashMap<String, Long>()
+
+    /** True when this device changed the same item at or after the time [remote] was written. */
+    fun changedLocallyAtOrAfter(context: Context, profileId: String, remote: RemoteMediaState): Boolean {
+        val key = profileId + "|" + remote.queueKey
+        if ((lastLocalChange[key] ?: Long.MIN_VALUE) >= remote.clientUpdatedAtMillis) return true
+        // Changes made before the app was last closed and not uploaded yet.
+        return pendingForUser(context, profileId, remote.userId)
+            .any { it.queueKey == remote.queueKey && it.clientUpdatedAtMillis >= remote.clientUpdatedAtMillis }
+    }
+
     @Synchronized
     fun enqueue(context: Context, profileId: String, state: RemoteMediaState) {
+        lastLocalChange.merge(profileId + "|" + state.queueKey, state.clientUpdatedAtMillis, ::maxOf)
         migrateLegacy(context)
         val current = read(context, profileId).associateByTo(linkedMapOf()) { it.queueKey }
         current[state.queueKey] = state

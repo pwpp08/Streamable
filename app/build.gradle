@@ -36,8 +36,8 @@ android {
         applicationId "com.streamflixreborn.streamflix"
         minSdk 23
         targetSdk 35
-        versionCode 196
-        versionName "1.0.23"
+        versionCode 197
+        versionName "1.0.24"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // -PonlyAbi=armeabi-v7a builds a slim APK for the 32-bit projector (drops the other libtorrent .so files).
         if (project.hasProperty('onlyAbi')) {
@@ -46,6 +46,7 @@ android {
 
         buildConfigField "String", "APP_LAYOUT", "\"${appLayout}\""
         buildConfigField "String", "TMDB_API_KEY", "\"${properties.getProperty("TMDB_API_KEY", "9b4396c90d4c866105c05677002f6a15")}\""
+        buildConfigField "String", "DEFAULT_ADDONS", "\"${properties.getProperty("DEFAULT_ADDONS", "")}\""
         buildConfigField "String", "SUBDL_API_KEY", "\"${properties.getProperty("SUBDL_API_KEY")}\""
         // Built-in sync backend (shared by the group); users can still override it in Settings.
         buildConfigField "String", "SUPABASE_URL", "\"${properties.getProperty("SUPABASE_URL", "https://adxcjzotlwrrpcllabox.supabase.co")}\""

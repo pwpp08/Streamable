@@ -37,8 +37,9 @@ object StremioAddons {
         return url.takeIf { it.length > 10 }
     }
 
+    /** Links built into the app at build time (separated by |), then the ones the viewer pasted. */
     fun configured(text: String = UserPreferences.stremioAddons): List<String> =
-        text.lines().mapNotNull(::normalize).distinct()
+        (com.streamflixreborn.streamflix.BuildConfig.DEFAULT_ADDONS.split('|') + text.lines()).mapNotNull(::normalize).distinct()
 
     private val names = ConcurrentHashMap<String, String>()
 
@@ -97,35 +98,31 @@ object StremioAddons {
         }
     }
 
-    /** Torrents: the usual 1080p rules, at most two per addon. Web links: 720p and up, at most three. */
+    /** Torrents: the usual 1080p rules, at most two per addon. Web links: the most playable few. */
     fun toServers(addon: String, streams: List<AddonStream>, torrentsAllowed: Boolean): List<Video.Server> {
         val torrents = if (!torrentsAllowed) emptyList() else
             TorrentServers.toServers(TorrentCandidateSelector.select(streams.mapNotNull { it.torrent }, max = 2))
                 .map { s -> Video.Server(s.id, s.name.replace(Regex("\\(([^)]*)\\)"), "($addon)"), s.src) }
         val used = mutableSetOf<String>()
-        val direct = streams.mapNotNull { it.direct }
-            .filter { it.height == 0 || it.height >= 720 }
-            .filterNot { AddonStreamParser.hardcodedSubs.containsMatchIn(it.label) }
-            .sortedByDescending { if (it.height in 1..1080) it.height else if (it.height > 1080) 1000 else 500 }
-            .take(3)
-            .map { d ->
-                var name = if (d.height > 0) "$addon ${d.height}p" else addon
-                var n = 2
-                while (!used.add(name)) name = (if (d.height > 0) "$addon ${d.height}p" else addon) + " #${n++}"
-                val id = "addon:${d.url.hashCode()}"
-                Video.Server(id = id, name = name, src = d.url).apply {
-                    video = Video(
-                        source = d.url,
-                        headers = d.headers.takeIf { it.isNotEmpty() },
-                        type = when {
-                            d.url.substringBefore('?').endsWith(".m3u8", true) -> "application/x-mpegURL"
-                            d.url.substringBefore('?').endsWith(".mp4", true) -> "video/mp4"
-                            d.url.substringBefore('?').endsWith(".mkv", true) -> "video/x-matroska"
-                            else -> null
-                        },
-                    ).also { videos[id] = it }
-                }
+        val direct = DirectPicker.pick(streams.mapNotNull { it.direct }).map { d ->
+            val source = DirectPicker.sourceOf(d.label)
+            val base = buildString {
+                append(addon)
+                if (d.height > 0) append(' ').append(d.height).append('p')
+                if (source != null) append(" \u00b7 ").append(source)
             }
+            var name = base
+            var n = 2
+            while (!used.add(name)) name = "$base #${n++}"
+            val id = "addon:${d.url.hashCode()}"
+            Video.Server(id = id, name = name, src = d.url).apply {
+                video = Video(
+                    source = d.url,
+                    headers = d.headers.takeIf { it.isNotEmpty() },
+                    type = DirectPicker.mimeOf(d),
+                ).also { videos[id] = it }
+            }
+        }
         return direct + torrents
     }
 
@@ -216,6 +213,90 @@ object AddonStreamParser {
         val headers = hints?.getAsJsonObject("proxyHeaders")?.getAsJsonObject("request")
             ?.entrySet()?.mapNotNull { (k, v) -> v.takeIf { it.isJsonPrimitive }?.let { k to it.asString } }?.toMap()
             .orEmpty()
-        return AddonStream(direct = AddonStream.Direct(url, height, text.replace('\n', ' '), headers))
+        return AddonStream(direct = AddonStream.Direct(url, height, (text + "\n" + fileName.orEmpty()).replace("\n", " | "), headers))
+    }
+}
+
+
+/**
+ * Chooses which of an addon's direct links to offer. Addons like PenguPlay return dozens of files
+ * per title; taking the first few in list order gave files with E-AC3/DTS audio, which many phones
+ * and the projector play silently. Prefers 1080p, MP4/HLS, H.264 and AAC/AC3 audio, and drops
+ * files that have no English audio or burned-in subtitles.
+ */
+object DirectPicker {
+    private val riskyAudio = Regex("(?<![a-z0-9])(ddp|dd\\+|e-?ac-?3|dts(-?hd)?|truehd|atmos)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val safeAudio = Regex("(?<![a-z0-9])(aac|ac-?3|dd ?5[. ]?1|dd ?2[. ]?0|opus|mp3)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val hevc = Regex("(?<![a-z0-9])(x265|h[. ]?265|hevc|av1)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val tenBit = Regex("(?<![a-z0-9])(10[ -]?bit|hi10p?)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val hdr = Regex("(?<![a-z0-9])(hdr10?\\+?|dv|dovi|dolby[ .]?vision)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val h264 = Regex("(?<![a-z0-9])(x264|h[. ]?264|avc)(?![a-z0-9])", RegexOption.IGNORE_CASE)
+    private val sizeGb = Regex("([0-9]+(?:[.,][0-9]+)?)\\s*(GB|MB)", RegexOption.IGNORE_CASE)
+    private val audioLine = Regex("Audio:\\s*([^|\\u2022]*)", RegexOption.IGNORE_CASE)
+    private val englishOk = Regex("english|(?<![a-z])eng(?![a-z])|multi|dual", RegexOption.IGNORE_CASE)
+    private val sourceName = Regex("Source:\\s*([^|]+)")
+
+    fun sourceOf(label: String): String? =
+        sourceName.find(label)?.groupValues?.get(1)?.trim()?.replace(Regex("\\s+"), " ")?.takeIf { it.isNotEmpty() }
+
+    fun mimeOf(d: AddonStream.Direct): String? {
+        val path = d.url.substringBefore('?').lowercase()
+        return when {
+            path.endsWith(".m3u8") || "/hls/" in path || Regex("(?<![a-z0-9])hls(?![a-z0-9])", RegexOption.IGNORE_CASE).containsMatchIn(d.label) -> "application/x-mpegURL"
+            path.endsWith(".mp4") || Regex("(?<![a-z0-9])mp4(?![a-z0-9])", RegexOption.IGNORE_CASE).containsMatchIn(d.label) -> "video/mp4"
+            path.endsWith(".mkv") || Regex("(?<![a-z0-9])mkv(?![a-z0-9])", RegexOption.IGNORE_CASE).containsMatchIn(d.label) -> "video/x-matroska"
+            else -> null
+        }
+    }
+
+    /** False when the file says what it is dubbed in and English isn't one of the languages. */
+    fun hasEnglish(label: String): Boolean {
+        val line = audioLine.find(label)?.groupValues?.get(1) ?: return true
+        return line.isBlank() || englishOk.containsMatchIn(line)
+    }
+
+    fun score(d: AddonStream.Direct): Int {
+        val text = d.label
+        var score = when {
+            d.height == 1080 -> 300
+            d.height in 1081..1440 -> 260
+            d.height >= 2160 -> 200
+            d.height == 720 -> 120
+            d.height == 0 -> 150
+            else -> 0
+        }
+        val mime = mimeOf(d)
+        if (mime == "video/mp4" || mime == "application/x-mpegURL") score += 40
+        if (h264.containsMatchIn(text)) score += 40
+        if (hevc.containsMatchIn(text)) score -= 30
+        if (tenBit.containsMatchIn(text)) score -= 20
+        if (hdr.containsMatchIn(text)) score -= 25
+        if (riskyAudio.containsMatchIn(text) && !safeAudio.containsMatchIn(text)) score -= 150
+        val gb = sizeGb.find(text)?.let {
+            val n = it.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return@let null
+            if (it.groupValues[2].equals("MB", true)) n / 1024 else n
+        }
+        if (gb != null) score += when {
+            gb in 2.0..10.0 -> 30
+            gb < 1.0 -> -30
+            gb > 25 -> -40
+            else -> 0
+        }
+        return score
+    }
+
+    /** The best few, at most two per source site so one failing host can't take them all. */
+    fun pick(all: List<AddonStream.Direct>, max: Int = 6): List<AddonStream.Direct> {
+        val usable = all
+            .filter { it.height == 0 || it.height >= 720 }
+            .filterNot { AddonStreamParser.hardcodedSubs.containsMatchIn(it.label) }
+            .filter { hasEnglish(it.label) }
+            .distinctBy { it.url.substringBefore('?') }
+        val perSource = HashMap<String, Int>()
+        return usable.sortedByDescending(::score).filter { d ->
+            val key = sourceOf(d.label) ?: "?"
+            val count = perSource.merge(key, 1, Int::plus) ?: 1
+            count <= 2
+        }.take(max)
     }
 }

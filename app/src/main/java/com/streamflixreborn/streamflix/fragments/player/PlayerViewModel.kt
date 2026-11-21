@@ -19,6 +19,7 @@ import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.EpisodeManager
 import com.streamflixreborn.streamflix.utils.LanguageMatcher
 import com.streamflixreborn.streamflix.utils.OpenSubtitles
+import com.streamflixreborn.streamflix.utils.SubtitleTitleMatch
 import com.streamflixreborn.streamflix.utils.SubDL
 import com.streamflixreborn.streamflix.utils.UserPreferences
 import kotlinx.coroutines.CancellationException
@@ -647,15 +648,34 @@ class PlayerViewModel(
                 val languages = OpenSubtitles.subLanguageIds(spoken)
                 val subtitles = when (videoType) {
                     is Video.Type.Episode -> {
-                        OpenSubtitles.search(
-                            query = videoType.tvShow.title,
-                            season = videoType.season.number,
-                            episode = videoType.number,
-                            subLanguageId = languages,
+                        SubtitleTitleMatch.filter(
+                            OpenSubtitles.search(
+                                query = videoType.tvShow.title,
+                                season = videoType.season.number,
+                                episode = videoType.number,
+                                subLanguageId = languages,
+                            ),
+                            title = videoType.tvShow.title,
+                            year = videoType.tvShow.releaseDate,
+                            series = true,
                         )
                     }
                     is Video.Type.Movie -> {
-                        OpenSubtitles.search(query = videoType.title, subLanguageId = languages)
+                        // The IMDb id names exactly one film; the name search (checked for the exact
+                        // name and year) only runs when that finds nothing.
+                        val imdb = videoType.imdbId?.takeIf { it.startsWith("tt") }
+                        val byImdb = imdb?.let {
+                            runCatching {
+                                OpenSubtitles.search(imdbId = it.removePrefix("tt").trimStart('0'), subLanguageId = languages)
+                            }.getOrDefault(emptyList())
+                        }.orEmpty()
+                        val matched = SubtitleTitleMatch.filter(byImdb, videoType.title, videoType.releaseDate, imdb)
+                        matched.ifEmpty {
+                            SubtitleTitleMatch.filter(
+                                OpenSubtitles.search(query = videoType.title, subLanguageId = languages),
+                                videoType.title, videoType.releaseDate, imdb,
+                            )
+                        }
                     }
                 }.sortedWith(compareBy({ it.languageName }, { it.subDownloadsCnt }))
 
