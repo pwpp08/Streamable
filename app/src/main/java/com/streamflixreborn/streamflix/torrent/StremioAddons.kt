@@ -96,12 +96,13 @@ object StremioAddons {
                         val tag = "addon ${index + 1}/${bases.size}"
                         // The list waits a limited time; a slow addon keeps going in the background and its
                         // answer is kept, so the next time the title is opened its servers are there at once.
+                        val addonName = async { nameOf(base) }
                         val streams = withTimeoutOrNull(ADDON_TIMEOUT_MS) { fetchJson(client(), "$base/stream/$path.json", tag, refresh).await() }
                         if (streams == null) {
                             logger("$tag: no answer in ${System.currentTimeMillis() - started} ms; still asking in the background")
                             return@async emptyList()
                         }
-                        val result = runCatching { toServers(nameOf(base), streams, torrentsAllowed()) }
+                        val result = runCatching { toServers(addonName.await(), streams, torrentsAllowed()) }
                             .onFailure { logger("$tag: ${it.javaClass.simpleName} while reading the answer") }
                             .getOrDefault(emptyList())
                         logger("$tag: ${result.size} servers in ${System.currentTimeMillis() - started} ms")
@@ -211,11 +212,38 @@ object StremioAddons {
                 if (streams != null) {
                     answers[key] = Cached(System.currentTimeMillis(), streams)
                     logger("$tag: ${streams.size} streams ready in ${System.currentTimeMillis() - started} ms")
+                    warm(patient, streams, tag)
                 }
                 asking.remove(key)
                 done.complete(streams)
             }
             done
+        }
+    }
+
+    /**
+     * The first request to some links is slow (the host prepares the stream); asking once while no one
+     * is waiting makes the real start quicker. Reads a few hundred bytes and reports how long it took.
+     */
+    private fun warm(client: OkHttpClient, streams: List<AddonStream>, tag: String) {
+        val picks = DirectPicker.pick(streams.mapNotNull { it.direct }, max = 6, perSource = 2)
+            .sortedBy { if (DirectPicker.sourceOf(it.label)?.contains("sirius", ignoreCase = true) == true) 0 else 1 }
+            .take(WARM_LINKS)
+        picks.forEach { d ->
+            background.launch {
+                val began = System.currentTimeMillis()
+                val outcome = runCatching {
+                    val request = Request.Builder().url(d.url).apply {
+                        d.headers.forEach { (k, v) -> runCatching { header(k, v) } }
+                    }.build()
+                    client.newCall(request).execute().use { r ->
+                        r.body?.source()?.request(512)
+                        r.code
+                    }
+                }
+                val result = outcome.getOrNull()?.let { "HTTP $it" } ?: outcome.exceptionOrNull()?.javaClass?.simpleName
+                logger("$tag: warmed ${DirectPicker.sourceOf(d.label) ?: "?"}: $result in ${System.currentTimeMillis() - began} ms")
+            }
         }
     }
 
@@ -233,7 +261,10 @@ object StremioAddons {
                     is Video.Type.Movie -> "movie/$imdb"
                     is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
                 }
-                bases.forEachIndexed { i, base -> fetchJson(NetworkClient.default, "$base/stream/$path.json", "prefetch ${i + 1}/${bases.size}", false) }
+                bases.forEachIndexed { i, base ->
+                    fetchJson(NetworkClient.default, "$base/stream/$path.json", "prefetch ${i + 1}/${bases.size}", false)
+                    background.launch { runCatching { nameOf(base) } }
+                }
             }
         }
     }
@@ -278,6 +309,7 @@ object StremioAddons {
     private const val ANSWER_TTL_MS = 10 * 60_000L
     private const val MEASURE_TIMEOUT_MS = 3_000L
     private const val MEASURE_CANDIDATES = 8
+    private const val WARM_LINKS = 3
 }
 
 /** One stream an addon offered: a torrent, a direct web link, or something the app can't play. */

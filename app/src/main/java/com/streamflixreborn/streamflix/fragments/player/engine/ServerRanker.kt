@@ -74,7 +74,8 @@ object ServerRanker {
     /** 0: PenguPlay Cinejoy Sirius up to 1080p, 1: a 4K one, 2: everything else. */
     fun siriusTier(server: Video.Server, playedHeight: Int?): Int {
         if (!isPenguPlay(server.name) || !server.name.contains("sirius", ignoreCase = true)) return 2
-        if (runCatching { StallMemory.isRecent(server.name) }.getOrDefault(false)) return 2
+        // A stall counts against it for a few minutes only: the player already moves on when it stalls.
+        if (runCatching { StallMemory.isRecent(server.name, ttlMs = 5 * 60_000L) }.getOrDefault(false)) return 2
         if (playedHeight != null && playedHeight < 1080) return 2
         val height = nameHeight.find(server.name)?.groupValues?.get(1)?.toIntOrNull() ?: 0
         return if (height > 1100) 1 else 0
