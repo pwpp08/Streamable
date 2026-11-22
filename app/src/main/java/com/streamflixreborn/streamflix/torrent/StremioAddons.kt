@@ -158,6 +158,32 @@ object StremioAddons {
         return direct + torrents
     }
 
+    /** A server's name without its measured height or "#2", so the same stream matches across fetches. */
+    fun sameStream(name: String): String =
+        name.replace(Regex(" \\d{3,4}p(?= |$)"), "").replace(Regex(" #\\d+$"), "").trim().lowercase()
+
+    /**
+     * Asks the addons again and returns fresh links by [sameStream] name. Addon links (Cinejoy's)
+     * stop working after a while, so a stream that failed mid-film is retried with a new one.
+     */
+    suspend fun freshLinks(videoType: Video.Type): Map<String, Video> =
+        Servers().servers(videoType).filter { isAddonServer(it) }
+            .groupBy { sameStream(it.name) }
+            .mapValues { (_, list) -> videoFor(list.first()) }
+
+    /** What a failed link answers now, for the log: status, type and the first bytes, never the link. */
+    suspend fun diagnose(video: Video): String = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = Request.Builder().url(video.source).apply {
+                video.headers?.forEach { (k, v) -> header(k, v) }
+            }.build()
+            NetworkClient.default.newCall(request).execute().use { r ->
+                val head = r.body?.source()?.let { s -> s.request(80); s.buffer.snapshot().utf8().take(80) }.orEmpty()
+                "HTTP ${r.code} ${r.header("Content-Type")} \"${head.replace(Regex("\\s+"), " ")}\""
+            }
+        }.getOrElse { "error ${it.javaClass.simpleName}: ${it.message}" }
+    }
+
     /** Direct links keep their headers here, so a copied server object still plays. */
     private val videos = ConcurrentHashMap<String, Video>()
 

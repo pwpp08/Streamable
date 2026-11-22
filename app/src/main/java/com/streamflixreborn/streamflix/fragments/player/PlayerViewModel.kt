@@ -281,6 +281,35 @@ class PlayerViewModel(
             getServers(videoType, id)
             return
         }
+        val failed = server ?: ranked.firstOrNull { it.id == failedId }
+        if (failed != null && com.streamflixreborn.streamflix.torrent.StremioAddons.isAddonServer(failed) && retriedAddon.add(failed.id)) {
+            // Addon links expire: ask the addon again and carry on from the same spot with a new link.
+            val old = resolved[failedId]?.video ?: com.streamflixreborn.streamflix.torrent.StremioAddons.videoFor(failed)
+            viewModelScope.launch {
+                Log.w(TAG, "${failed.name} failed; link now answers ${com.streamflixreborn.streamflix.torrent.StremioAddons.diagnose(old)}")
+                val fresh = runCatching { com.streamflixreborn.streamflix.torrent.StremioAddons.freshLinks(videoType) }.getOrDefault(emptyMap())
+                ranked.filter { com.streamflixreborn.streamflix.torrent.StremioAddons.isAddonServer(it) }.forEach { s ->
+                    fresh[com.streamflixreborn.streamflix.torrent.StremioAddons.sameStream(s.name)]?.let { resolved[s.id] = Resolved(it) }
+                }
+                val again = fresh[com.streamflixreborn.streamflix.torrent.StremioAddons.sameStream(failed.name)]
+                if (currentServerId != failedId) return@launch
+                if (again != null && again.source != old.source) {
+                    Log.i(TAG, "${failed.name}: retrying with a fresh link")
+                    emitSuccess(again, failed, failover = true)
+                } else {
+                    Log.w(TAG, "${failed.name}: no fresh link")
+                    afterFailure(failedId, failed)
+                }
+            }
+            return
+        }
+        afterFailure(failedId, server)
+    }
+
+    /** Ids of addon servers already retried with a fresh link; once each, so a dead stream can't loop. */
+    private val retriedAddon = mutableSetOf<String>()
+
+    private fun afterFailure(failedId: String, server: Video.Server?) {
         if (failedId == manualServerId) {
             // Picked by hand: stay on it and let the viewer decide what to try next.
             val chosen = server ?: ranked.firstOrNull { it.id == failedId } ?: return
