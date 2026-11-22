@@ -403,10 +403,13 @@ class PlayerViewModel(
                 if (graceDeadline == 0L) graceDeadline = now + PICK_GRACE_MS
                 // Quality differs per title, so the first answer is not picked until there are a few to compare.
                 // The remembered server needs no comparison: it is what the viewer settled on.
+                // Cinejoy Sirius starts straight away too: a quick test often can't reach it in time, and
+                // losing the test used to start a weaker server and switch to Sirius seconds later.
+                val trusted = order[best].name.equals(stickyName, ignoreCase = true) || ServerRanker.siriusTier(order[best], null) < 2
                 val enough = videos.indices.count { videos[it] != null && !ServerRanker.isTorrentServer(order[it].name) } >= MIN_TO_COMPARE ||
-                    !webPending || order[best].name.equals(stickyName, ignoreCase = true)
+                    !webPending || trusted
                 if ((higherRankedDone && enough) || now >= graceDeadline) {
-                    val pick = if (order[best].name.equals(stickyName, ignoreCase = true)) best else chooseByMeasurement(order, videos) ?: best
+                    val pick = if (trusted) best else chooseByMeasurement(order, videos) ?: best
                     emitSuccess(videos[pick]!!, order[pick], failover = false)
                     return
                 }

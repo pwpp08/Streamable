@@ -86,13 +86,15 @@ object StremioAddons {
             return coroutineScope {
                 bases.map { base ->
                     async(Dispatchers.IO) {
-                        withTimeoutOrNull(ADDON_TIMEOUT_MS) {
+                        // The request and the measuring have separate limits, so a slow answer still
+                        // leaves time to measure, and the whole thing ends before the caller gives up.
+                        val json = withTimeoutOrNull(ADDON_TIMEOUT_MS) {
                             runCatching {
-                                val json = client().newCall(Request.Builder().url("$base/stream/$path.json").build()).execute()
-                                    .use { if (it.isSuccessful) it.body?.string() else null } ?: return@runCatching emptyList()
-                                toServers(nameOf(base), measured(AddonStreamParser.parse(json)), torrentsAllowed())
+                                client().newCall(Request.Builder().url("$base/stream/$path.json").build()).execute()
+                                    .use { if (it.isSuccessful) it.body?.string() else null }
                             }.getOrNull()
-                        }.orEmpty()
+                        } ?: return@async emptyList()
+                        runCatching { toServers(nameOf(base), measured(AddonStreamParser.parse(json)), torrentsAllowed()) }.getOrDefault(emptyList())
                     }
                 }.awaitAll().flatten()
             }
@@ -105,10 +107,14 @@ object StremioAddons {
      */
     suspend fun measured(streams: List<AddonStream>): List<AddonStream> = coroutineScope {
         val candidates = DirectPicker.pick(streams.mapNotNull { it.direct }, max = MEASURE_CANDIDATES, perSource = 4)
-        val heights = withTimeoutOrNull(MEASURE_TIMEOUT_MS) {
-            candidates.map { d -> async(Dispatchers.IO) { d.url to ContainerProbe.height(d.url, d.headers.takeIf { it.isNotEmpty() }, DirectPicker.mimeOf(d)) } }
-                .awaitAll().toMap()
-        }.orEmpty()
+        // Each file gets its own limit: one slow host no longer throws away the heights already read.
+        val heights = candidates.map { d ->
+            async(Dispatchers.IO) {
+                d.url to withTimeoutOrNull(MEASURE_TIMEOUT_MS) {
+                    ContainerProbe.height(d.url, d.headers.takeIf { it.isNotEmpty() }, DirectPicker.mimeOf(d))
+                }
+            }
+        }.awaitAll().mapNotNull { (url, h) -> h?.let { url to it } }.toMap()
         streams.map { s ->
             val d = s.direct ?: return@map s
             val real = heights[d.url] ?: return@map s
@@ -122,7 +128,14 @@ object StremioAddons {
             TorrentServers.toServers(TorrentCandidateSelector.select(streams.mapNotNull { it.torrent }, max = 2))
                 .map { s -> Video.Server(s.id, s.name.replace(Regex("\\(([^)]*)\\)"), "($addon)"), s.src) }
         val used = mutableSetOf<String>()
-        val direct = DirectPicker.pick(streams.mapNotNull { it.direct }, perSource = 3).map { d ->
+        // One server per source site, two for Cinejoy Sirius (full HD and 4K): copies of the same host
+        // only slow the list down and fail together.
+        val perSite = HashMap<String, Int>()
+        val direct = DirectPicker.pick(streams.mapNotNull { it.direct }, perSource = 2).filter { d ->
+            val key = DirectPicker.sourceOf(d.label) ?: "?"
+            val limit = if (key.contains("sirius", ignoreCase = true)) 2 else 1
+            (perSite.merge(key, 1, Int::plus) ?: 1) <= limit
+        }.map { d ->
             val source = DirectPicker.sourceOf(d.label)
             val base = buildString {
                 append(addon)
@@ -152,9 +165,9 @@ object StremioAddons {
 
     fun videoFor(server: Video.Server): Video = server.video ?: videos[server.id] ?: Video(source = server.src)
 
-    private const val ADDON_TIMEOUT_MS = 13_000L
-    private const val MEASURE_TIMEOUT_MS = 5_000L
-    private const val MEASURE_CANDIDATES = 12
+    private const val ADDON_TIMEOUT_MS = 10_000L
+    private const val MEASURE_TIMEOUT_MS = 3_000L
+    private const val MEASURE_CANDIDATES = 8
 }
 
 /** One stream an addon offered: a torrent, a direct web link, or something the app can't play. */
