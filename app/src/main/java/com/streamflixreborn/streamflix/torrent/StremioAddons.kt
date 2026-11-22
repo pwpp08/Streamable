@@ -96,12 +96,12 @@ object StremioAddons {
                         val tag = "addon ${index + 1}/${bases.size}"
                         // The list waits a limited time; a slow addon keeps going in the background and its
                         // answer is kept, so the next time the title is opened its servers are there at once.
-                        val json = withTimeoutOrNull(ADDON_TIMEOUT_MS) { fetchJson(client(), "$base/stream/$path.json", tag, refresh).await() }
-                        if (json == null) {
+                        val streams = withTimeoutOrNull(ADDON_TIMEOUT_MS) { fetchJson(client(), "$base/stream/$path.json", tag, refresh).await() }
+                        if (streams == null) {
                             logger("$tag: no answer in ${System.currentTimeMillis() - started} ms; still asking in the background")
                             return@async emptyList()
                         }
-                        val result = runCatching { toServers(nameOf(base), measured(AddonStreamParser.parse(json)), torrentsAllowed()) }
+                        val result = runCatching { toServers(nameOf(base), streams, torrentsAllowed()) }
                             .onFailure { logger("$tag: ${it.javaClass.simpleName} while reading the answer") }
                             .getOrDefault(emptyList())
                         logger("$tag: ${result.size} servers in ${System.currentTimeMillis() - started} ms")
@@ -169,25 +169,25 @@ object StremioAddons {
         return direct + torrents
     }
 
-    private class Cached(val at: Long, val json: String)
+    private class Cached(val at: Long, val streams: List<AddonStream>)
 
     private val answers = ConcurrentHashMap<String, Cached>()
-    private val asking = ConcurrentHashMap<String, CompletableDeferred<String?>>()
+    private val asking = ConcurrentHashMap<String, CompletableDeferred<List<AddonStream>?>>()
     private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * One addon request, kept alive in the background past the caller's patience. Answers are reused
      * for [ANSWER_TTL_MS]; [refresh] skips that, for links that stopped working.
      */
-    private fun fetchJson(client: OkHttpClient, url: String, tag: String, refresh: Boolean): CompletableDeferred<String?> {
+    private fun fetchJson(client: OkHttpClient, url: String, tag: String, refresh: Boolean): CompletableDeferred<List<AddonStream>?> {
         val key = System.identityHashCode(client).toString() + url
         if (refresh) answers.remove(key)
         answers[key]?.takeIf { System.currentTimeMillis() - it.at < ANSWER_TTL_MS }?.let {
             logger("$tag: answered from memory")
-            return CompletableDeferred(it.json)
+            return CompletableDeferred(it.streams)
         }
         return asking.getOrPut(key) {
-            val done = CompletableDeferred<String?>()
+            val done = CompletableDeferred<List<AddonStream>?>()
             background.launch {
                 val started = System.currentTimeMillis()
                 val patient = client.newBuilder().callTimeout(75, TimeUnit.SECONDS).readTimeout(75, TimeUnit.SECONDS).build()
@@ -206,14 +206,35 @@ object StremioAddons {
                     if (body == null && (attempt >= 2 || System.currentTimeMillis() - started > 15_000)) break
                     if (body == null) delay(500)
                 }
-                if (body != null) {
-                    answers[key] = Cached(System.currentTimeMillis(), body)
-                    logger("$tag: answer in ${System.currentTimeMillis() - started} ms")
+                // Heights are read here too, so whoever asks next gets the finished list.
+                val streams = body?.let { runCatching { measured(AddonStreamParser.parse(it)) }.getOrNull() }
+                if (streams != null) {
+                    answers[key] = Cached(System.currentTimeMillis(), streams)
+                    logger("$tag: ${streams.size} streams ready in ${System.currentTimeMillis() - started} ms")
                 }
                 asking.remove(key)
-                done.complete(body)
+                done.complete(streams)
             }
             done
+        }
+    }
+
+    /**
+     * Starts asking the addons about [videoType] now, so the answer is ready when the player opens.
+     * Quiet when nothing is configured or the title has no IMDb id.
+     */
+    fun prefetch(videoType: Video.Type) {
+        background.launch {
+            runCatching {
+                val bases = configured()
+                if (bases.isEmpty()) return@launch
+                val imdb = TorrentImdb.resolve(videoType) ?: return@launch
+                val path = when (videoType) {
+                    is Video.Type.Movie -> "movie/$imdb"
+                    is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
+                }
+                bases.forEachIndexed { i, base -> fetchJson(NetworkClient.default, "$base/stream/$path.json", "prefetch ${i + 1}/${bases.size}", false) }
+            }
         }
     }
 
@@ -253,7 +274,7 @@ object StremioAddons {
 
     fun videoFor(server: Video.Server): Video = server.video ?: videos[server.id] ?: Video(source = server.src)
 
-    private const val ADDON_TIMEOUT_MS = 10_000L
+    private const val ADDON_TIMEOUT_MS = 20_000L
     private const val ANSWER_TTL_MS = 10 * 60_000L
     private const val MEASURE_TIMEOUT_MS = 3_000L
     private const val MEASURE_CANDIDATES = 8

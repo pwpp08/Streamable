@@ -763,29 +763,38 @@ class TmdbProvider(override val language: String) : Provider {
         // Torrents and addons are asked while the web servers are listed, so neither waits for the other.
         val (addonServers, torrentServers) = kotlinx.coroutines.coroutineScope {
             val addons = async {
-                runCatching { kotlinx.coroutines.withTimeoutOrNull(14_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
+                runCatching { kotlinx.coroutines.withTimeoutOrNull(22_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
                     .getOrNull().orEmpty()
             }
             val torrents = async {
                 runCatching { kotlinx.coroutines.withTimeoutOrNull(8_000L) { TorrentServers().servers(videoType) } }
                     .getOrNull().orEmpty()
             }
-            addons.await() to torrents.await()
+            val web = async {
+                val list = mutableListOf<Video.Server>()
+                // VixSrc first: it answers in under a second and its playlists now list 1080p. The picture
+                // size each stream really delivers is still measured at start (SourceProbe), so a title
+                // where VixSrc is lower than Vidzee still starts on the sharper one.
+                list.add(VixSrcExtractor().server(videoType))
+                // Videasy: native, ~150 ms, adaptive up to 1080p. Left out while its API is blocking apps,
+                // so playback doesn't start on it and fall to the next server.
+                list.addAll(VideasyExtractor().let { if (it.isReachable()) it.servers(videoType) else emptyList() })
+                list.addAll(VidzeeExtractor().servers(videoType))
+                list.addAll(listOf(
+                    VidLinkExtractor().server(videoType),
+                    VidsrcRuExtractor().server(videoType),
+                ))
+                // Removed 2026-11-12 after failing on every test title: 2Embed (404), Moviesapi and Vidlove
+                // (domains gone), Vidsrc.net (TLS refused), Vidflix (521), Videm (domain gone), Vidrock (no servers).
+                list
+            }
+            val addonList = addons.await()
+            servers.addAll(web.await())
+            // Torrents are the fallback: they get a moment more, not the list's time.
+            val torrentList = kotlinx.coroutines.withTimeoutOrNull(1_500L) { torrents.await() }.orEmpty()
+            torrents.cancel()
+            addonList to torrentList
         }
-        // VixSrc first: it answers in under a second and its playlists now list 1080p. The picture
-        // size each stream really delivers is still measured at start (SourceProbe), so a title
-        // where VixSrc is lower than Vidzee still starts on the sharper one.
-        servers.add(VixSrcExtractor().server(videoType))
-        // Videasy: native, ~150 ms, adaptive up to 1080p. Left out while its API is blocking apps,
-        // so playback doesn't start on it and fall to the next server.
-        servers.addAll(VideasyExtractor().let { if (it.isReachable()) it.servers(videoType) else emptyList() })
-        servers.addAll(VidzeeExtractor().servers(videoType))
-        servers.addAll(listOf(
-            VidLinkExtractor().server(videoType),
-            VidsrcRuExtractor().server(videoType),
-        ))
-        // Removed 2026-11-12 after failing on every test title: 2Embed (404), Moviesapi and Vidlove
-        // (domains gone), Vidsrc.net (TLS refused), Vidflix (521), Videm (domain gone), Vidrock (no servers).
 
         // Torrent servers last: they are the 1080p fallback/upgrade (opt-out in Settings > Sources).
         servers.addAll(torrentServers)

@@ -206,6 +206,7 @@ class HomeMobileFragment : Fragment() {
             .find { it.name == Category.CONTINUE_WATCHING }
             ?.also {
                 it.name = getString(R.string.home_continue_watching)
+                com.streamflixreborn.streamflix.torrent.AddonPrefetch.continueWatching(it.list)
                 it.list.forEach { show ->
                     when (show) {
                         is Episode -> show.itemType = AppAdapter.Type.EPISODE_CONTINUE_WATCHING_MOBILE_ITEM
