@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
@@ -84,17 +85,38 @@ object StremioAddons {
                 is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
             }
             return coroutineScope {
-                bases.map { base ->
+                bases.mapIndexed { index, base ->
                     async(Dispatchers.IO) {
                         // The request and the measuring have separate limits, so a slow answer still
                         // leaves time to measure, and the whole thing ends before the caller gives up.
+                        val started = System.currentTimeMillis()
+                        val tag = "addon ${index + 1}/${bases.size}"
+                        // One quick retry: a refused or dropped first request is common and costs the whole list.
                         val json = withTimeoutOrNull(ADDON_TIMEOUT_MS) {
-                            runCatching {
-                                client().newCall(Request.Builder().url("$base/stream/$path.json").build()).execute()
-                                    .use { if (it.isSuccessful) it.body?.string() else null }
-                            }.getOrNull()
-                        } ?: return@async emptyList()
-                        runCatching { toServers(nameOf(base), measured(AddonStreamParser.parse(json)), torrentsAllowed()) }.getOrDefault(emptyList())
+                            var body: String? = null
+                            var attempt = 0
+                            while (body == null && attempt < 2) {
+                                attempt++
+                                val outcome = runCatching {
+                                    client().newCall(Request.Builder().url("$base/stream/$path.json").build()).execute().use { r ->
+                                        if (r.isSuccessful) r.body?.string() else { logger("$tag attempt $attempt: HTTP ${r.code}"); null }
+                                    }
+                                }
+                                body = outcome.getOrNull()
+                                outcome.exceptionOrNull()?.let { logger("$tag attempt $attempt: ${it.javaClass.simpleName} after ${System.currentTimeMillis() - started} ms") }
+                                if (body == null && attempt < 2) delay(500)
+                            }
+                            body
+                        }
+                        if (json == null) {
+                            logger("$tag: no answer after ${System.currentTimeMillis() - started} ms")
+                            return@async emptyList()
+                        }
+                        val result = runCatching { toServers(nameOf(base), measured(AddonStreamParser.parse(json)), torrentsAllowed()) }
+                            .onFailure { logger("$tag: ${it.javaClass.simpleName} while reading the answer") }
+                            .getOrDefault(emptyList())
+                        logger("$tag: ${result.size} servers in ${System.currentTimeMillis() - started} ms")
+                        result
                     }
                 }.awaitAll().flatten()
             }
@@ -157,6 +179,9 @@ object StremioAddons {
         }
         return direct + torrents
     }
+
+    /** Where the addon loading reports what happened; the Android app points it at logcat. */
+    @Volatile var logger: (String) -> Unit = {}
 
     /** A server's name without its measured height or "#2", so the same stream matches across fetches. */
     fun sameStream(name: String): String =
