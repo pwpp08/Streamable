@@ -6,7 +6,11 @@ import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.ContainerProbe
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.utils.UserPreferences
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -16,6 +20,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 /**
  * Stremio addons the viewer added in Settings > Sources (one manifest link per line). Each one is
@@ -76,7 +81,7 @@ object StremioAddons {
         private val addons: () -> List<String> = { configured() },
         private val torrentsAllowed: () -> Boolean = { UserPreferences.torrentEnabled },
     ) {
-        suspend fun servers(videoType: Video.Type): List<Video.Server> {
+        suspend fun servers(videoType: Video.Type, refresh: Boolean = false): List<Video.Server> {
             val bases = addons()
             if (bases.isEmpty()) return emptyList()
             val imdb = imdbIdFor(videoType) ?: return emptyList()
@@ -87,29 +92,13 @@ object StremioAddons {
             return coroutineScope {
                 bases.mapIndexed { index, base ->
                     async(Dispatchers.IO) {
-                        // The request and the measuring have separate limits, so a slow answer still
-                        // leaves time to measure, and the whole thing ends before the caller gives up.
                         val started = System.currentTimeMillis()
                         val tag = "addon ${index + 1}/${bases.size}"
-                        // One quick retry: a refused or dropped first request is common and costs the whole list.
-                        val json = withTimeoutOrNull(ADDON_TIMEOUT_MS) {
-                            var body: String? = null
-                            var attempt = 0
-                            while (body == null && attempt < 2) {
-                                attempt++
-                                val outcome = runCatching {
-                                    client().newCall(Request.Builder().url("$base/stream/$path.json").build()).execute().use { r ->
-                                        if (r.isSuccessful) r.body?.string() else { logger("$tag attempt $attempt: HTTP ${r.code}"); null }
-                                    }
-                                }
-                                body = outcome.getOrNull()
-                                outcome.exceptionOrNull()?.let { logger("$tag attempt $attempt: ${it.javaClass.simpleName} after ${System.currentTimeMillis() - started} ms") }
-                                if (body == null && attempt < 2) delay(500)
-                            }
-                            body
-                        }
+                        // The list waits a limited time; a slow addon keeps going in the background and its
+                        // answer is kept, so the next time the title is opened its servers are there at once.
+                        val json = withTimeoutOrNull(ADDON_TIMEOUT_MS) { fetchJson(client(), "$base/stream/$path.json", tag, refresh).await() }
                         if (json == null) {
-                            logger("$tag: no answer after ${System.currentTimeMillis() - started} ms")
+                            logger("$tag: no answer in ${System.currentTimeMillis() - started} ms; still asking in the background")
                             return@async emptyList()
                         }
                         val result = runCatching { toServers(nameOf(base), measured(AddonStreamParser.parse(json)), torrentsAllowed()) }
@@ -180,6 +169,54 @@ object StremioAddons {
         return direct + torrents
     }
 
+    private class Cached(val at: Long, val json: String)
+
+    private val answers = ConcurrentHashMap<String, Cached>()
+    private val asking = ConcurrentHashMap<String, CompletableDeferred<String?>>()
+    private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * One addon request, kept alive in the background past the caller's patience. Answers are reused
+     * for [ANSWER_TTL_MS]; [refresh] skips that, for links that stopped working.
+     */
+    private fun fetchJson(client: OkHttpClient, url: String, tag: String, refresh: Boolean): CompletableDeferred<String?> {
+        val key = System.identityHashCode(client).toString() + url
+        if (refresh) answers.remove(key)
+        answers[key]?.takeIf { System.currentTimeMillis() - it.at < ANSWER_TTL_MS }?.let {
+            logger("$tag: answered from memory")
+            return CompletableDeferred(it.json)
+        }
+        return asking.getOrPut(key) {
+            val done = CompletableDeferred<String?>()
+            background.launch {
+                val started = System.currentTimeMillis()
+                val patient = client.newBuilder().callTimeout(75, TimeUnit.SECONDS).readTimeout(75, TimeUnit.SECONDS).build()
+                var body: String? = null
+                var attempt = 0
+                while (body == null && attempt < 2) {
+                    attempt++
+                    val outcome = runCatching {
+                        patient.newCall(Request.Builder().url(url).build()).execute().use { r ->
+                            if (r.isSuccessful) r.body?.string() else { logger("$tag attempt $attempt: HTTP ${r.code}"); null }
+                        }
+                    }
+                    body = outcome.getOrNull()
+                    outcome.exceptionOrNull()?.let { logger("$tag attempt $attempt: ${it.javaClass.simpleName} after ${System.currentTimeMillis() - started} ms") }
+                    // A refusal that came quickly is worth one more go; after a long wait it is not.
+                    if (body == null && (attempt >= 2 || System.currentTimeMillis() - started > 15_000)) break
+                    if (body == null) delay(500)
+                }
+                if (body != null) {
+                    answers[key] = Cached(System.currentTimeMillis(), body)
+                    logger("$tag: answer in ${System.currentTimeMillis() - started} ms")
+                }
+                asking.remove(key)
+                done.complete(body)
+            }
+            done
+        }
+    }
+
     /** Where the addon loading reports what happened; the Android app points it at logcat. */
     @Volatile var logger: (String) -> Unit = {}
 
@@ -192,7 +229,7 @@ object StremioAddons {
      * stop working after a while, so a stream that failed mid-film is retried with a new one.
      */
     suspend fun freshLinks(videoType: Video.Type): Map<String, Video> =
-        Servers().servers(videoType).filter { isAddonServer(it) }
+        Servers().servers(videoType, refresh = true).filter { isAddonServer(it) }
             .groupBy { sameStream(it.name) }
             .mapValues { (_, list) -> videoFor(list.first()) }
 
@@ -217,6 +254,7 @@ object StremioAddons {
     fun videoFor(server: Video.Server): Video = server.video ?: videos[server.id] ?: Video(source = server.src)
 
     private const val ADDON_TIMEOUT_MS = 10_000L
+    private const val ANSWER_TTL_MS = 10 * 60_000L
     private const val MEASURE_TIMEOUT_MS = 3_000L
     private const val MEASURE_CANDIDATES = 8
 }
