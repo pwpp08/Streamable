@@ -14,6 +14,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.preference.Preference
+import com.streamflixreborn.streamflix.sync.CloudSyncStatus
 import com.streamflixreborn.streamflix.R
 import com.streamflixreborn.streamflix.sync.CloudSyncManager
 import com.streamflixreborn.streamflix.sync.CloudSyncProgress
@@ -54,6 +55,7 @@ object CloudAccountSettingsController {
             signUp?.isEnabled = SupabaseProvider.isConfigured && email == null
             signOut?.isEnabled = SupabaseProvider.isConfigured && email != null
             syncNow?.isEnabled = SupabaseProvider.isConfigured && email != null
+            if (email != null) syncNow?.summary = syncSummary(fragment, profileId)
         }
 
         signIn?.setOnPreferenceClickListener {
@@ -107,6 +109,20 @@ object CloudAccountSettingsController {
             if (fragment.isAdded && ProfileManager.activeProfileId == profileId) refresh()
         }
         refresh()
+    }
+
+    private fun syncSummary(fragment: Fragment, profileId: String): String {
+        val s = CloudSyncStatus.snapshot(fragment.requireContext(), profileId, CloudSyncManager.currentUserId(profileId))
+        fun ago(at: Long) = android.text.format.DateUtils.getRelativeTimeSpanString(
+            at, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS,
+        ).toString()
+        val head = when {
+            s.lastErrorAtMillis != null && (s.lastSuccessAtMillis == null || s.lastErrorAtMillis > s.lastSuccessAtMillis) ->
+                fragment.getString(R.string.cloud_sync_state_failed, ago(s.lastErrorAtMillis), s.lastError.orEmpty())
+            s.lastSuccessAtMillis != null -> fragment.getString(R.string.cloud_sync_state_ok, ago(s.lastSuccessAtMillis))
+            else -> fragment.getString(R.string.cloud_sync_state_never)
+        }
+        return head + " · " + fragment.getString(R.string.cloud_sync_state_waiting, s.waiting)
     }
 
     private fun showCredentialsDialog(

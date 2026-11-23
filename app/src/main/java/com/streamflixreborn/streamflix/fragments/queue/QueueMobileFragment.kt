@@ -46,6 +46,7 @@ class QueueMobileFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewModel.reconcileSeen(requireContext().applicationContext)
         adapter = QueueAdapter(
             isTv = false,
             section = { viewModel.state.value.section },

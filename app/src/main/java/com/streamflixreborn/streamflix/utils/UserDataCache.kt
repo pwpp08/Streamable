@@ -105,6 +105,11 @@ object UserDataCache {
         }.getOrNull()
     }
 
+    /** Counts writes, so a loader can tell that something changed while it was reading the database. */
+    @Volatile
+    var changes: Long = 0L
+        private set
+
     fun write(context: Context, provider: Provider, newData: UserData) {
         val key = cacheKey(provider)
         val normalizedData = newData.normalized()
@@ -114,6 +119,7 @@ object UserDataCache {
         if (oldData == normalizedData) return
 
         memoryCache[key] = normalizedData
+        changes++
 
         runCatching {
             cacheFile(context, key).apply {

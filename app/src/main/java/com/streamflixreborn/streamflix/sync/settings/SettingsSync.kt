@@ -101,6 +101,7 @@ object SettingsSync {
             { UserPreferences.showAllTrackLanguages = it.toBoolean() }),
         Entry("stremio_addons", { UserPreferences.stremioAddons }, { UserPreferences.stremioAddons = it }),
         Entry("torrent_enabled", { UserPreferences.torrentEnabled.toString() }, { UserPreferences.torrentEnabled = it.toBoolean() }),
+        Entry("hide_obscure_titles", { UserPreferences.hideObscureTitles.toString() }, { UserPreferences.hideObscureTitles = it.toBoolean() }),
         // Queue reactions and titles marked seen (per provider, inside one document).
         Entry("queue", { com.streamflixreborn.streamflix.fragments.queue.QueueStore.exportForSync() },
             { com.streamflixreborn.streamflix.fragments.queue.QueueStore.importFromSync(it) }),

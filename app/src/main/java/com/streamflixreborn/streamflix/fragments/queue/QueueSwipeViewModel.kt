@@ -75,6 +75,7 @@ class QueueSwipeViewModel(private val database: AppDatabase) : ViewModel() {
         when (item) {
             is Movie -> if (seen) {
                 QueueStore.setSeen(QueueStore.key(false, item.id), item.title, item.poster, item.released?.format("yyyy"), true, item.released?.timeInMillis, item.rating)
+                QueueWatched.markMovie(context, item)
                 WatchEvents.movieWatched(item)
             } else {
                 ArtworkRepair.resolveMovieForFavorite(context, item, true).let {

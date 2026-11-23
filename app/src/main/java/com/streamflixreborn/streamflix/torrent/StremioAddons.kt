@@ -183,11 +183,27 @@ object StremioAddons {
     private fun fetchJson(client: OkHttpClient, url: String, tag: String, refresh: Boolean): CompletableDeferred<List<AddonStream>?> {
         val key = System.identityHashCode(client).toString() + url
         if (refresh) answers.remove(key)
-        answers[key]?.takeIf { System.currentTimeMillis() - it.at < ANSWER_TTL_MS }?.let {
-            logger("$tag: answered from memory")
-            return CompletableDeferred(it.streams)
+        val known = if (refresh) null else answers[key] ?: runCatching { store?.load(url) }.getOrNull()
+            ?.let { (at, saved) -> Cached(at, saved).also { answers[key] = it } }
+        if (known != null) {
+            val age = System.currentTimeMillis() - known.at
+            if (age < ANSWER_TTL_MS) {
+                logger("$tag: answered from memory")
+                return CompletableDeferred(known.streams)
+            }
+            if (age < STALE_TTL_MS) {
+                // Good enough to start on; a fresh answer is fetched behind it, and a link that has gone
+                // stale is replaced by the fresh-link retry in the player.
+                logger("$tag: answered from the saved copy (${age / 60_000} min old), asking again in the background")
+                ask(client, url, tag, key)
+                return CompletableDeferred(known.streams)
+            }
         }
-        return asking.getOrPut(key) {
+        return ask(client, url, tag, key)
+    }
+
+    private fun ask(client: OkHttpClient, url: String, tag: String, key: String): CompletableDeferred<List<AddonStream>?> =
+        asking.getOrPut(key) {
             val done = CompletableDeferred<List<AddonStream>?>()
             background.launch {
                 val started = System.currentTimeMillis()
@@ -210,7 +226,9 @@ object StremioAddons {
                 // Heights are read here too, so whoever asks next gets the finished list.
                 val streams = body?.let { runCatching { measured(AddonStreamParser.parse(it)) }.getOrNull() }
                 if (streams != null) {
-                    answers[key] = Cached(System.currentTimeMillis(), streams)
+                    val now = System.currentTimeMillis()
+                    answers[key] = Cached(now, streams)
+                    runCatching { store?.save(url, now, streams) }
                     logger("$tag: ${streams.size} streams ready in ${System.currentTimeMillis() - started} ms")
                     warm(patient, streams, tag)
                 }
@@ -219,7 +237,6 @@ object StremioAddons {
             }
             done
         }
-    }
 
     /**
      * The first request to some links is slow (the host prepares the stream); asking once while no one
@@ -269,6 +286,14 @@ object StremioAddons {
         }
     }
 
+    /** Keeps answers across app restarts; the Android app provides one, other apps may leave it out. */
+    interface AnswerStore {
+        fun load(url: String): Pair<Long, List<AddonStream>>?
+        fun save(url: String, at: Long, streams: List<AddonStream>)
+    }
+
+    @Volatile var store: AnswerStore? = null
+
     /** Where the addon loading reports what happened; the Android app points it at logcat. */
     @Volatile var logger: (String) -> Unit = {}
 
@@ -307,6 +332,7 @@ object StremioAddons {
 
     private const val ADDON_TIMEOUT_MS = 20_000L
     private const val ANSWER_TTL_MS = 10 * 60_000L
+    private const val STALE_TTL_MS = 60 * 60_000L
     private const val MEASURE_TIMEOUT_MS = 3_000L
     private const val MEASURE_CANDIDATES = 8
     private const val WARM_LINKS = 3

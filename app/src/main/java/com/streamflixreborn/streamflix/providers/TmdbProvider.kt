@@ -44,12 +44,19 @@ class TmdbProvider(override val language: String) : Provider {
     override val logo =
         "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tmdb.new.logo.svg/1280px-Tmdb.new.logo.svg.png"
 
+    /** Stubs TMDb has no artwork or ratings for; they have no servers either. */
+    private fun TMDb3.MultiItem.isObscure(): Boolean = UserPreferences.hideObscureTitles && when (this) {
+        is TMDb3.Movie -> posterPath == null && voteCount == 0
+        is TMDb3.Tv -> posterPath == null && voteCount == 0
+        else -> false
+    }
+
     override suspend fun getHome(): List<Category> = coroutineScope {
         val categories = mutableListOf<Category>()
         val watchRegion = if (language == "en") "US" else language.uppercase()
 
         val mapMulti: (TMDb3.MultiItem) -> AppAdapter.Item? = { multi ->
-            when (multi) {
+            if (multi.isObscure()) null else when (multi) {
                 is TMDb3.Movie -> Movie(
                     id = multi.id.toString(),
                     title = multi.title,
@@ -419,7 +426,7 @@ class TmdbProvider(override val language: String) : Provider {
         } else {
             TMDb3.Search.multi(query, page = page, language = language).results
         }
-        val results = raw.mapNotNull { multi ->
+        val results = raw.filterNot { it.isObscure() }.mapNotNull { multi ->
             when (multi) {
                 is TMDb3.Movie -> Movie(
                     id = multi.id.toString(),
@@ -449,7 +456,7 @@ class TmdbProvider(override val language: String) : Provider {
     }
 
     override suspend fun getMovies(page: Int): List<Movie> {
-        val movies = TMDb3.MovieLists.popular(page = page, language = language).results.map { movie ->
+        val movies = TMDb3.MovieLists.popular(page = page, language = language).results.filterNot { it.isObscure() }.map { movie ->
             Movie(
                 id = movie.id.toString(),
                 title = movie.title,
@@ -465,7 +472,7 @@ class TmdbProvider(override val language: String) : Provider {
     }
 
     override suspend fun getTvShows(page: Int): List<TvShow> {
-        val tvShows = TMDb3.TvSeriesLists.popular(page = page, language = language).results.map { tv ->
+        val tvShows = TMDb3.TvSeriesLists.popular(page = page, language = language).results.filterNot { it.isObscure() }.map { tv ->
             TvShow(
                 id = tv.id.toString(),
                 title = tv.name,
@@ -519,7 +526,7 @@ class TmdbProvider(override val language: String) : Provider {
                         image = cast.profilePath?.w500,
                     )
                 } ?: listOf(),
-                recommendations = movie.recommendations?.results?.mapNotNull { multi ->
+                recommendations = movie.recommendations?.results?.filterNot { it.isObscure() }?.mapNotNull { multi ->
                     when (multi) {
                         is TMDb3.Movie -> Movie(
                             id = multi.id.toString(),
@@ -596,7 +603,7 @@ class TmdbProvider(override val language: String) : Provider {
                         image = cast.profilePath?.w500,
                     )
                 } ?: listOf(),
-                recommendations = tv.recommendations?.results?.mapNotNull { multi ->
+                recommendations = tv.recommendations?.results?.filterNot { it.isObscure() }?.mapNotNull { multi ->
                     when (multi) {
                         is TMDb3.Movie -> Movie(
                             id = multi.id.toString(),
@@ -670,7 +677,7 @@ class TmdbProvider(override val language: String) : Provider {
                 page = page,
                 withGenres = TMDb3.Params.WithBuilder(id),
                 language = language
-            ).results.map { movie ->
+            ).results.filterNot { it.isObscure() }.map { movie ->
                 Movie(
                     id = movie.id.toString(),
                     title = movie.title,
@@ -684,7 +691,7 @@ class TmdbProvider(override val language: String) : Provider {
                 page = page,
                 withGenres = TMDb3.Params.WithBuilder(id),
                 language = language
-            ).results.map { tv ->
+            ).results.filterNot { it.isObscure() }.map { tv ->
                 TvShow(
                     id = tv.id.toString(),
                     title = tv.name,
@@ -718,6 +725,7 @@ class TmdbProvider(override val language: String) : Provider {
                 deathday = person.deathday,
 
                 filmography = person.combinedCredits?.cast
+                    ?.filterNot { it.isObscure() }
                     ?.mapNotNull { multi ->
                         when (multi) {
                             is TMDb3.Movie -> Movie(

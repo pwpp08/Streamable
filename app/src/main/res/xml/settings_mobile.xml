@@ -343,6 +343,13 @@
                     android:summary="@string/settings_torrent_summary"
                     android:defaultValue="true"
                     app:iconSpaceReserved="false" />
+
+                <SwitchPreferenceCompat
+                    android:key="HIDE_OBSCURE_TITLES"
+                    android:title="@string/settings_hide_obscure_title"
+                    android:summary="@string/settings_hide_obscure_summary"
+                    android:defaultValue="true"
+                    app:iconSpaceReserved="false" />
             </PreferenceCategory>
 
             <PreferenceCategory

@@ -268,17 +268,23 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
         WatchStateActions.setWatched(context, item, true)
     }
 
-    fun setReaction(entry: QueueEntry, reaction: Reaction?) {
+    fun setReaction(context: Context, entry: QueueEntry, reaction: Reaction?) {
         QueueStore.setReaction(entry.key, reaction)
         // Reacting means you've seen it.
         if (reaction != null && !entry.watched) {
             QueueStore.setSeen(entry.key, entry.title, entry.poster, entry.year, true, entry.releasedMillis, entry.rating)
+            if (!entry.isTv) viewModelScope.launch(Dispatchers.IO) {
+                QueueWatched.markMovie(context, entry.movie ?: Movie(id = entry.id, title = entry.title, poster = entry.poster))
+            }
         }
     }
 
+    /** Brings films marked seen before the Queue and the film flags were kept together up to date. */
+    fun reconcileSeen(context: Context) = viewModelScope.launch(Dispatchers.IO) { QueueWatched.reconcile(context) }
+
     fun setWatched(context: Context, entry: QueueEntry, watched: Boolean) = viewModelScope.launch(Dispatchers.IO) {
-        val movie = entry.movie
-        if (!entry.isTv && movie != null) {
+        if (!entry.isTv) {
+            val movie = entry.movie ?: Movie(id = entry.id, title = entry.title, poster = entry.poster)
             WatchStateActions.setWatched(context, movie, watched)
         }
         QueueStore.setSeen(entry.key, entry.title, entry.poster, entry.year, watched, entry.releasedMillis, entry.rating)
@@ -417,6 +423,7 @@ class QueueViewModel(private val database: AppDatabase) : ViewModel() {
                     is Movie -> {
                         if (target is ImportTarget.Rated) {
                             markRated(QueueStore.key(false, match.id), match.title, match.poster ?: match.banner, match.released?.format("yyyy"), target.reaction, match.released?.timeInMillis, match.rating)
+                            QueueWatched.markMovie(context, match)
                         } else {
                             ArtworkRepair.resolveMovieForFavorite(context, match, true).let {
                                 database.movieDao().upsertFavorite(it, true)
