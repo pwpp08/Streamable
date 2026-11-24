@@ -98,7 +98,7 @@ object PlayerFactory {
 
     fun buildLoadControl(context: Context, profile: Profile): DefaultLoadControl =
         DefaultLoadControl.Builder()
-            .setBufferDurationsMs(profile.minBufferMs, profile.maxBufferMs, 2_500, 8_000)
+            .setBufferDurationsMs(profile.minBufferMs, profile.maxBufferMs, if (profile == Profile.LOW_MEMORY) 2_500 else 1_500, 8_000)
             .setTargetBufferBytes(targetBufferBytes(context, profile))
             .setPrioritizeTimeOverSizeThresholds(true)
             .setBackBuffer(20_000, true)

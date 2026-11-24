@@ -477,7 +477,9 @@ class PlayerViewModel(
                 // The remembered server needs no comparison: it is what the viewer settled on.
                 // Cinejoy Sirius starts straight away too: a quick test often can't reach it in time, and
                 // losing the test used to start a weaker server and switch to Sirius seconds later.
-                val trusted = order[best].name.equals(stickyName, ignoreCase = true) || ServerRanker.siriusTier(order[best], null) < 2
+                // A server already seen playing full HD is trusted too: the quality upgrade still corrects it later.
+                val trusted = order[best].name.equals(stickyName, ignoreCase = true) || ServerRanker.siriusTier(order[best], null) < 2 ||
+                    (QualityMemory.height(order[best].name) ?: 0) >= FULL_HD
                 val enough = videos.indices.count { videos[it] != null && !ServerRanker.isTorrentServer(order[it].name) } >= MIN_TO_COMPARE ||
                     !webPending || trusted
                 if ((higherRankedDone && enough) || now >= graceDeadline) {
@@ -870,7 +872,7 @@ class PlayerViewModel(
         private const val MAX_PARALLEL_RESOLUTIONS = 4
         private const val RESOLVE_TIMEOUT_MS = 12_000L
         /** After the first server resolves, wait this long for better-ranked ones. */
-        private const val PICK_GRACE_MS = 2_000L
+        private const val PICK_GRACE_MS = 700L
         private const val LATE_SWITCH_WINDOW_MS = 75_000L
         private const val MIN_TO_COMPARE = 3
         /** Started server + backups resolved ahead of time. */
@@ -888,7 +890,7 @@ class PlayerViewModel(
         private const val DECODE_WAIT_MS = 15_000L
         /** Resolved servers whose speed is sampled before choosing the one to play. */
         private const val PROBE_CANDIDATES = 4
-        private const val MEASURE_MAX_MS = 3_500L
+        private const val MEASURE_MAX_MS = 2_000L
         private const val MEASURE_GRACE_MS = 600L
     }
 }

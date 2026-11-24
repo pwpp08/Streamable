@@ -56,6 +56,9 @@ class MovieTvFragment : Fragment() {
                     }
                     is MovieViewModel.State.SuccessLoading -> {
                         displayMovie(state.movie)
+                        // Get the servers ready while the viewer reads the page: play then starts at once.
+                        com.streamflixreborn.streamflix.torrent.AddonPrefetch.typeOf(state.movie)
+                            ?.let(com.streamflixreborn.streamflix.fragments.player.engine.PlayWarmup::warm)
                         binding.isLoading.root.visibility = View.GONE
                     }
                     is MovieViewModel.State.FailedLoading -> {

@@ -9,6 +9,8 @@ import com.streamflixreborn.streamflix.utils.format
 object AddonPrefetch {
     fun continueWatching(items: List<Any>) {
         items.take(4).forEach { item -> typeOf(item)?.let(StremioAddons::prefetch) }
+        // The first item is the one most likely pressed next: get its servers resolved too.
+        items.firstOrNull()?.let { typeOf(it) }?.let(com.streamflixreborn.streamflix.fragments.player.engine.PlayWarmup::warm)
     }
 
     /** The saved answer for this item is not needed any more (finished, or removed from the row). */
@@ -16,7 +18,7 @@ object AddonPrefetch {
         typeOf(item)?.let(StremioAddons::forget)
     }
 
-    private fun typeOf(item: Any): Video.Type? = when (item) {
+    fun typeOf(item: Any): Video.Type? = when (item) {
         is Movie -> Video.Type.Movie(
             id = item.id,
             title = item.title,

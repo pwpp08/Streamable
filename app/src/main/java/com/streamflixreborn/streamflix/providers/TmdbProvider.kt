@@ -41,6 +41,15 @@ class TmdbProvider(override val language: String) : Provider {
         get() = ""
 
     override val name = "TMDb ($language)"
+
+    companion object {
+        /**
+         * How long the server list waits for a cold PenguPlay. The phone app starts without it and lets it join
+         * late; a player without late join (desktop) sets this higher.
+         */
+        @Volatile
+        var addonWaitMs: Long = 1_500L
+    }
     override val logo =
         "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tmdb.new.logo.svg/1280px-Tmdb.new.logo.svg.png"
 
@@ -771,7 +780,9 @@ class TmdbProvider(override val language: String) : Provider {
         // Torrents and addons are asked while the web servers are listed, so neither waits for the other.
         val (addonServers, torrentServers) = kotlinx.coroutines.coroutineScope {
             val addons = async {
-                runCatching { kotlinx.coroutines.withTimeoutOrNull(8_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
+                // A saved or recently asked answer comes back at once. A cold PenguPlay is not waited for: the
+                // player starts on the web servers and moves over when it answers (late join).
+                runCatching { kotlinx.coroutines.withTimeoutOrNull(addonWaitMs) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
                     .getOrNull().orEmpty()
             }
             val torrents = async {
@@ -799,7 +810,7 @@ class TmdbProvider(override val language: String) : Provider {
             val addonList = addons.await()
             servers.addAll(web.await())
             // Torrents are the fallback: they get a moment more, not the list's time.
-            val torrentList = kotlinx.coroutines.withTimeoutOrNull(1_500L) { torrents.await() }.orEmpty()
+            val torrentList = kotlinx.coroutines.withTimeoutOrNull(500L) { torrents.await() }.orEmpty()
             torrents.cancel()
             addonList to torrentList
         }
