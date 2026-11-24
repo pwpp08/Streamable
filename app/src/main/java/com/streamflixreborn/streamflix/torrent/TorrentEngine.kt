@@ -46,7 +46,7 @@ object TorrentEngine {
     private const val UPLOAD_LIMIT_BPS = 128 * 1024
     private val VIDEO_EXT = setOf("mkv", "mp4", "m4v", "avi", "mov", "webm", "ts")
 
-    private val DEFAULT_TRACKERS = listOf(
+    internal val DEFAULT_TRACKERS = listOf(
         "udp://tracker.opentrackr.org:1337/announce",
         "udp://open.tracker.cl:1337/announce",
         "udp://tracker.torrent.eu.org:451/announce",

@@ -374,6 +374,10 @@
     <string name="cloud_sync_sign_out">Sign out</string>
     <string name="cloud_sync_now">Sync now</string>
     <string name="cloud_sync_now_summary">Upload local changes and download changes from other devices</string>
+    <string name="cloud_sync_state_ok">Last synced %1$s</string>
+    <string name="cloud_sync_state_failed">Last sync failed %1$s (%2$s)</string>
+    <string name="cloud_sync_state_never">Not synced yet</string>
+    <string name="cloud_sync_state_waiting">%1$d waiting to upload</string>
     <string name="cloud_sync_email_hint">Email</string>
     <string name="cloud_sync_password_hint">Password</string>
     <string name="cloud_sync_success">Synchronization complete</string>

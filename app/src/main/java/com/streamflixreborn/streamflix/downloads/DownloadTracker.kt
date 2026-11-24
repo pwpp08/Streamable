@@ -18,6 +18,7 @@ import com.streamflixreborn.streamflix.R
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
 
@@ -79,6 +80,11 @@ object DownloadTracker {
         this.manager = manager
         this.appContext = context.applicationContext
         manager.addListener(listener)
+        mainHandler.post {
+            kotlinx.coroutines.MainScope().launch {
+                com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloadStore.records.collect { publish() }
+            }
+        }
         Thread({
             try {
                 DownloadUtil.downloadIndex(context).getDownloads().use { cursor ->
@@ -225,6 +231,9 @@ object DownloadTracker {
                 if (pendingItem?.status == Status.RESOLVING) return@forEach
                 result[id] = toItem(download, notMet, failures[id])
             }
+            com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloadStore.records.value.values
+                .sortedByDescending { it.createdAt }
+                .forEach { result[it.id] = it.toTrackerItem() }
             result
         }
         _items.value = map

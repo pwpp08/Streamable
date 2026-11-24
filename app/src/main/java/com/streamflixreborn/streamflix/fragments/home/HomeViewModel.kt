@@ -543,6 +543,7 @@ class HomeViewModel : ViewModel() {
         refreshOtherProvidersContinueWatching(provider)
 
         viewModelScope.launch(Dispatchers.IO) {
+            val changesAtStart = UserDataCache.changes
             val db = AppDatabase.getInstance(appContext)
             val moviesDeferred = async { db.movieDao().getFavorites().first() }
             val tvShowsDeferred = async { db.tvShowDao().getFavorites().first() }
@@ -581,6 +582,10 @@ class HomeViewModel : ViewModel() {
                 ),
             )
 
+            // The database was read a moment ago. If the list changed meanwhile (an item was removed
+            // from Continue Watching, or the cloud brought progress), this snapshot is stale and must
+            // not put the old rows back.
+            if (UserDataCache.changes != changesAtStart) return@launch
             UserDataCache.write(appContext, provider, newData)
 
             if (_userDataCache.value != newData) {

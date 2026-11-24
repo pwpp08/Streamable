@@ -26,7 +26,8 @@
     </style>
 
     <!-- Navigation -->
-    <style name="Widget.StreamFlix.BottomNavigation" parent="Widget.Material3Expressive.BottomNavigationView" />
+    <!-- The stable M3 bar: the Expressive one drew ghost dividers and lost its labels on some phones. -->
+    <style name="Widget.StreamFlix.BottomNavigation" parent="Widget.Material3.BottomNavigationView" />
     <style name="Widget.StreamFlix.NavigationRail" parent="Widget.Material3Expressive.NavigationRailView" />
 
     <!-- Progress / loading -->

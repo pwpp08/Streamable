@@ -59,6 +59,15 @@
             android:text="@string/downloads_save_space"
             android:textAppearance="?attr/textAppearanceTitleSmall"
             android:textColor="?attr/colorOnSurface" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/cb_downloads_delete_watched"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="@string/downloads_delete_watched"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?attr/colorOnSurface" />
     </LinearLayout>
 
     <FrameLayout

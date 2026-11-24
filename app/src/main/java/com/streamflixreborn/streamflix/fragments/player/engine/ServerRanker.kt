@@ -69,6 +69,18 @@ object ServerRanker {
      */
     const val VIXSRC_PRIOR = 72
 
+    private val nameHeight = Regex("(?<![0-9])(\\d{3,4})p")
+
+    /** 0: PenguPlay Cinejoy Sirius up to 1080p, 1: a 4K one, 2: everything else. */
+    fun siriusTier(server: Video.Server, playedHeight: Int?): Int {
+        if (!isPenguPlay(server.name) || !server.name.contains("sirius", ignoreCase = true)) return 2
+        // A stall counts against it for a few minutes only: the player already moves on when it stalls.
+        if (runCatching { StallMemory.isRecent(server.name, ttlMs = 5 * 60_000L) }.getOrDefault(false)) return 2
+        if (playedHeight != null && playedHeight < 1080) return 2
+        val height = nameHeight.find(server.name)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        return if (height > 1100) 1 else 0
+    }
+
     fun rank(
         servers: List<Video.Server>,
         preferredName: String? = null,
@@ -112,7 +124,10 @@ object ServerRanker {
         val stickyUsable = !(fullHdExists && stickyHeight != null && stickyHeight < 1080)
         return servers.withIndex()
             .sortedWith(
-                compareBy<IndexedValue<Video.Server>> { if (it.value.name.equals(preferredName, ignoreCase = true)) 0 else 1 }
+                // PenguPlay's Cinejoy Sirius leads, ahead of the title's last-played server too: a full HD
+                // one first, then a 4K one. Not while it is stalling, or known to play below full HD.
+                compareBy<IndexedValue<Video.Server>> { siriusTier(it.value, heights.getValue(it.value)) }
+                    .thenBy { if (it.value.name.equals(preferredName, ignoreCase = true)) 0 else 1 }
                     .thenBy { if (stickyUsable && it.value.name.equals(stickyName, ignoreCase = true)) 0 else 1 }
                     // P2P takes ~30 s to start: it only plays first when nothing else is left or it
                     // is what this title played last (the quality upgrade and failover still reach it).

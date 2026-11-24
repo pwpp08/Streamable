@@ -88,6 +88,6 @@ object StallMemory {
         prefs().edit().putLong(server.trim().lowercase(), now).apply()
     }
 
-    fun isRecent(server: String, now: Long = System.currentTimeMillis()): Boolean =
-        now - prefs().getLong(server.trim().lowercase(), 0L) < TTL_MS
+    fun isRecent(server: String, now: Long = System.currentTimeMillis(), ttlMs: Long = TTL_MS): Boolean =
+        now - prefs().getLong(server.trim().lowercase(), 0L) < ttlMs
 }

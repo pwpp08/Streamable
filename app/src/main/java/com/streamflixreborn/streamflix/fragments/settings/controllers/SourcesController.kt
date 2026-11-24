@@ -28,6 +28,7 @@ class SourcesController(
         host.onClick(KEY_PROVIDERS) { host.navigate(R.id.providers) }
         host.onClick(KEY_HEALTH) { host.navigate(R.id.provider_health) }
         host.bindSwitch(KEY_TORRENT, { UserPreferences.torrentEnabled }) { UserPreferences.torrentEnabled = it }
+        host.bindSwitch(KEY_HIDE_OBSCURE, { UserPreferences.hideObscureTitles }) { UserPreferences.hideObscureTitles = it }
         bindDoh()
         bindAddons()
         bindTmdb()
@@ -50,6 +51,7 @@ class SourcesController(
             summary = entry
         }
         host.refreshSwitch(KEY_TORRENT) { UserPreferences.torrentEnabled }
+        host.refreshSwitch(KEY_HIDE_OBSCURE) { UserPreferences.hideObscureTitles }
         refreshAddons()
         host.refreshSwitch(KEY_ENABLE_TMDB) { UserPreferences.enableTmdb }
         host.find<EditTextPreference>(KEY_TMDB_API)?.apply {
@@ -188,6 +190,7 @@ class SourcesController(
         const val KEY_HEALTH = "sources_health"
         const val KEY_DOH = "p_doh_provider_url"
         const val KEY_TORRENT = "TORRENT_ENABLED"
+        const val KEY_HIDE_OBSCURE = "HIDE_OBSCURE_TITLES"
         const val KEY_ADDONS = "STREMIO_ADDONS"
         const val NEWLINE = "\n"
         const val KEY_ENABLE_TMDB = "ENABLE_TMDB"

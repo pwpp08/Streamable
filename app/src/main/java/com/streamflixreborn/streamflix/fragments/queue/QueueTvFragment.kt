@@ -39,6 +39,7 @@ class QueueTvFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewModel.reconcileSeen(requireContext().applicationContext)
         columns = maxOf(4, resources.configuration.screenWidthDp / 180)
         adapter = QueueAdapter(
             isTv = true,

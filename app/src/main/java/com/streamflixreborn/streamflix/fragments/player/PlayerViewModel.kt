@@ -218,14 +218,56 @@ class PlayerViewModel(
         wrongAudio.clear()
         // A torrent the viewer picked by hand is pinned like any manual choice.
         manualServerId = chosenTorrentId?.takeIf { id -> servers.any { it.id == id } }
+        val rankedFor = chosenTorrentName ?: preferredServerName
         chosenTorrentId = null
         chosenTorrentName = null
         Log.d(TAG, "ranked servers (preferred=$preferredServerName, sticky=$sticky): ${ranked.joinToString { it.name }}")
+        rankPreference = rankedFor
+        watchForLateAddons()
 
         val results = Channel<Pair<Int, Video?>>(Channel.UNLIMITED)
         resolutionJob?.cancel()
         resolutionJob = launchResolutions(ranked, results)
         launchPlayback { pickFirst(ranked, results) }
+    }
+
+    private var rankPreference: String? = null
+    private var lateJob: Job? = null
+    private var lateWatched = false
+    private var firstPlayAt = 0L
+
+    /**
+     * PenguPlay (and any other addon) can answer after the list was shown. This keeps asking in the
+     * background; when it answers, its servers are added to the picker, and if the film has only just
+     * begun on something else, playback moves to Cinejoy Sirius (position kept).
+     */
+    private fun watchForLateAddons() {
+        if (lateWatched) return
+        lateWatched = true
+        val type = videoType
+        lateJob = viewModelScope.launch(Dispatchers.IO) {
+            val addons = com.streamflixreborn.streamflix.torrent.StremioAddons
+            if (addons.configured().isEmpty() || servers.any { addons.isAddonServer(it) }) return@launch
+            val late = runCatching {
+                withTimeoutOrNull(addons.LATE_PATIENCE_MS) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers(patienceMs = addons.LATE_PATIENCE_MS).servers(type) }
+            }.getOrNull().orEmpty().filterNot { late -> servers.any { it.id == late.id } }
+            if (late.isEmpty()) return@launch
+            Log.i(TAG, "late join: ${late.size} addon servers arrived: ${late.joinToString { it.name }}")
+            servers = servers + late
+            ranked = ServerRanker.rank(servers, preferredName = rankPreference, stickyName = stickyName)
+            _state.emit(State.ServersAdded(servers))
+            // Only a film that has just begun is moved; one the viewer settled into is left alone.
+            val best = ranked.firstOrNull { ServerRanker.siriusTier(it, null) < 2 } ?: return@launch
+            val settled = firstPlayAt != 0L && SystemClock.elapsedRealtime() - firstPlayAt > LATE_SWITCH_WINDOW_MS
+            if (manualServerId != null || settled || currentServerId == best.id || best.id in failedIds) return@launch
+            val video = cachedVideo(best) ?: resolve(best) ?: return@launch
+            playbackMutex.withLock {
+                if (manualServerId == null && currentServerId != best.id) {
+                    Log.i(TAG, "late join: moving to ${best.name}")
+                    emitSuccess(video, best, failover = true)
+                }
+            }
+        }
     }
 
     /** Manual server choice from the player settings. */
@@ -281,6 +323,35 @@ class PlayerViewModel(
             getServers(videoType, id)
             return
         }
+        val failed = server ?: ranked.firstOrNull { it.id == failedId }
+        if (failed != null && com.streamflixreborn.streamflix.torrent.StremioAddons.isAddonServer(failed) && retriedAddon.add(failed.id)) {
+            // Addon links expire: ask the addon again and carry on from the same spot with a new link.
+            val old = resolved[failedId]?.video ?: com.streamflixreborn.streamflix.torrent.StremioAddons.videoFor(failed)
+            viewModelScope.launch {
+                Log.w(TAG, "${failed.name} failed; link now answers ${com.streamflixreborn.streamflix.torrent.StremioAddons.diagnose(old)}")
+                val fresh = runCatching { com.streamflixreborn.streamflix.torrent.StremioAddons.freshLinks(videoType) }.getOrDefault(emptyMap())
+                ranked.filter { com.streamflixreborn.streamflix.torrent.StremioAddons.isAddonServer(it) }.forEach { s ->
+                    fresh[com.streamflixreborn.streamflix.torrent.StremioAddons.sameStream(s.name)]?.let { resolved[s.id] = Resolved(it) }
+                }
+                val again = fresh[com.streamflixreborn.streamflix.torrent.StremioAddons.sameStream(failed.name)]
+                if (currentServerId != failedId) return@launch
+                if (again != null && again.source != old.source) {
+                    Log.i(TAG, "${failed.name}: retrying with a fresh link")
+                    emitSuccess(again, failed, failover = true)
+                } else {
+                    Log.w(TAG, "${failed.name}: no fresh link")
+                    afterFailure(failedId, failed)
+                }
+            }
+            return
+        }
+        afterFailure(failedId, server)
+    }
+
+    /** Ids of addon servers already retried with a fresh link; once each, so a dead stream can't loop. */
+    private val retriedAddon = mutableSetOf<String>()
+
+    private fun afterFailure(failedId: String, server: Video.Server?) {
         if (failedId == manualServerId) {
             // Picked by hand: stay on it and let the viewer decide what to try next.
             val chosen = server ?: ranked.firstOrNull { it.id == failedId } ?: return
@@ -296,6 +367,7 @@ class PlayerViewModel(
 
     /** [server] is playing fine; remember it for this title. */
     fun onPlaybackStarted(server: Video.Server) {
+        if (firstPlayAt == 0L) firstPlayAt = SystemClock.elapsedRealtime()
         activeServerId = server.id
         resolved[server.id]?.video?.let { activeVideo = it }
         if (server.id == offlineServer?.id) return
@@ -403,10 +475,13 @@ class PlayerViewModel(
                 if (graceDeadline == 0L) graceDeadline = now + PICK_GRACE_MS
                 // Quality differs per title, so the first answer is not picked until there are a few to compare.
                 // The remembered server needs no comparison: it is what the viewer settled on.
+                // Cinejoy Sirius starts straight away too: a quick test often can't reach it in time, and
+                // losing the test used to start a weaker server and switch to Sirius seconds later.
+                val trusted = order[best].name.equals(stickyName, ignoreCase = true) || ServerRanker.siriusTier(order[best], null) < 2
                 val enough = videos.indices.count { videos[it] != null && !ServerRanker.isTorrentServer(order[it].name) } >= MIN_TO_COMPARE ||
-                    !webPending || order[best].name.equals(stickyName, ignoreCase = true)
+                    !webPending || trusted
                 if ((higherRankedDone && enough) || now >= graceDeadline) {
-                    val pick = if (order[best].name.equals(stickyName, ignoreCase = true)) best else chooseByMeasurement(order, videos) ?: best
+                    val pick = if (trusted) best else chooseByMeasurement(order, videos) ?: best
                     emitSuccess(videos[pick]!!, order[pick], failover = false)
                     return
                 }
@@ -752,6 +827,9 @@ class PlayerViewModel(
     sealed class State {
         data object LoadingServers : State()
         data class SuccessLoadingServers(val servers: List<Video.Server>) : State()
+
+        /** The addons answered after the list was shown; the full list is now [servers]. */
+        data class ServersAdded(val servers: List<Video.Server>) : State()
         data class FailedLoadingServers(val error: Exception) : State()
         data class LoadingVideo(val server: Video.Server) : State()
 
@@ -793,6 +871,7 @@ class PlayerViewModel(
         private const val RESOLVE_TIMEOUT_MS = 12_000L
         /** After the first server resolves, wait this long for better-ranked ones. */
         private const val PICK_GRACE_MS = 2_000L
+        private const val LATE_SWITCH_WINDOW_MS = 75_000L
         private const val MIN_TO_COMPARE = 3
         /** Started server + backups resolved ahead of time. */
         private const val MAX_PRERESOLVED = 3

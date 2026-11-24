@@ -16,6 +16,8 @@ import androidx.media3.exoplayer.offline.DownloadHelper
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloadStore
+import com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloader
 import com.streamflixreborn.streamflix.fragments.player.engine.ServerRanker
 import com.streamflixreborn.streamflix.fragments.player.engine.StickyServers
 import com.streamflixreborn.streamflix.models.Video
@@ -120,6 +122,7 @@ object DownloadStarter {
 
     /** "Try another server": starts again, skipping every server already tried for this title. */
     fun retry(context: Context, item: DownloadTracker.Item) {
+        if (isTorrent(item.id)) return TorrentDownloader.retry(item.id)
         val meta = item.metadata ?: return
         start(
             context,
@@ -128,11 +131,18 @@ object DownloadStarter {
         )
     }
 
-    fun pause(context: Context, id: String) = setStopReason(context, id, STOP_REASON_PAUSED)
+    private fun isTorrent(id: String) = TorrentDownloadStore.get(id) != null
 
-    fun resume(context: Context, id: String) = setStopReason(context, id, Download.STOP_REASON_NONE)
+    fun pause(context: Context, id: String) {
+        if (isTorrent(id)) TorrentDownloader.pause(id) else setStopReason(context, id, STOP_REASON_PAUSED)
+    }
+
+    fun resume(context: Context, id: String) {
+        if (isTorrent(id)) TorrentDownloader.resume(id) else setStopReason(context, id, Download.STOP_REASON_NONE)
+    }
 
     fun remove(context: Context, id: String) {
+        if (isTorrent(id)) return TorrentDownloader.remove(id)
         val app = context.applicationContext
         jobs.remove(id)?.cancel()
         DownloadTracker.clearPending(id)

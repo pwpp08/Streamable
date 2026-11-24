@@ -182,7 +182,8 @@ object CloudSyncManager {
         context: Context,
         onProgress: (CloudSyncProgress) -> Unit = {},
     ) = accountSyncMutex.withLock {
-        syncNowLocked(context, ProfileManager.activeProfileId ?: "default", onProgress)
+        val profileId = ProfileManager.activeProfileId ?: "default"
+        recorded(context, profileId) { syncNowLocked(context, profileId, onProgress) }
     }
 
     suspend fun syncNow(
@@ -190,7 +191,18 @@ object CloudSyncManager {
         profileId: String,
         onProgress: (CloudSyncProgress) -> Unit = {},
     ) = accountSyncMutex.withLock {
-        syncNowLocked(context, profileId, onProgress)
+        recorded(context, profileId) { syncNowLocked(context, profileId, onProgress) }
+    }
+
+    /** Runs a synchronisation and keeps its outcome for the settings screen. */
+    private suspend fun recorded(context: Context, profileId: String, block: suspend () -> Unit) {
+        try {
+            block()
+            CloudSyncStatus.succeeded(context.applicationContext, profileId)
+        } catch (error: Throwable) {
+            CloudSyncStatus.failed(context.applicationContext, profileId, error)
+            throw error
+        }
     }
 
     private suspend fun syncNowLocked(
@@ -647,6 +659,9 @@ object CloudSyncManager {
                                 poster = state.poster,
                                 banner = state.banner,
                             )
+                        if (movie.watchHistory == null && state.lastEngagementAtMillis != null) {
+                            Log.i(TAG, "CW cloud restores progress: movie ${state.mediaId} engaged ${state.lastEngagementAtMillis} updated ${state.clientUpdatedAtMillis} by ${state.lastDeviceId?.take(6)}")
+                        }
                         movie.isFavorite = state.isFavorite
                         movie.favoritedAtMillis = state.favoritedAtMillis
                         movie.isWatched = state.isWatched

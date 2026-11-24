@@ -44,12 +44,19 @@ class TmdbProvider(override val language: String) : Provider {
     override val logo =
         "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tmdb.new.logo.svg/1280px-Tmdb.new.logo.svg.png"
 
+    /** Stubs TMDb has no artwork or ratings for; they have no servers either. */
+    private fun TMDb3.MultiItem.isObscure(): Boolean = UserPreferences.hideObscureTitles && when (this) {
+        is TMDb3.Movie -> posterPath == null && voteCount == 0
+        is TMDb3.Tv -> posterPath == null && voteCount == 0
+        else -> false
+    }
+
     override suspend fun getHome(): List<Category> = coroutineScope {
         val categories = mutableListOf<Category>()
         val watchRegion = if (language == "en") "US" else language.uppercase()
 
         val mapMulti: (TMDb3.MultiItem) -> AppAdapter.Item? = { multi ->
-            when (multi) {
+            if (multi.isObscure()) null else when (multi) {
                 is TMDb3.Movie -> Movie(
                     id = multi.id.toString(),
                     title = multi.title,
@@ -419,7 +426,7 @@ class TmdbProvider(override val language: String) : Provider {
         } else {
             TMDb3.Search.multi(query, page = page, language = language).results
         }
-        val results = raw.mapNotNull { multi ->
+        val results = raw.filterNot { it.isObscure() }.mapNotNull { multi ->
             when (multi) {
                 is TMDb3.Movie -> Movie(
                     id = multi.id.toString(),
@@ -449,7 +456,7 @@ class TmdbProvider(override val language: String) : Provider {
     }
 
     override suspend fun getMovies(page: Int): List<Movie> {
-        val movies = TMDb3.MovieLists.popular(page = page, language = language).results.map { movie ->
+        val movies = TMDb3.MovieLists.popular(page = page, language = language).results.filterNot { it.isObscure() }.map { movie ->
             Movie(
                 id = movie.id.toString(),
                 title = movie.title,
@@ -465,7 +472,7 @@ class TmdbProvider(override val language: String) : Provider {
     }
 
     override suspend fun getTvShows(page: Int): List<TvShow> {
-        val tvShows = TMDb3.TvSeriesLists.popular(page = page, language = language).results.map { tv ->
+        val tvShows = TMDb3.TvSeriesLists.popular(page = page, language = language).results.filterNot { it.isObscure() }.map { tv ->
             TvShow(
                 id = tv.id.toString(),
                 title = tv.name,
@@ -519,7 +526,7 @@ class TmdbProvider(override val language: String) : Provider {
                         image = cast.profilePath?.w500,
                     )
                 } ?: listOf(),
-                recommendations = movie.recommendations?.results?.mapNotNull { multi ->
+                recommendations = movie.recommendations?.results?.filterNot { it.isObscure() }?.mapNotNull { multi ->
                     when (multi) {
                         is TMDb3.Movie -> Movie(
                             id = multi.id.toString(),
@@ -596,7 +603,7 @@ class TmdbProvider(override val language: String) : Provider {
                         image = cast.profilePath?.w500,
                     )
                 } ?: listOf(),
-                recommendations = tv.recommendations?.results?.mapNotNull { multi ->
+                recommendations = tv.recommendations?.results?.filterNot { it.isObscure() }?.mapNotNull { multi ->
                     when (multi) {
                         is TMDb3.Movie -> Movie(
                             id = multi.id.toString(),
@@ -670,7 +677,7 @@ class TmdbProvider(override val language: String) : Provider {
                 page = page,
                 withGenres = TMDb3.Params.WithBuilder(id),
                 language = language
-            ).results.map { movie ->
+            ).results.filterNot { it.isObscure() }.map { movie ->
                 Movie(
                     id = movie.id.toString(),
                     title = movie.title,
@@ -684,7 +691,7 @@ class TmdbProvider(override val language: String) : Provider {
                 page = page,
                 withGenres = TMDb3.Params.WithBuilder(id),
                 language = language
-            ).results.map { tv ->
+            ).results.filterNot { it.isObscure() }.map { tv ->
                 TvShow(
                     id = tv.id.toString(),
                     title = tv.name,
@@ -718,6 +725,7 @@ class TmdbProvider(override val language: String) : Provider {
                 deathday = person.deathday,
 
                 filmography = person.combinedCredits?.cast
+                    ?.filterNot { it.isObscure() }
                     ?.mapNotNull { multi ->
                         when (multi) {
                             is TMDb3.Movie -> Movie(
@@ -759,32 +767,42 @@ class TmdbProvider(override val language: String) : Provider {
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
         val servers = mutableListOf<Video.Server>()
+        com.streamflixreborn.streamflix.torrent.StremioAddons.logger = { android.util.Log.d("StremioAddons", it) }
         // Torrents and addons are asked while the web servers are listed, so neither waits for the other.
         val (addonServers, torrentServers) = kotlinx.coroutines.coroutineScope {
             val addons = async {
-                runCatching { kotlinx.coroutines.withTimeoutOrNull(12_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
+                runCatching { kotlinx.coroutines.withTimeoutOrNull(8_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
                     .getOrNull().orEmpty()
             }
             val torrents = async {
                 runCatching { kotlinx.coroutines.withTimeoutOrNull(8_000L) { TorrentServers().servers(videoType) } }
                     .getOrNull().orEmpty()
             }
-            addons.await() to torrents.await()
+            val web = async {
+                val list = mutableListOf<Video.Server>()
+                // VixSrc first: it answers in under a second and its playlists now list 1080p. The picture
+                // size each stream really delivers is still measured at start (SourceProbe), so a title
+                // where VixSrc is lower than Vidzee still starts on the sharper one.
+                list.add(VixSrcExtractor().server(videoType))
+                // Videasy: native, ~150 ms, adaptive up to 1080p. Left out while its API is blocking apps,
+                // so playback doesn't start on it and fall to the next server.
+                list.addAll(VideasyExtractor().let { if (it.isReachable()) it.servers(videoType) else emptyList() })
+                list.addAll(VidzeeExtractor().servers(videoType))
+                list.addAll(listOf(
+                    VidLinkExtractor().server(videoType),
+                    VidsrcRuExtractor().server(videoType),
+                ))
+                // Removed 2026-11-12 after failing on every test title: 2Embed (404), Moviesapi and Vidlove
+                // (domains gone), Vidsrc.net (TLS refused), Vidflix (521), Videm (domain gone), Vidrock (no servers).
+                list
+            }
+            val addonList = addons.await()
+            servers.addAll(web.await())
+            // Torrents are the fallback: they get a moment more, not the list's time.
+            val torrentList = kotlinx.coroutines.withTimeoutOrNull(1_500L) { torrents.await() }.orEmpty()
+            torrents.cancel()
+            addonList to torrentList
         }
-        // VixSrc first: it answers in under a second and its playlists now list 1080p. The picture
-        // size each stream really delivers is still measured at start (SourceProbe), so a title
-        // where VixSrc is lower than Vidzee still starts on the sharper one.
-        servers.add(VixSrcExtractor().server(videoType))
-        // Videasy: native, ~150 ms, adaptive up to 1080p. Left out while its API is blocking apps,
-        // so playback doesn't start on it and fall to the next server.
-        servers.addAll(VideasyExtractor().let { if (it.isReachable()) it.servers(videoType) else emptyList() })
-        servers.addAll(VidzeeExtractor().servers(videoType))
-        servers.addAll(listOf(
-            VidLinkExtractor().server(videoType),
-            VidsrcRuExtractor().server(videoType),
-        ))
-        // Removed 2026-11-12 after failing on every test title: 2Embed (404), Moviesapi and Vidlove
-        // (domains gone), Vidsrc.net (TLS refused), Vidflix (521), Videm (domain gone), Vidrock (no servers).
 
         // Torrent servers last: they are the 1080p fallback/upgrade (opt-out in Settings > Sources).
         servers.addAll(torrentServers)

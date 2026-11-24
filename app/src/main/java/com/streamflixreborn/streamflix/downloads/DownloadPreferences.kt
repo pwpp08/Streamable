@@ -13,6 +13,7 @@ object DownloadPreferences {
     private const val PREFS = "downloads_prefs"
     private const val KEY_WIFI_ONLY = "downloadsWifiOnly"
     private const val KEY_SAVE_SPACE = "downloadsSaveSpace"
+    private const val KEY_DELETE_WATCHED = "downloadsDeleteWatched"
 
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -28,6 +29,13 @@ object DownloadPreferences {
 
     fun setSaveSpace(context: Context, value: Boolean) {
         prefs(context).edit().putBoolean(KEY_SAVE_SPACE, value).apply()
+    }
+
+    /** Removes a download (and its file) when the title is watched to the end. Off by default. */
+    fun deleteWhenWatched(context: Context): Boolean = prefs(context).getBoolean(KEY_DELETE_WATCHED, false)
+
+    fun setDeleteWhenWatched(context: Context, value: Boolean) {
+        prefs(context).edit().putBoolean(KEY_DELETE_WATCHED, value).apply()
     }
 
     fun requirements(context: Context): Requirements =

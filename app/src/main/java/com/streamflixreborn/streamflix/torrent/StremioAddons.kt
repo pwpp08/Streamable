@@ -6,15 +6,21 @@ import com.streamflixreborn.streamflix.models.Video
 import com.streamflixreborn.streamflix.utils.ContainerProbe
 import com.streamflixreborn.streamflix.utils.NetworkClient
 import com.streamflixreborn.streamflix.utils.UserPreferences
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 /**
  * Stremio addons the viewer added in Settings > Sources (one manifest link per line). Each one is
@@ -74,25 +80,31 @@ object StremioAddons {
         private val imdbIdFor: suspend (Video.Type) -> String? = { TorrentImdb.resolve(it) },
         private val addons: () -> List<String> = { configured() },
         private val torrentsAllowed: () -> Boolean = { UserPreferences.torrentEnabled },
+        private val patienceMs: Long = ADDON_TIMEOUT_MS,
     ) {
-        suspend fun servers(videoType: Video.Type): List<Video.Server> {
+        suspend fun servers(videoType: Video.Type, refresh: Boolean = false): List<Video.Server> {
             val bases = addons()
             if (bases.isEmpty()) return emptyList()
             val imdb = imdbIdFor(videoType) ?: return emptyList()
-            val path = when (videoType) {
-                is Video.Type.Movie -> "movie/$imdb"
-                is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
-            }
+            val path = pathFor(videoType, imdb)
             return coroutineScope {
-                bases.map { base ->
+                bases.mapIndexed { index, base ->
                     async(Dispatchers.IO) {
-                        withTimeoutOrNull(ADDON_TIMEOUT_MS) {
-                            runCatching {
-                                val json = client().newCall(Request.Builder().url("$base/stream/$path.json").build()).execute()
-                                    .use { if (it.isSuccessful) it.body?.string() else null } ?: return@runCatching emptyList()
-                                toServers(nameOf(base), measured(AddonStreamParser.parse(json)), torrentsAllowed())
-                            }.getOrNull()
-                        }.orEmpty()
+                        val started = System.currentTimeMillis()
+                        val tag = "addon ${index + 1}/${bases.size}"
+                        // The list waits a limited time; a slow addon keeps going in the background and its
+                        // answer is kept, so the next time the title is opened its servers are there at once.
+                        val addonName = async { nameOf(base) }
+                        val streams = withTimeoutOrNull(patienceMs) { fetchJson(client(), "$base/stream/$path.json", tag, refresh).await() }
+                        if (streams == null) {
+                            logger("$tag: no answer in ${System.currentTimeMillis() - started} ms; still asking in the background")
+                            return@async emptyList()
+                        }
+                        val result = runCatching { toServers(addonName.await(), streams, torrentsAllowed()) }
+                            .onFailure { logger("$tag: ${it.javaClass.simpleName} while reading the answer") }
+                            .getOrDefault(emptyList())
+                        logger("$tag: ${result.size} servers in ${System.currentTimeMillis() - started} ms")
+                        result
                     }
                 }.awaitAll().flatten()
             }
@@ -105,10 +117,14 @@ object StremioAddons {
      */
     suspend fun measured(streams: List<AddonStream>): List<AddonStream> = coroutineScope {
         val candidates = DirectPicker.pick(streams.mapNotNull { it.direct }, max = MEASURE_CANDIDATES, perSource = 4)
-        val heights = withTimeoutOrNull(MEASURE_TIMEOUT_MS) {
-            candidates.map { d -> async(Dispatchers.IO) { d.url to ContainerProbe.height(d.url, d.headers.takeIf { it.isNotEmpty() }, DirectPicker.mimeOf(d)) } }
-                .awaitAll().toMap()
-        }.orEmpty()
+        // Each file gets its own limit: one slow host no longer throws away the heights already read.
+        val heights = candidates.map { d ->
+            async(Dispatchers.IO) {
+                d.url to withTimeoutOrNull(MEASURE_TIMEOUT_MS) {
+                    ContainerProbe.height(d.url, d.headers.takeIf { it.isNotEmpty() }, DirectPicker.mimeOf(d))
+                }
+            }
+        }.awaitAll().mapNotNull { (url, h) -> h?.let { url to it } }.toMap()
         streams.map { s ->
             val d = s.direct ?: return@map s
             val real = heights[d.url] ?: return@map s
@@ -122,7 +138,14 @@ object StremioAddons {
             TorrentServers.toServers(TorrentCandidateSelector.select(streams.mapNotNull { it.torrent }, max = 2))
                 .map { s -> Video.Server(s.id, s.name.replace(Regex("\\(([^)]*)\\)"), "($addon)"), s.src) }
         val used = mutableSetOf<String>()
-        val direct = DirectPicker.pick(streams.mapNotNull { it.direct }, perSource = 3).map { d ->
+        // One server per source site, two for Cinejoy Sirius (full HD and 4K): copies of the same host
+        // only slow the list down and fail together.
+        val perSite = HashMap<String, Int>()
+        val direct = DirectPicker.pick(streams.mapNotNull { it.direct }, perSource = 2).filter { d ->
+            val key = DirectPicker.sourceOf(d.label) ?: "?"
+            val limit = if (key.contains("sirius", ignoreCase = true)) 2 else 1
+            (perSite.merge(key, 1, Int::plus) ?: 1) <= limit
+        }.map { d ->
             val source = DirectPicker.sourceOf(d.label)
             val base = buildString {
                 append(addon)
@@ -145,6 +168,214 @@ object StremioAddons {
         return direct + torrents
     }
 
+    private class Cached(val at: Long, val streams: List<AddonStream>)
+
+    private val answers = ConcurrentHashMap<String, Cached>()
+    private val asking = ConcurrentHashMap<String, CompletableDeferred<List<AddonStream>?>>()
+    private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * One addon request, kept alive in the background past the caller's patience. Answers are reused
+     * for [ANSWER_TTL_MS]; [refresh] skips that, for links that stopped working.
+     */
+    private fun fetchJson(client: OkHttpClient, url: String, tag: String, refresh: Boolean): CompletableDeferred<List<AddonStream>?> {
+        val key = System.identityHashCode(client).toString() + url
+        if (refresh) answers.remove(key)
+        val known = if (refresh) null else answers[key] ?: runCatching { store?.load(url) }.getOrNull()
+            ?.let { (at, saved) -> Cached(at, saved).also { answers[key] = it } }
+        if (known != null) {
+            val age = System.currentTimeMillis() - known.at
+            if (age < ANSWER_TTL_MS) {
+                logger("$tag: answered from memory")
+                return CompletableDeferred(known.streams)
+            }
+            if (age < KEEP_MS) {
+                // Kept until the film is finished. Before it is used, the best link gets one quick look:
+                // alive, it starts at once (a fresh answer is fetched behind it); dead, a fresh one is
+                // asked for first, so playback never begins on a link that fails.
+                val checked = CompletableDeferred<List<AddonStream>?>()
+                background.launch {
+                    if (linkAlive(client, known.streams) == false) {
+                        logger("$tag: the saved link (${age / 60_000} min old) no longer answers; asking for a fresh one")
+                        answers.remove(key)
+                        checked.complete(ask(client, url, tag, key).await())
+                    } else {
+                        logger("$tag: answered from the saved copy (${age / 60_000} min old), asking again in the background")
+                        ask(client, url, tag, key)
+                        checked.complete(known.streams)
+                    }
+                }
+                return checked
+            }
+        }
+        return ask(client, url, tag, key)
+    }
+
+    /**
+     * One quick request to the first of the best links. false only when the host says the link is gone
+     * (an error status, or something that is not a playlist); a slow answer or no network is not a verdict.
+     */
+    private suspend fun linkAlive(client: OkHttpClient, streams: List<AddonStream>): Boolean? {
+        val d = DirectPicker.pick(streams.mapNotNull { it.direct }, max = 6, perSource = 2)
+            .sortedBy { if (DirectPicker.sourceOf(it.label)?.contains("sirius", ignoreCase = true) == true) 0 else 1 }
+            .firstOrNull() ?: return null
+        val quick = client.newBuilder().callTimeout(ALIVE_TIMEOUT_MS, TimeUnit.MILLISECONDS).build()
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val request = Request.Builder().url(d.url).apply {
+                    d.headers.forEach { (k, v) -> runCatching { header(k, v) } }
+                }.build()
+                quick.newCall(request).execute().use { r ->
+                    if (!r.isSuccessful) return@use false
+                    val isPlaylist = DirectPicker.mimeOf(d)?.contains("mpegurl", ignoreCase = true) == true || d.url.contains(".m3u8")
+                    if (!isPlaylist) return@use true
+                    r.body?.source()?.let { s -> s.request(7); s.buffer.snapshot().utf8().startsWith("#EXTM3U") } ?: false
+                }
+            }.getOrNull()
+        }
+    }
+
+    /** The saved answer for a title is no longer needed (the film is finished or left Continue Watching). */
+    fun forget(videoType: Video.Type) {
+        background.launch {
+            runCatching {
+                val bases = configured()
+                if (bases.isEmpty()) return@launch
+                val imdb = TorrentImdb.resolve(videoType) ?: return@launch
+                val path = pathFor(videoType, imdb)
+                bases.forEach { base ->
+                    val url = "$base/stream/$path.json"
+                    answers.keys.filter { it.endsWith(url) }.forEach { answers.remove(it) }
+                    store?.delete(url)
+                }
+            }
+        }
+    }
+
+    private fun pathFor(videoType: Video.Type, imdb: String) = when (videoType) {
+        is Video.Type.Movie -> "movie/$imdb"
+        is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
+    }
+
+    private fun ask(client: OkHttpClient, url: String, tag: String, key: String): CompletableDeferred<List<AddonStream>?> =
+        asking.getOrPut(key) {
+            val done = CompletableDeferred<List<AddonStream>?>()
+            background.launch {
+                val started = System.currentTimeMillis()
+                val patient = client.newBuilder().callTimeout(75, TimeUnit.SECONDS).readTimeout(75, TimeUnit.SECONDS).build()
+                var body: String? = null
+                var attempt = 0
+                while (body == null && attempt < 2) {
+                    attempt++
+                    val outcome = runCatching {
+                        patient.newCall(Request.Builder().url(url).build()).execute().use { r ->
+                            if (r.isSuccessful) r.body?.string() else { logger("$tag attempt $attempt: HTTP ${r.code}"); null }
+                        }
+                    }
+                    body = outcome.getOrNull()
+                    outcome.exceptionOrNull()?.let { logger("$tag attempt $attempt: ${it.javaClass.simpleName} after ${System.currentTimeMillis() - started} ms") }
+                    // A refusal that came quickly is worth one more go; after a long wait it is not.
+                    if (body == null && (attempt >= 2 || System.currentTimeMillis() - started > 15_000)) break
+                    if (body == null) delay(500)
+                }
+                // Heights are read here too, so whoever asks next gets the finished list.
+                val streams = body?.let { runCatching { measured(AddonStreamParser.parse(it)) }.getOrNull() }
+                if (streams != null) {
+                    val now = System.currentTimeMillis()
+                    answers[key] = Cached(now, streams)
+                    runCatching { store?.save(url, now, streams) }
+                    logger("$tag: ${streams.size} streams ready in ${System.currentTimeMillis() - started} ms")
+                    warm(patient, streams, tag)
+                }
+                asking.remove(key)
+                done.complete(streams)
+            }
+            done
+        }
+
+    /**
+     * The first request to some links is slow (the host prepares the stream); asking once while no one
+     * is waiting makes the real start quicker. Reads a few hundred bytes and reports how long it took.
+     */
+    private fun warm(client: OkHttpClient, streams: List<AddonStream>, tag: String) {
+        val picks = DirectPicker.pick(streams.mapNotNull { it.direct }, max = 6, perSource = 2)
+            .sortedBy { if (DirectPicker.sourceOf(it.label)?.contains("sirius", ignoreCase = true) == true) 0 else 1 }
+            .take(WARM_LINKS)
+        picks.forEach { d ->
+            background.launch {
+                val began = System.currentTimeMillis()
+                val outcome = runCatching {
+                    val request = Request.Builder().url(d.url).apply {
+                        d.headers.forEach { (k, v) -> runCatching { header(k, v) } }
+                    }.build()
+                    client.newCall(request).execute().use { r ->
+                        r.body?.source()?.request(512)
+                        r.code
+                    }
+                }
+                val result = outcome.getOrNull()?.let { "HTTP $it" } ?: outcome.exceptionOrNull()?.javaClass?.simpleName
+                logger("$tag: warmed ${DirectPicker.sourceOf(d.label) ?: "?"}: $result in ${System.currentTimeMillis() - began} ms")
+            }
+        }
+    }
+
+    /**
+     * Starts asking the addons about [videoType] now, so the answer is ready when the player opens.
+     * Quiet when nothing is configured or the title has no IMDb id.
+     */
+    fun prefetch(videoType: Video.Type) {
+        background.launch {
+            runCatching {
+                val bases = configured()
+                if (bases.isEmpty()) return@launch
+                val imdb = TorrentImdb.resolve(videoType) ?: return@launch
+                val path = pathFor(videoType, imdb)
+                bases.forEachIndexed { i, base ->
+                    fetchJson(NetworkClient.default, "$base/stream/$path.json", "prefetch ${i + 1}/${bases.size}", false)
+                    background.launch { runCatching { nameOf(base) } }
+                }
+            }
+        }
+    }
+
+    /** Keeps answers across app restarts; the Android app provides one, other apps may leave it out. */
+    interface AnswerStore {
+        fun load(url: String): Pair<Long, List<AddonStream>>?
+        fun save(url: String, at: Long, streams: List<AddonStream>)
+        fun delete(url: String)
+    }
+
+    @Volatile var store: AnswerStore? = null
+
+    /** Where the addon loading reports what happened; the Android app points it at logcat. */
+    @Volatile var logger: (String) -> Unit = {}
+
+    /** A server's name without its measured height or "#2", so the same stream matches across fetches. */
+    fun sameStream(name: String): String =
+        name.replace(Regex(" \\d{3,4}p(?= |$)"), "").replace(Regex(" #\\d+$"), "").trim().lowercase()
+
+    /**
+     * Asks the addons again and returns fresh links by [sameStream] name. Addon links (Cinejoy's)
+     * stop working after a while, so a stream that failed mid-film is retried with a new one.
+     */
+    suspend fun freshLinks(videoType: Video.Type): Map<String, Video> =
+        Servers().servers(videoType, refresh = true).filter { isAddonServer(it) }
+            .groupBy { sameStream(it.name) }
+            .mapValues { (_, list) -> videoFor(list.first()) }
+
+    /** What a failed link answers now, for the log: status, type and the first bytes, never the link. */
+    suspend fun diagnose(video: Video): String = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = Request.Builder().url(video.source).apply {
+                video.headers?.forEach { (k, v) -> header(k, v) }
+            }.build()
+            NetworkClient.default.newCall(request).execute().use { r ->
+                val head = r.body?.source()?.let { s -> s.request(80); s.buffer.snapshot().utf8().take(80) }.orEmpty()
+                "HTTP ${r.code} ${r.header("Content-Type")} \"${head.replace(Regex("\\s+"), " ")}\""
+            }
+        }.getOrElse { "error ${it.javaClass.simpleName}: ${it.message}" }
+    }
+
     /** Direct links keep their headers here, so a copied server object still plays. */
     private val videos = ConcurrentHashMap<String, Video>()
 
@@ -152,9 +383,14 @@ object StremioAddons {
 
     fun videoFor(server: Video.Server): Video = server.video ?: videos[server.id] ?: Video(source = server.src)
 
-    private const val ADDON_TIMEOUT_MS = 13_000L
-    private const val MEASURE_TIMEOUT_MS = 5_000L
-    private const val MEASURE_CANDIDATES = 12
+    private const val ADDON_TIMEOUT_MS = 20_000L
+    const val LATE_PATIENCE_MS = 90_000L
+    private const val ANSWER_TTL_MS = 10 * 60_000L
+    private const val KEEP_MS = 30L * 24 * 60 * 60_000L
+    private const val ALIVE_TIMEOUT_MS = 3_000L
+    private const val MEASURE_TIMEOUT_MS = 3_000L
+    private const val MEASURE_CANDIDATES = 8
+    private const val WARM_LINKS = 3
 }
 
 /** One stream an addon offered: a torrent, a direct web link, or something the app can't play. */

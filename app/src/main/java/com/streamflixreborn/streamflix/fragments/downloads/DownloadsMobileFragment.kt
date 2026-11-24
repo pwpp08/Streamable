@@ -66,6 +66,10 @@ class DownloadsMobileFragment : Fragment() {
         binding.cbDownloadsSaveSpace.setOnCheckedChangeListener { _, checked ->
             DownloadPreferences.setSaveSpace(context, checked)
         }
+        binding.cbDownloadsDeleteWatched.isChecked = DownloadPreferences.deleteWhenWatched(context)
+        binding.cbDownloadsDeleteWatched.setOnCheckedChangeListener { _, checked ->
+            DownloadPreferences.setDeleteWhenWatched(context, checked)
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

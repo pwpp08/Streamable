@@ -126,6 +126,8 @@ object WatchStateActions {
      * next-episode suggestion does not bring the show back.
      */
     suspend fun removeFromContinueWatching(context: Context, item: AppAdapter.Item) {
+        Log.i(TAG, "CW remove: ${item.javaClass.simpleName} ${(item as? Movie)?.id ?: (item as? Episode)?.id}")
+        com.streamflixreborn.streamflix.torrent.AddonPrefetch.forget(item)
         withTarget(context, item) { provider, db ->
             when (item) {
                 is Movie -> {
@@ -163,7 +165,7 @@ object WatchStateActions {
     }
 
     /** Mark as watched (clears the progress) or unwatched (keeps it). */
-    suspend fun setWatched(context: Context, item: AppAdapter.Item, watched: Boolean) {
+    suspend fun setWatched(context: Context, item: AppAdapter.Item, watched: Boolean, announce: Boolean = true) {
         withTarget(context, item) { provider, db ->
             val now = Calendar.getInstance()
             when (item) {
@@ -174,7 +176,7 @@ object WatchStateActions {
                     if (watched) Rules.markWatched(movie, now) else Rules.markUnwatched(movie)
                     if (stored != null) dao.update(movie) else dao.insert(movie)
                     UserDataCache.syncMovieToCache(context, provider, movie)
-                    if (watched) WatchEvents.movieWatched(movie)
+                    if (watched && announce) WatchEvents.movieWatched(movie)
                 }
 
                 is Episode -> {

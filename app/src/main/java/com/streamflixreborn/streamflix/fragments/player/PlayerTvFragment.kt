@@ -356,6 +356,20 @@ class PlayerTvFragment : Fragment() {
                         viewModel.startPlayback(state.servers, args.preferredServerName)
                     }
 
+                        is PlayerViewModel.State.ServersAdded -> {
+                            servers = state.servers
+                            nextUi.setServers(servers, currentServer)
+                            player.playlistMetadata = MediaMetadata.Builder()
+                                .setTitle(player.playlistMetadata.title)
+                                .setMediaServers(state.servers.map { MediaServer(id = it.id, name = it.name) })
+                                .build()
+                            binding.settings.setOnServerSelectedListener { server ->
+                                val selected = state.servers.find { server.id == it.id } ?: return@setOnServerSelectedListener
+                                pendingResumeMs = player.currentPosition.takeIf { it > 0 }
+                                viewModel.getVideo(selected)
+                            }
+                        }
+
                         is PlayerViewModel.State.FailedLoadingServers -> {
                             Toast.makeText(
                                 requireContext(),

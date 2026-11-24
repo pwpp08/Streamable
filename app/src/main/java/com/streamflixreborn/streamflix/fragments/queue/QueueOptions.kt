@@ -44,11 +44,11 @@ object QueueOptions {
         binding.tgQueueReaction.addOnButtonCheckedListener { _, checkedId, isChecked ->
             val reaction = buttons.entries.firstOrNull { it.value.id == checkedId }?.key ?: return@addOnButtonCheckedListener
             if (isChecked) {
-                viewModel.setReaction(entry, reaction)
+                viewModel.setReaction(context, entry, reaction)
                 binding.tvQueueReactionLabel.text = label(reaction)
                 binding.tvQueueReactionLabel.isVisible = true
             } else if (binding.tgQueueReaction.checkedButtonId == android.view.View.NO_ID) {
-                viewModel.setReaction(entry, null)
+                viewModel.setReaction(context, entry, null)
                 binding.tvQueueReactionLabel.isVisible = false
             }
         }

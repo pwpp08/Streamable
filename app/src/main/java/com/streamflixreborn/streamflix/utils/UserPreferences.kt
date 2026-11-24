@@ -385,6 +385,11 @@ object UserPreferences {
         get() = Key.TORRENT_ENABLED.getBoolean() ?: true
         set(value) = Key.TORRENT_ENABLED.setBoolean(value)
 
+    /** Hides TMDb entries with no poster and no votes (stubs, clips and the like). */
+    var hideObscureTitles: Boolean
+        get() = Key.HIDE_OBSCURE_TITLES.getBoolean() ?: true
+        set(value) = Key.HIDE_OBSCURE_TITLES.setBoolean(value)
+
     /** Extra Stremio addons, one manifest link per line (Settings > Sources). */
     var stremioAddons: String
         get() = Key.STREMIO_ADDONS.getString() ?: ""
@@ -743,6 +748,7 @@ object UserPreferences {
         SERVER_AUTO_SUBTITLES_DISABLED,
         ENABLE_TMDB,
         TORRENT_ENABLED,
+        HIDE_OBSCURE_TITLES,
         STREMIO_ADDONS,
         TMDB_CATEGORIES,
         ENABLE_RECENTLY_WATCHED,
