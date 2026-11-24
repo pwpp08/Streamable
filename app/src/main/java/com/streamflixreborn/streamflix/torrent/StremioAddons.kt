@@ -80,15 +80,13 @@ object StremioAddons {
         private val imdbIdFor: suspend (Video.Type) -> String? = { TorrentImdb.resolve(it) },
         private val addons: () -> List<String> = { configured() },
         private val torrentsAllowed: () -> Boolean = { UserPreferences.torrentEnabled },
+        private val patienceMs: Long = ADDON_TIMEOUT_MS,
     ) {
         suspend fun servers(videoType: Video.Type, refresh: Boolean = false): List<Video.Server> {
             val bases = addons()
             if (bases.isEmpty()) return emptyList()
             val imdb = imdbIdFor(videoType) ?: return emptyList()
-            val path = when (videoType) {
-                is Video.Type.Movie -> "movie/$imdb"
-                is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
-            }
+            val path = pathFor(videoType, imdb)
             return coroutineScope {
                 bases.mapIndexed { index, base ->
                     async(Dispatchers.IO) {
@@ -97,7 +95,7 @@ object StremioAddons {
                         // The list waits a limited time; a slow addon keeps going in the background and its
                         // answer is kept, so the next time the title is opened its servers are there at once.
                         val addonName = async { nameOf(base) }
-                        val streams = withTimeoutOrNull(ADDON_TIMEOUT_MS) { fetchJson(client(), "$base/stream/$path.json", tag, refresh).await() }
+                        val streams = withTimeoutOrNull(patienceMs) { fetchJson(client(), "$base/stream/$path.json", tag, refresh).await() }
                         if (streams == null) {
                             logger("$tag: no answer in ${System.currentTimeMillis() - started} ms; still asking in the background")
                             return@async emptyList()
@@ -191,15 +189,72 @@ object StremioAddons {
                 logger("$tag: answered from memory")
                 return CompletableDeferred(known.streams)
             }
-            if (age < STALE_TTL_MS) {
-                // Good enough to start on; a fresh answer is fetched behind it, and a link that has gone
-                // stale is replaced by the fresh-link retry in the player.
-                logger("$tag: answered from the saved copy (${age / 60_000} min old), asking again in the background")
-                ask(client, url, tag, key)
-                return CompletableDeferred(known.streams)
+            if (age < KEEP_MS) {
+                // Kept until the film is finished. Before it is used, the best link gets one quick look:
+                // alive, it starts at once (a fresh answer is fetched behind it); dead, a fresh one is
+                // asked for first, so playback never begins on a link that fails.
+                val checked = CompletableDeferred<List<AddonStream>?>()
+                background.launch {
+                    if (linkAlive(client, known.streams) == false) {
+                        logger("$tag: the saved link (${age / 60_000} min old) no longer answers; asking for a fresh one")
+                        answers.remove(key)
+                        checked.complete(ask(client, url, tag, key).await())
+                    } else {
+                        logger("$tag: answered from the saved copy (${age / 60_000} min old), asking again in the background")
+                        ask(client, url, tag, key)
+                        checked.complete(known.streams)
+                    }
+                }
+                return checked
             }
         }
         return ask(client, url, tag, key)
+    }
+
+    /**
+     * One quick request to the first of the best links. false only when the host says the link is gone
+     * (an error status, or something that is not a playlist); a slow answer or no network is not a verdict.
+     */
+    private suspend fun linkAlive(client: OkHttpClient, streams: List<AddonStream>): Boolean? {
+        val d = DirectPicker.pick(streams.mapNotNull { it.direct }, max = 6, perSource = 2)
+            .sortedBy { if (DirectPicker.sourceOf(it.label)?.contains("sirius", ignoreCase = true) == true) 0 else 1 }
+            .firstOrNull() ?: return null
+        val quick = client.newBuilder().callTimeout(ALIVE_TIMEOUT_MS, TimeUnit.MILLISECONDS).build()
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val request = Request.Builder().url(d.url).apply {
+                    d.headers.forEach { (k, v) -> runCatching { header(k, v) } }
+                }.build()
+                quick.newCall(request).execute().use { r ->
+                    if (!r.isSuccessful) return@use false
+                    val isPlaylist = DirectPicker.mimeOf(d)?.contains("mpegurl", ignoreCase = true) == true || d.url.contains(".m3u8")
+                    if (!isPlaylist) return@use true
+                    r.body?.source()?.let { s -> s.request(7); s.buffer.snapshot().utf8().startsWith("#EXTM3U") } ?: false
+                }
+            }.getOrNull()
+        }
+    }
+
+    /** The saved answer for a title is no longer needed (the film is finished or left Continue Watching). */
+    fun forget(videoType: Video.Type) {
+        background.launch {
+            runCatching {
+                val bases = configured()
+                if (bases.isEmpty()) return@launch
+                val imdb = TorrentImdb.resolve(videoType) ?: return@launch
+                val path = pathFor(videoType, imdb)
+                bases.forEach { base ->
+                    val url = "$base/stream/$path.json"
+                    answers.keys.filter { it.endsWith(url) }.forEach { answers.remove(it) }
+                    store?.delete(url)
+                }
+            }
+        }
+    }
+
+    private fun pathFor(videoType: Video.Type, imdb: String) = when (videoType) {
+        is Video.Type.Movie -> "movie/$imdb"
+        is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
     }
 
     private fun ask(client: OkHttpClient, url: String, tag: String, key: String): CompletableDeferred<List<AddonStream>?> =
@@ -274,10 +329,7 @@ object StremioAddons {
                 val bases = configured()
                 if (bases.isEmpty()) return@launch
                 val imdb = TorrentImdb.resolve(videoType) ?: return@launch
-                val path = when (videoType) {
-                    is Video.Type.Movie -> "movie/$imdb"
-                    is Video.Type.Episode -> "series/$imdb:${videoType.season.number}:${videoType.number}"
-                }
+                val path = pathFor(videoType, imdb)
                 bases.forEachIndexed { i, base ->
                     fetchJson(NetworkClient.default, "$base/stream/$path.json", "prefetch ${i + 1}/${bases.size}", false)
                     background.launch { runCatching { nameOf(base) } }
@@ -290,6 +342,7 @@ object StremioAddons {
     interface AnswerStore {
         fun load(url: String): Pair<Long, List<AddonStream>>?
         fun save(url: String, at: Long, streams: List<AddonStream>)
+        fun delete(url: String)
     }
 
     @Volatile var store: AnswerStore? = null
@@ -331,8 +384,10 @@ object StremioAddons {
     fun videoFor(server: Video.Server): Video = server.video ?: videos[server.id] ?: Video(source = server.src)
 
     private const val ADDON_TIMEOUT_MS = 20_000L
+    const val LATE_PATIENCE_MS = 90_000L
     private const val ANSWER_TTL_MS = 10 * 60_000L
-    private const val STALE_TTL_MS = 60 * 60_000L
+    private const val KEEP_MS = 30L * 24 * 60 * 60_000L
+    private const val ALIVE_TIMEOUT_MS = 3_000L
     private const val MEASURE_TIMEOUT_MS = 3_000L
     private const val MEASURE_CANDIDATES = 8
     private const val WARM_LINKS = 3

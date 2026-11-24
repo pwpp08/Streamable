@@ -57,4 +57,12 @@ class AddonAnswerFilesTest {
         dir.listFiles()!!.single().writeText("{ not json")
         assertNull(store.load("https://addon.example/x.json"))
     }
+
+    @Test
+    fun `a deleted answer is gone`() {
+        val store = AddonAnswerFiles(folder.newFolder("answers"))
+        store.save("https://addon.example/y.json", 1L, streams())
+        store.delete("https://addon.example/y.json")
+        assertNull(store.load("https://addon.example/y.json"))
+    }
 }

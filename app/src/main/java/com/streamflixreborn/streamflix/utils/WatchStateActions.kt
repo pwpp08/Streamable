@@ -127,6 +127,7 @@ object WatchStateActions {
      */
     suspend fun removeFromContinueWatching(context: Context, item: AppAdapter.Item) {
         Log.i(TAG, "CW remove: ${item.javaClass.simpleName} ${(item as? Movie)?.id ?: (item as? Episode)?.id}")
+        com.streamflixreborn.streamflix.torrent.AddonPrefetch.forget(item)
         withTarget(context, item) { provider, db ->
             when (item) {
                 is Movie -> {

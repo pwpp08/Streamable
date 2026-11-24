@@ -218,14 +218,56 @@ class PlayerViewModel(
         wrongAudio.clear()
         // A torrent the viewer picked by hand is pinned like any manual choice.
         manualServerId = chosenTorrentId?.takeIf { id -> servers.any { it.id == id } }
+        val rankedFor = chosenTorrentName ?: preferredServerName
         chosenTorrentId = null
         chosenTorrentName = null
         Log.d(TAG, "ranked servers (preferred=$preferredServerName, sticky=$sticky): ${ranked.joinToString { it.name }}")
+        rankPreference = rankedFor
+        watchForLateAddons()
 
         val results = Channel<Pair<Int, Video?>>(Channel.UNLIMITED)
         resolutionJob?.cancel()
         resolutionJob = launchResolutions(ranked, results)
         launchPlayback { pickFirst(ranked, results) }
+    }
+
+    private var rankPreference: String? = null
+    private var lateJob: Job? = null
+    private var lateWatched = false
+    private var firstPlayAt = 0L
+
+    /**
+     * PenguPlay (and any other addon) can answer after the list was shown. This keeps asking in the
+     * background; when it answers, its servers are added to the picker, and if the film has only just
+     * begun on something else, playback moves to Cinejoy Sirius (position kept).
+     */
+    private fun watchForLateAddons() {
+        if (lateWatched) return
+        lateWatched = true
+        val type = videoType
+        lateJob = viewModelScope.launch(Dispatchers.IO) {
+            val addons = com.streamflixreborn.streamflix.torrent.StremioAddons
+            if (addons.configured().isEmpty() || servers.any { addons.isAddonServer(it) }) return@launch
+            val late = runCatching {
+                withTimeoutOrNull(addons.LATE_PATIENCE_MS) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers(patienceMs = addons.LATE_PATIENCE_MS).servers(type) }
+            }.getOrNull().orEmpty().filterNot { late -> servers.any { it.id == late.id } }
+            if (late.isEmpty()) return@launch
+            Log.i(TAG, "late join: ${late.size} addon servers arrived: ${late.joinToString { it.name }}")
+            servers = servers + late
+            ranked = ServerRanker.rank(servers, preferredName = rankPreference, stickyName = stickyName)
+            _state.emit(State.ServersAdded(servers))
+            // Only a film that has just begun is moved; one the viewer settled into is left alone.
+            val best = ranked.firstOrNull { ServerRanker.siriusTier(it, null) < 2 } ?: return@launch
+            val settled = firstPlayAt != 0L && SystemClock.elapsedRealtime() - firstPlayAt > LATE_SWITCH_WINDOW_MS
+            if (manualServerId != null || settled || currentServerId == best.id || best.id in failedIds) return@launch
+            val video = cachedVideo(best) ?: resolve(best) ?: return@launch
+            playbackMutex.withLock {
+                if (manualServerId == null && currentServerId != best.id) {
+                    Log.i(TAG, "late join: moving to ${best.name}")
+                    emitSuccess(video, best, failover = true)
+                }
+            }
+        }
     }
 
     /** Manual server choice from the player settings. */
@@ -325,6 +367,7 @@ class PlayerViewModel(
 
     /** [server] is playing fine; remember it for this title. */
     fun onPlaybackStarted(server: Video.Server) {
+        if (firstPlayAt == 0L) firstPlayAt = SystemClock.elapsedRealtime()
         activeServerId = server.id
         resolved[server.id]?.video?.let { activeVideo = it }
         if (server.id == offlineServer?.id) return
@@ -784,6 +827,9 @@ class PlayerViewModel(
     sealed class State {
         data object LoadingServers : State()
         data class SuccessLoadingServers(val servers: List<Video.Server>) : State()
+
+        /** The addons answered after the list was shown; the full list is now [servers]. */
+        data class ServersAdded(val servers: List<Video.Server>) : State()
         data class FailedLoadingServers(val error: Exception) : State()
         data class LoadingVideo(val server: Video.Server) : State()
 
@@ -825,6 +871,7 @@ class PlayerViewModel(
         private const val RESOLVE_TIMEOUT_MS = 12_000L
         /** After the first server resolves, wait this long for better-ranked ones. */
         private const val PICK_GRACE_MS = 2_000L
+        private const val LATE_SWITCH_WINDOW_MS = 75_000L
         private const val MIN_TO_COMPARE = 3
         /** Started server + backups resolved ahead of time. */
         private const val MAX_PRERESOLVED = 3

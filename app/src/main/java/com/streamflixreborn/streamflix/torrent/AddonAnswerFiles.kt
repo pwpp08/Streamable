@@ -33,6 +33,10 @@ class AddonAnswerFiles(private val dir: File) : StremioAddons.AnswerStore {
         }
     }
 
+    override fun delete(url: String) {
+        runCatching { fileFor(url).delete() }
+    }
+
     private companion object {
         const val MAX_FILES = 80
     }

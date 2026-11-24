@@ -771,7 +771,7 @@ class TmdbProvider(override val language: String) : Provider {
         // Torrents and addons are asked while the web servers are listed, so neither waits for the other.
         val (addonServers, torrentServers) = kotlinx.coroutines.coroutineScope {
             val addons = async {
-                runCatching { kotlinx.coroutines.withTimeoutOrNull(22_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
+                runCatching { kotlinx.coroutines.withTimeoutOrNull(8_000L) { com.streamflixreborn.streamflix.torrent.StremioAddons.Servers().servers(videoType) } }
                     .getOrNull().orEmpty()
             }
             val torrents = async {
