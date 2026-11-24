@@ -62,7 +62,7 @@ class StreamDataSourceFactory(
     /** Downloaded titles are read from the download cache; everything else from the network. */
     val dataSourceFactory: DataSource.Factory = DataSource.Factory {
         TorrentAwareDataSource(
-            if (OfflineMediaProvider.isOffline(currentVideo())) offlineDataSourceFactory.createDataSource()
+            if (OfflineMediaProvider.isCacheBacked(currentVideo())) offlineDataSourceFactory.createDataSource()
             else networkDataSourceFactory.createDataSource()
         )
     }

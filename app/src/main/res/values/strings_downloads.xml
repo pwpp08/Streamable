@@ -12,6 +12,7 @@
     <string name="downloads_storage">Used %1$s · Free %2$s</string>
     <string name="downloads_wifi_only">Download on Wi-Fi only</string>
     <string name="downloads_save_space">Save space (720p)</string>
+    <string name="downloads_delete_watched">Delete a download once I have finished watching it</string>
     <string name="downloads_offline_server">Downloaded</string>
 
     <string name="download_action">Download</string>
@@ -42,4 +43,24 @@
     <string name="download_error_no_provider">No provider selected.</string>
     <string name="download_error_unsupported">This stream can\'t be downloaded.</string>
     <string name="download_item_subtitle_episode">S%1$d·E%2$d %3$s</string>
+    <string name="download_torrent_failed">The download failed.</string>
+    <string name="download_torrent_stalled">No data has arrived for 10 minutes.</string>
+    <string name="download_torrent_no_peers">Nobody is sharing this file right now.</string>
+    <string name="download_torrent_no_subtitle">No subtitle was found, so none was added.</string>
+    <string name="download_torrent_subtitle_beside">The subtitle could not go inside this file, so it was saved next to it in Downloads/Streamable.</string>
+    <string name="download_torrent_waiting_wifi">Waiting for Wi-Fi</string>
+    <string name="download_torrent_finishing">Finishing up</string>
+    <string name="download_torrent_starting">Starting</string>
+    <string name="download_torrent_more">+%1$d more</string>
+    <string name="download_choice_title">Download %1$s</string>
+    <string name="download_choice_loading">Looking for downloads…</string>
+    <string name="download_choice_quality">Quality</string>
+    <string name="download_choice_option">%1$dp · %2$s · %3$d sharing · %4$s</string>
+    <string name="download_choice_option_unknown_size">%1$dp · %2$d sharing · %3$s</string>
+    <string name="download_choice_subtitle">Add a subtitle to the file</string>
+    <string name="download_choice_subtitle_language">Subtitle language</string>
+    <string name="download_choice_start">Download</string>
+    <string name="download_choice_none">No download was found for this title.</string>
+    <string name="download_choice_stream">Use a streaming server</string>
+    <string name="download_choice_files_note">The file is also saved to Movies/Streamable, so other players can open it.</string>
 </resources>

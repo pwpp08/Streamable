@@ -126,6 +126,9 @@ class ProgressSaver(
                 watchItem?.watchedDate = Calendar.getInstance()
                 watchItem?.watchHistory = null
                 watchItem?.let { com.streamflixreborn.streamflix.torrent.AddonPrefetch.forget(it) }
+                UserPreferences.currentProvider?.name?.let {
+                    com.streamflixreborn.streamflix.downloads.DownloadHousekeeping.afterFinished(appContext, it, videoType)
+                }
             }
         }
 

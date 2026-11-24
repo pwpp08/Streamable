@@ -94,7 +94,9 @@ class DownloadButton @JvmOverloads constructor(
             null, DownloadTracker.Status.NONE -> {
                 DownloadActions.requestNotificationPermission(DownloadActions.activityOf(context))
                 beforeStart?.invoke()
-                DownloadStarter.start(context, target)
+                com.streamflixreborn.streamflix.downloads.torrent.DownloadChoiceDialog.show(context, target) {
+                    DownloadStarter.start(context, target)
+                }
             }
             DownloadTracker.Status.RESOLVING,
             DownloadTracker.Status.REMOVING ->

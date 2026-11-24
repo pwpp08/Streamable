@@ -6,6 +6,7 @@
     <string name="downloads_storage">Foglalt: %1$s · Szabad: %2$s</string>
     <string name="downloads_wifi_only">Letöltés csak Wi-Fi-n</string>
     <string name="downloads_save_space">Helytakarékos (720p)</string>
+    <string name="downloads_delete_watched">Letöltés törlése, ha végignéztem</string>
     <string name="downloads_offline_server">Letöltve</string>
 
     <string name="download_action">Letöltés</string>
@@ -36,4 +37,24 @@
     <string name="download_error_no_provider">Nincs kiválasztott szolgáltató.</string>
     <string name="download_error_unsupported">Ez a stream nem tölthető le.</string>
     <string name="download_item_subtitle_episode">%1$d. évad · %2$d. rész %3$s</string>
+    <string name="download_torrent_failed">A letöltés nem sikerült.</string>
+    <string name="download_torrent_stalled">10 perce nem érkezett adat.</string>
+    <string name="download_torrent_no_peers">Jelenleg senki sem oszt ilyen fájlt.</string>
+    <string name="download_torrent_no_subtitle">Nem találtunk feliratot, ezért nem került bele.</string>
+    <string name="download_torrent_subtitle_beside">A felirat nem fért bele a fájlba, ezért mellé mentettük a Downloads/Streamable mappába.</string>
+    <string name="download_torrent_waiting_wifi">Wi-Fire vár</string>
+    <string name="download_torrent_finishing">Befejezés</string>
+    <string name="download_torrent_starting">Indítás</string>
+    <string name="download_torrent_more">+%1$d további</string>
+    <string name="download_choice_title">%1$s letöltése</string>
+    <string name="download_choice_loading">Letöltések keresése…</string>
+    <string name="download_choice_quality">Minőség</string>
+    <string name="download_choice_option">%1$dp · %2$s · %3$d megosztó · %4$s</string>
+    <string name="download_choice_option_unknown_size">%1$dp · %2$d megosztó · %3$s</string>
+    <string name="download_choice_subtitle">Felirat hozzáadása a fájlhoz</string>
+    <string name="download_choice_subtitle_language">Felirat nyelve</string>
+    <string name="download_choice_start">Letöltés</string>
+    <string name="download_choice_none">Ehhez a címhez nem található letöltés.</string>
+    <string name="download_choice_stream">Streaming szerver használata</string>
+    <string name="download_choice_files_note">A fájl a Movies/Streamable mappába is bekerül, így más lejátszók is megnyithatják.</string>
 </resources>

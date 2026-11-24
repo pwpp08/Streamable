@@ -9,6 +9,9 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import com.streamflixreborn.streamflix.R
+import com.streamflixreborn.streamflix.downloads.torrent.DownloadPublisher
+import com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloadState
+import com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloadStore
 import com.streamflixreborn.streamflix.models.Video
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
@@ -22,7 +25,10 @@ object OfflineMediaProvider {
 
     private const val TAG = "OfflineMediaProvider"
 
-    class OfflineMedia(val video: Video, val server: Video.Server, val request: DownloadRequest)
+    class OfflineMedia(val video: Video, val server: Video.Server, val request: DownloadRequest?)
+
+    /** Sources that are plain files on the phone (torrent downloads), not entries of the download cache. */
+    private val localFiles = ConcurrentHashMap.newKeySet<String>()
 
     /** Sources handed to the player, by [Video.source], with their download request. */
     private val active = ConcurrentHashMap<String, DownloadRequest>()
@@ -33,6 +39,7 @@ object OfflineMediaProvider {
      */
     fun lookup(context: Context, videoType: Video.Type, providerName: String?): OfflineMedia? {
         providerName ?: return null
+        torrentFile(context, videoType, providerName)?.let { return it }
         if (!DownloadUtil.isSupported(context) || !DownloadUtil.hasDownloadStore(context)) return null
         val id = DownloadIds.of(providerName, videoType)
         val download = try {
@@ -61,12 +68,30 @@ object OfflineMediaProvider {
         )
     }
 
+    private fun torrentFile(context: Context, videoType: Video.Type, providerName: String): OfflineMedia? {
+        val id = DownloadIds.of(providerName, videoType)
+        val record = TorrentDownloadStore.get(id)
+            ?.takeIf { it.state == TorrentDownloadState.COMPLETED && DownloadPublisher.exists(context, it.finalUri) }
+            ?: return null
+        val uri = record.finalUri ?: return null
+        localFiles += uri
+        Log.d(TAG, "playing $id from its downloaded file")
+        return OfflineMedia(
+            video = Video(source = uri, subtitles = emptyList(), type = DownloadPublisher.mimeFor(record.finalName.orEmpty().substringAfterLast('.', "mkv"))),
+            server = Video.Server(id = "offline:$id", name = context.getString(R.string.downloads_offline_server)),
+            request = null,
+        )
+    }
+
+    /** True when [video] must be read through the download cache (not a plain local file). */
+    fun isCacheBacked(video: Video?): Boolean = video != null && active.containsKey(video.source)
+
     /** Called when a download is deleted. */
     fun forget(source: String) {
         active.remove(source)
     }
 
-    fun isOffline(video: Video?): Boolean = video != null && active.containsKey(video.source)
+    fun isOffline(video: Video?): Boolean = video != null && (active.containsKey(video.source) || localFiles.contains(video.source))
 
     fun isOfflineServer(server: Video.Server?): Boolean = server?.id?.startsWith("offline:") == true
 
