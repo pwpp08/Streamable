@@ -52,13 +52,7 @@ object TorrentDownloader {
     private var session: SessionManager? = null
     private var sessionUsers = 0
 
-    private lateinit var app: Context
-
-    fun init(context: Context) {
-        if (::app.isInitialized) return
-        app = context.applicationContext
-        TorrentDownloadStore.init(app)
-    }
+    private val app: Context get() = com.streamflixreborn.streamflix.StreamFlixApp.instance.applicationContext
 
     /** Where downloads are kept while they run: the phone's app storage (the SD card when there is one). */
     private fun workRoot(): File =
@@ -101,19 +95,6 @@ object TorrentDownloader {
             }
             TorrentDownloadService.refresh(app)
         }
-    }
-
-    /**
-     * At app start: a download that was still active means the app was stopped while it ran (killed,
-     * or crashed). It is NOT restarted automatically: if the stop was a crash, restarting would crash
-     * the app on every launch. It shows as paused, one tap resumes it.
-     */
-    fun pauseInterrupted() {
-        TorrentDownloadStore.records.value.values
-            .filter { it.isActive && !jobs.containsKey(it.id) }
-            .forEach { r ->
-                TorrentDownloadStore.update(r.id) { it.copy(state = TorrentDownloadState.PAUSED, message = null) }
-            }
     }
 
     private fun launch(id: String) {

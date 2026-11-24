@@ -41,11 +41,10 @@ class StreamFlixApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // First, so that anything that goes wrong later leaves a trace in Download/Streamable.
+        com.streamflixreborn.streamflix.utils.CrashReporter.install(this)
+        Thread({ com.streamflixreborn.streamflix.utils.CrashReporter.recordExitReasons(this) }, "exit-reasons").apply { isDaemon = true }.start()
         com.streamflixreborn.streamflix.torrent.TorrentEngine.cleanStaleFiles()
-        if (com.streamflixreborn.streamflix.downloads.DownloadUtil.isSupported(this)) {
-            com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloader.init(this)
-            com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloader.pauseInterrupted()
-        }
         com.streamflixreborn.streamflix.torrent.StremioAddons.store =
             com.streamflixreborn.streamflix.torrent.AddonAnswerFiles(java.io.File(noBackupFilesDir, "addon-answers"))
         com.streamflixreborn.streamflix.torrent.StremioAddons.logger = { android.util.Log.d("StremioAddons", it) }

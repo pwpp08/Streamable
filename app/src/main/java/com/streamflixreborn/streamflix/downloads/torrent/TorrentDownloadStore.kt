@@ -19,7 +19,15 @@ object TorrentDownloadStore {
     private var lastWrite = 0L
 
     private val _records = MutableStateFlow<Map<String, TorrentDownloadRecord>>(emptyMap())
-    val records: StateFlow<Map<String, TorrentDownloadRecord>> = _records
+    val records: StateFlow<Map<String, TorrentDownloadRecord>>
+        get() {
+            ensure()
+            return _records
+        }
+
+    private fun ensure() {
+        if (file == null) init(com.streamflixreborn.streamflix.StreamFlixApp.instance)
+    }
 
     fun init(context: Context) = synchronized(lock) {
         if (file != null) return
@@ -28,12 +36,24 @@ object TorrentDownloadStore {
         val loaded = runCatching {
             if (f.exists()) json.decodeFromString(ListSerializer(TorrentDownloadRecord.serializer()), f.readText()) else emptyList()
         }.onFailure { Log.w(TAG, "could not read the torrent downloads", it) }.getOrDefault(emptyList())
-        _records.value = loaded.associateBy { it.id }
+        // Nothing runs yet in this process: a download that was active was stopped with the app (killed, or
+        // crashed), and is not restarted by itself - a crashing download would then crash every launch.
+        _records.value = loaded.map {
+            if (it.isActive) it.copy(state = TorrentDownloadState.PAUSED, message = null) else it
+        }.associateBy { it.id }
     }
 
-    fun get(id: String): TorrentDownloadRecord? = _records.value[id]
+    fun get(id: String): TorrentDownloadRecord? {
+        ensure()
+        return _records.value[id]
+    }
 
-    fun put(record: TorrentDownloadRecord, persist: Boolean = true) = synchronized(lock) {
+    fun put(record: TorrentDownloadRecord, persist: Boolean = true) {
+        ensure()
+        putLocked(record, persist)
+    }
+
+    private fun putLocked(record: TorrentDownloadRecord, persist: Boolean) = synchronized(lock) {
         _records.value = _records.value + (record.id to record)
         if (persist) write(force = true)
     }
@@ -41,6 +61,7 @@ object TorrentDownloadStore {
     /** Applies [change] to the record [id]; progress-only changes are written to disk at most every few seconds. */
     fun update(id: String, persist: Boolean = true, change: (TorrentDownloadRecord) -> TorrentDownloadRecord): TorrentDownloadRecord? =
         synchronized(lock) {
+            ensure()
             val current = _records.value[id] ?: return null
             val next = change(current)
             _records.value = _records.value + (id to next)
