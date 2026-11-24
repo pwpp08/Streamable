@@ -103,12 +103,17 @@ object TorrentDownloader {
         }
     }
 
-    /** At app start: carry on with whatever was running when the app was closed. */
-    fun resumeAll() {
+    /**
+     * At app start: a download that was still active means the app was stopped while it ran (killed,
+     * or crashed). It is NOT restarted automatically: if the stop was a crash, restarting would crash
+     * the app on every launch. It shows as paused, one tap resumes it.
+     */
+    fun pauseInterrupted() {
         TorrentDownloadStore.records.value.values
-            .filter { it.isActive }
-            .sortedBy { it.createdAt }
-            .forEach { if (!jobs.containsKey(it.id)) launch(it.id) }
+            .filter { it.isActive && !jobs.containsKey(it.id) }
+            .forEach { r ->
+                TorrentDownloadStore.update(r.id) { it.copy(state = TorrentDownloadState.PAUSED, message = null) }
+            }
     }
 
     private fun launch(id: String) {
@@ -117,7 +122,8 @@ object TorrentDownloader {
                 gate.withPermit { run(id) }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                // Throwable on purpose: an out-of-memory or linkage error here must not take the app down.
                 Log.w(TAG, "download $id failed", e)
                 TorrentDownloadStore.update(id) {
                     it.copy(state = TorrentDownloadState.FAILED, message = e.message ?: app.getString(R.string.download_torrent_failed))

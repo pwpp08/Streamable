@@ -44,7 +44,7 @@ class StreamFlixApp : Application() {
         com.streamflixreborn.streamflix.torrent.TorrentEngine.cleanStaleFiles()
         if (com.streamflixreborn.streamflix.downloads.DownloadUtil.isSupported(this)) {
             com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloader.init(this)
-            com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloader.resumeAll()
+            com.streamflixreborn.streamflix.downloads.torrent.TorrentDownloader.pauseInterrupted()
         }
         com.streamflixreborn.streamflix.torrent.StremioAddons.store =
             com.streamflixreborn.streamflix.torrent.AddonAnswerFiles(java.io.File(noBackupFilesDir, "addon-answers"))
