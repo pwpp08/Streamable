@@ -65,4 +65,30 @@ class AddonAnswerFilesTest {
         store.delete("https://addon.example/y.json")
         assertNull(store.load("https://addon.example/y.json"))
     }
+
+    @Test
+    fun `a torrent stream with every field survives too`() {
+        val dir = folder.newFolder("answers")
+        val torrent = com.streamflixreborn.streamflix.torrent.TorrentStream(
+            infoHash = "a".repeat(40), fileIdx = 3, release = "Film.2020.1080p.WEB-DL.x264", fileName = "film.mkv",
+            seeders = 42, sizeBytes = 3L shl 30, site = "YTS", languages = "GB", height = 1080,
+            trackers = listOf("udp://tracker.example:1337/announce"),
+        )
+        val store = AddonAnswerFiles(dir)
+        store.save("https://addon.example/t.json", 5L, listOf(AddonStream(torrent = torrent), AddonStream(torrent = torrent.copy(fileIdx = null, fileName = null))))
+        val (_, loaded) = store.load("https://addon.example/t.json")!!
+        assertEquals(torrent, loaded[0].torrent)
+        assertEquals(null, loaded[1].torrent!!.fileIdx)
+        assertEquals(null, loaded[1].torrent!!.fileName)
+    }
+
+    @Test
+    fun `files in the old format are ignored and cleaned away`() {
+        val dir = folder.newFolder("answers")
+        java.io.File(dir, "0123456789abcdef0123456789abcdef.json").writeText("{\"a\":1,\"b\":[{\"a\":{}}]}")
+        val store = AddonAnswerFiles(dir)
+        store.save("https://addon.example/new.json", 1L, streams())
+        assertEquals(1, dir.listFiles()!!.size)
+        assertTrue(dir.listFiles()!!.single().name.endsWith(".v2.json"))
+    }
 }

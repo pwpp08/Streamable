@@ -195,14 +195,24 @@ object StremioAddons {
                 // asked for first, so playback never begins on a link that fails.
                 val checked = CompletableDeferred<List<AddonStream>?>()
                 background.launch {
-                    if (linkAlive(client, known.streams) == false) {
-                        logger("$tag: the saved link (${age / 60_000} min old) no longer answers; asking for a fresh one")
+                    try {
+                        if (linkAlive(client, known.streams) == false) {
+                            logger("$tag: the saved link (${age / 60_000} min old) no longer answers; asking for a fresh one")
+                            answers.remove(key)
+                            checked.complete(ask(client, url, tag, key).await())
+                        } else {
+                            logger("$tag: answered from the saved copy (${age / 60_000} min old), asking again in the background")
+                            ask(client, url, tag, key)
+                            checked.complete(known.streams)
+                        }
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        // A saved copy that can't be used is dropped and asked for again; it must never end the app.
+                        logger("$tag: the saved copy could not be used (${e.javaClass.simpleName}); asking for a fresh one")
                         answers.remove(key)
-                        checked.complete(ask(client, url, tag, key).await())
-                    } else {
-                        logger("$tag: answered from the saved copy (${age / 60_000} min old), asking again in the background")
-                        ask(client, url, tag, key)
-                        checked.complete(known.streams)
+                        runCatching { store?.delete(url) }
+                        runCatching { checked.complete(ask(client, url, tag, key).await()) }
                     }
                 }
                 return checked
