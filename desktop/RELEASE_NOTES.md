@@ -6,6 +6,10 @@ StreamFlix for Windows and macOS: the phone app's sources and look on a big scre
 
 VLC is built in; nothing else to install.
 
+**New in 1.1.8**
+- Obscure titles are hidden: TMDb stubs and clips with no poster and no votes no longer show up in rows. Settings → Sources → Hide obscure titles turns it off.
+- The shared fixes from the phone app up to 1.0.35 (PenguPlay answers kept and checked before use, steadier source ordering).
+
 **New in 1.1.7**
 - Watch with torrents: a Torrents button on every film and on the show page (and on each episode) opens a page with all the torrents Torrentio and MediaFusion know, with filters for resolution, source, codec, HDR, seeders and size. Click one to play it.
 - Typos in a search still find the closest title (Intersteller finds Interstellar).

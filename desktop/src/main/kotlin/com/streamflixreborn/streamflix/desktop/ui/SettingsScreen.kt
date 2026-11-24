@@ -132,6 +132,10 @@ fun SettingsScreen(onThemeChanged: () -> Unit) {
                         enabled = com.streamflixreborn.streamflix.desktop.player.TorrentSupport.available,
                     )
                 }
+                SettingRow("Hide obscure titles", "Hides entries with no poster and no votes (clips, stubs). Takes effect on the next load.") {
+                    var hide by remember { mutableStateOf(UserPreferences.hideObscureTitles) }
+                    Switch(hide, { hide = it; UserPreferences.hideObscureTitles = it })
+                }
                 AddonLinks()
                 SettingRow("Clear cached pages", "Reloads home rows and details from the provider.") {
                     TextButton(onClick = { Repo.clear() }) { Text("Clear") }

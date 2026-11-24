@@ -87,6 +87,11 @@ object UserPreferences {
         get() = bool("TORRENT_ENABLED", true)
         set(value) = set("TORRENT_ENABLED", value.toString())
 
+    /** Hides TMDb entries with no poster and no votes (stubs, clips and the like). */
+    var hideObscureTitles: Boolean
+        get() = bool("HIDE_OBSCURE_TITLES", true)
+        set(value) = set("HIDE_OBSCURE_TITLES", value.toString())
+
     /** Extra Stremio addons, one manifest link per line. */
     var stremioAddons: String
         get() = get("STREMIO_ADDONS").orEmpty()
