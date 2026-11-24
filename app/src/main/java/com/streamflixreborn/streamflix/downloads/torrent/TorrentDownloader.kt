@@ -42,7 +42,7 @@ object TorrentDownloader {
     private const val METADATA_TIMEOUT_S = 45
     private const val POLL_MS = 1_000L
     private const val NO_PROGRESS_LIMIT_MS = 10 * 60_000L
-    private const val MAX_CONNECTIONS = 80
+    private const val MAX_CONNECTIONS = 60
     private val VIDEO_EXT = setOf("mkv", "mp4", "m4v", "avi", "mov", "webm", "ts")
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -54,9 +54,15 @@ object TorrentDownloader {
 
     private val app: Context get() = com.streamflixreborn.streamflix.StreamFlixApp.instance.applicationContext
 
-    /** Where downloads are kept while they run: the phone's app storage (the SD card when there is one). */
-    private fun workRoot(): File =
-        File(app.getExternalFilesDir(null) ?: app.filesDir, "torrent-downloads").apply { mkdirs() }
+    /**
+     * Where downloads are kept while they run: the app's own internal storage. The shared storage (the one
+     * other apps see) goes through a layer that some phones can't take heavy random writes on; the finished
+     * file is copied there in one sequential pass at the end.
+     */
+    private fun workRoot(): File = File(app.noBackupFilesDir, "torrent-downloads").apply { mkdirs() }
+
+    /** Where earlier versions kept the files (shared storage); only ever cleaned up. */
+    private fun legacyRoot(): File? = app.getExternalFilesDir(null)?.let { File(it, "torrent-downloads") }
 
     // --- Commands ----------------------------------------------------------------------------
 
@@ -93,6 +99,8 @@ object TorrentDownloader {
                 DownloadPublisher.delete(app, r.finalUri)
                 r.workDir?.let { runCatching { File(it).deleteRecursively() } }
             }
+            runCatching { File(workRoot(), safe(id)).deleteRecursively() }
+            runCatching { legacyRoot()?.let { File(it, safe(id)).deleteRecursively() } }
             TorrentDownloadService.refresh(app)
         }
     }
@@ -123,7 +131,9 @@ object TorrentDownloader {
 
     private suspend fun run(id: String) {
         val record = TorrentDownloadStore.get(id) ?: return
-        val dir = File(record.workDir ?: File(workRoot(), safe(id)).absolutePath).apply { mkdirs() }
+        val dir = File(workRoot(), safe(id)).apply { mkdirs() }
+        // A download started by an earlier version left its partial file on shared storage; it starts again here.
+        runCatching { legacyRoot()?.let { File(it, safe(id)).deleteRecursively() } }
         waitForNetwork(id)
         TorrentDownloadStore.update(id) { it.copy(state = TorrentDownloadState.STARTING, message = null) }
 
@@ -133,6 +143,7 @@ object TorrentDownloader {
             val info = withContext(Dispatchers.IO) { loadInfo(sm, record, dir) }
             val fileIdx = chooseFile(info, record.choice.fileIdx)
             val total = info.files().fileSize(fileIdx)
+            if (dir.usableSpace < total + (300L shl 20)) error(app.getString(R.string.download_torrent_no_space))
             val priorities = Array(info.numFiles()) { if (it == fileIdx) Priority.DEFAULT else Priority.IGNORE }
             withContext(Dispatchers.IO) { sm.download(info, dir, null, priorities, null, torrent_flags_t()) }
             val h = findHandle(sm, info) ?: error(app.getString(R.string.download_torrent_failed))
@@ -301,7 +312,9 @@ object TorrentDownloader {
             )
         }
         val sm = SessionManager(false)
-        sm.start(SessionParams(pack))
+        // Plain reads and writes instead of memory-mapped files: mapping a multi-GB file is what some phones
+        // (and their storage layer) do not survive.
+        sm.start(SessionParams(pack).apply { setPosixDiskIO() })
         session = sm
         sm
     }

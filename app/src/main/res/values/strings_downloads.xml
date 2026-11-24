@@ -44,6 +44,7 @@
     <string name="download_error_unsupported">This stream can\'t be downloaded.</string>
     <string name="download_item_subtitle_episode">S%1$d·E%2$d %3$s</string>
     <string name="download_torrent_failed">The download failed.</string>
+    <string name="download_torrent_no_space">Not enough free storage for this download.</string>
     <string name="download_torrent_stalled">No data has arrived for 10 minutes.</string>
     <string name="download_torrent_no_peers">Nobody is sharing this file right now.</string>
     <string name="download_torrent_no_subtitle">No subtitle was found, so none was added.</string>

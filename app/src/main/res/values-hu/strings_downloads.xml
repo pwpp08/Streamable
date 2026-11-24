@@ -38,6 +38,7 @@
     <string name="download_error_unsupported">Ez a stream nem tölthető le.</string>
     <string name="download_item_subtitle_episode">%1$d. évad · %2$d. rész %3$s</string>
     <string name="download_torrent_failed">A letöltés nem sikerült.</string>
+    <string name="download_torrent_no_space">Nincs elég szabad hely ehhez a letöltéshez.</string>
     <string name="download_torrent_stalled">10 perce nem érkezett adat.</string>
     <string name="download_torrent_no_peers">Jelenleg senki sem oszt ilyen fájlt.</string>
     <string name="download_torrent_no_subtitle">Nem találtunk feliratot, ezért nem került bele.</string>
