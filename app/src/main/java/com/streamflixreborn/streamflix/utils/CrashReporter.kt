@@ -35,7 +35,7 @@ object CrashReporter {
         }
     }
 
-    private fun header(app: Context): String =
+    internal fun header(app: Context): String =
         "StreamFlix ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) | ${Build.MANUFACTURER} ${Build.MODEL} | Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})\n${Date()}\n"
 
     private fun report(app: Application, thread: Thread, error: Throwable) {
@@ -84,7 +84,7 @@ object CrashReporter {
         }.onFailure { Log.w(TAG, "could not record exit reasons", it) }
     }
 
-    private fun writeDownload(context: Context, name: String, text: String) {
+    internal fun writeDownload(context: Context, name: String, text: String) {
         if (Build.VERSION.SDK_INT < 29) return
         val resolver = context.contentResolver
         runCatching {

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamflixreborn.streamflix.StreamFlixApp
 import com.streamflixreborn.streamflix.downloads.OfflineMediaProvider
+import com.streamflixreborn.streamflix.fragments.player.engine.StartTimeline
 import com.streamflixreborn.streamflix.fragments.player.engine.NextEpisodePrefetch
 import com.streamflixreborn.streamflix.fragments.player.engine.QualityMemory
 import com.streamflixreborn.streamflix.fragments.player.engine.AudioGate
@@ -106,6 +107,12 @@ class PlayerViewModel(
     private var offlineServer: Video.Server? = null
 
     init {
+        StartTimeline.begin(
+            when (val t = videoType) {
+                is Video.Type.Movie -> "${t.title} (movie)"
+                is Video.Type.Episode -> "${t.tvShow.title} S${t.season.number}E${t.number}"
+            },
+        )
         loadSources()
         getSubtitles(videoType)
     }
@@ -197,8 +204,10 @@ class PlayerViewModel(
 
             Log.i(TAG, "[SERVERS LIST] -> Provider: ${provider.name}, prefetched=${prefetched != null}")
             Log.i(TAG, "[SERVERS LIST] -> Found ${servers.size} servers: ${servers.joinToString { it.name }}")
+            StartTimeline.mark("servers listed: ${servers.size}${if (prefetched != null) " (prepared ahead: ${prefetched.resolved.size} already resolved)" else ""}")
             _state.emit(State.SuccessLoadingServers(servers))
         } catch (e: Exception) {
+            StartTimeline.finish("no servers: ${e.message}")
             Log.e(TAG, "Loading servers failed: ", e)
             _state.emit(State.FailedLoadingServers(e))
         }
@@ -368,6 +377,7 @@ class PlayerViewModel(
     /** [server] is playing fine; remember it for this title. */
     fun onPlaybackStarted(server: Video.Server) {
         if (firstPlayAt == 0L) firstPlayAt = SystemClock.elapsedRealtime()
+        StartTimeline.finish("first picture on ${server.name}")
         activeServerId = server.id
         resolved[server.id]?.video?.let { activeVideo = it }
         if (server.id == offlineServer?.id) return
@@ -578,6 +588,7 @@ class PlayerViewModel(
         currentServerId = server.id
         QualityMemory.currentServer = server.name
         Log.d(TAG, "playing ${server.name} (failover=$failover)")
+        StartTimeline.mark("starting on ${server.name}${if (failover) " (failover)" else ""}")
         _state.emit(State.SuccessLoadingVideo(prepareVideo(video), server, failover))
         startQualityUpgrade(video, server)
     }
@@ -682,6 +693,7 @@ class PlayerViewModel(
             }
             if (video.source.isEmpty()) throw Exception("No source found")
             Log.d(TAG, "resolved ${server.name} in ${SystemClock.elapsedRealtime() - started} ms")
+            StartTimeline.mark("resolved ${server.name} (${SystemClock.elapsedRealtime() - started} ms)")
             video
         } catch (e: TimeoutCancellationException) {
             Log.w(TAG, "resolving ${server.name} timed out")

@@ -304,6 +304,7 @@ class HomeTvFragment : Fragment() {
     }
 
     private fun displayHome(categories: List<Category>) {
+        com.streamflixreborn.streamflix.torrent.AddonPrefetch.rows(categories.filter { it.name != Category.CONTINUE_WATCHING }.map { it.list })
         categories
             .find { it.name == Category.FEATURED }
             ?.also {

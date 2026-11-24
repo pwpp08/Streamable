@@ -202,6 +202,7 @@ object StremioAddons {
                             checked.complete(ask(client, url, tag, key).await())
                         } else {
                             logger("$tag: answered from the saved copy (${age / 60_000} min old), asking again in the background")
+                            warm(client, known.streams, tag)
                             ask(client, url, tag, key)
                             checked.complete(known.streams)
                         }
@@ -311,6 +312,8 @@ object StremioAddons {
         val picks = DirectPicker.pick(streams.mapNotNull { it.direct }, max = 6, perSource = 2)
             .sortedBy { if (DirectPicker.sourceOf(it.label)?.contains("sirius", ignoreCase = true) == true) 0 else 1 }
             .take(WARM_LINKS)
+        // The best link also gets its media playlist and first chunk fetched, so the host's caches are hot.
+        picks.firstOrNull()?.let { best -> background.launch { runCatching { warmDeep(client, best, tag) } } }
         picks.forEach { d ->
             background.launch {
                 val began = System.currentTimeMillis()
@@ -328,6 +331,45 @@ object StremioAddons {
             }
         }
     }
+
+    /** Master playlist, then the best variant's playlist, then the first bytes of its first chunk. */
+    private fun warmDeep(client: OkHttpClient, d: AddonStream.Direct, tag: String) {
+        val began = System.currentTimeMillis()
+        val quick = client.newBuilder().callTimeout(12, TimeUnit.SECONDS).build()
+        fun get(url: String, maxBytes: Long): String? = runCatching {
+            val request = Request.Builder().url(url).apply { d.headers.forEach { (k, v) -> runCatching { header(k, v) } } }.build()
+            quick.newCall(request).execute().use { r ->
+                if (!r.isSuccessful) return@use null
+                val source = r.body?.source() ?: return@use null
+                source.request(maxBytes)
+                source.buffer.snapshot().utf8()
+            }
+        }.getOrNull()
+
+        val master = get(d.url, 256 * 1024)?.takeIf { it.startsWith("#EXTM3U") } ?: return
+        var mediaUrl = d.url
+        var media = master
+        if (master.contains("#EXT-X-STREAM-INF")) {
+            val lines = master.lines()
+            var bestHeight = -1
+            var bestUri: String? = null
+            lines.forEachIndexed { i, line ->
+                if (!line.startsWith("#EXT-X-STREAM-INF")) return@forEachIndexed
+                val height = Regex("RESOLUTION=\\d+x(\\d+)").find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                val uri = lines.drop(i + 1).firstOrNull { it.isNotBlank() && !it.startsWith("#") }?.trim()
+                if (uri != null && height > bestHeight) { bestHeight = height; bestUri = uri }
+            }
+            val variant = bestUri?.let { resolveUrl(d.url, it) } ?: return
+            media = get(variant, 512 * 1024)?.takeIf { it.startsWith("#EXTM3U") } ?: return
+            mediaUrl = variant
+        }
+        val segment = media.lines().firstOrNull { it.isNotBlank() && !it.startsWith("#") }?.trim()?.let { resolveUrl(mediaUrl, it) } ?: return
+        get(segment, 768 * 1024)
+        logger("$tag: warmed the playlist and first chunk of ${DirectPicker.sourceOf(d.label) ?: "?"} in ${System.currentTimeMillis() - began} ms")
+    }
+
+    private fun resolveUrl(base: String, relative: String): String? =
+        runCatching { java.net.URI(base).resolve(relative).toString() }.getOrNull()
 
     /**
      * Starts asking the addons about [videoType] now, so the answer is ready when the player opens.

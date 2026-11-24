@@ -47,7 +47,10 @@ class StreamFlixApp : Application() {
         com.streamflixreborn.streamflix.torrent.TorrentEngine.cleanStaleFiles()
         com.streamflixreborn.streamflix.torrent.StremioAddons.store =
             com.streamflixreborn.streamflix.torrent.AddonAnswerFiles(java.io.File(noBackupFilesDir, "addon-answers"))
-        com.streamflixreborn.streamflix.torrent.StremioAddons.logger = { android.util.Log.d("StremioAddons", it) }
+        com.streamflixreborn.streamflix.torrent.StremioAddons.logger = {
+            android.util.Log.d("StremioAddons", it)
+            com.streamflixreborn.streamflix.fragments.player.engine.StartTimeline.addon(it)
+        }
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 

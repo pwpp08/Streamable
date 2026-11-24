@@ -192,6 +192,7 @@ class QueueMobileFragment : Fragment() {
         binding.cgQueueRating.isVisible = watched
         syncRatingChips(state.rating)
 
+        if (!watched) com.streamflixreborn.streamflix.torrent.AddonPrefetch.rows(listOf(state.visible.mapNotNull { it.episode ?: it.movie }), rows = 1, perRow = 5)
         adapter.submitList(state.visible)
         val empty = lists.loaded && state.visible.isEmpty()
         binding.queueEmpty.root.isVisible = empty

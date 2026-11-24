@@ -776,7 +776,7 @@ class TmdbProvider(override val language: String) : Provider {
 
     override suspend fun getServers(id: String, videoType: Video.Type): List<Video.Server> {
         val servers = mutableListOf<Video.Server>()
-        com.streamflixreborn.streamflix.torrent.StremioAddons.logger = { android.util.Log.d("StremioAddons", it) }
+        // (the app sets the logger once at start; desktop and tests leave the default)
         // Torrents and addons are asked while the web servers are listed, so neither waits for the other.
         val (addonServers, torrentServers) = kotlinx.coroutines.coroutineScope {
             val addons = async {
